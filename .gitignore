@@ -1,0 +1,10 @@
+Archive/
+Backup/
+0 - Archive/
+1 - Backup/
+smartbooks_accounting_app.html
+node_modules/
+npm-debug.log*
+*.log
+backend/data/*.json
+!backend/data/.gitkeep

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartBooks Accounting App</title>
+  
+  <link rel="stylesheet" href="./src/styles.css" />
+</head>
+<body>
+  <div class="mobile-overlay" id="mobileOverlay"></div>
+  <div class="app">
+    <aside class="rail">
+      <div class="brand-mini">sb</div>
+      <button class="rail-btn" data-open-create><span class="rail-icon">＋</span><span>Create</span></button>
+      <button class="rail-btn active" data-nav="dashboard"><span class="rail-icon">▦</span><span>Dash</span></button>
+      <button class="rail-btn" data-nav="reports"><span class="rail-icon">↗</span><span>Reports</span></button>
+      <button class="rail-btn" data-nav="apps"><span class="rail-icon">▩</span><span>Apps</span></button>
+      <div class="rail-spacer"></div>
+      <button class="rail-btn" id="railCustomize"><span class="rail-icon">⚙</span><span>Customize</span></button>
+    </aside>
+
+    <aside class="sidebar" id="sidebar">
+      <div class="company">
+        <div class="company-logo">SB</div>
+        <div><h1>SmartBooks</h1><span>Accounting App</span></div>
+      </div>
+      <button class="new-btn" data-open-create>＋ New</button>
+      <div class="side-title">Bookmarks</div>
+      <div class="nav-group">
+        <button class="nav-item" data-nav="dashboard"><span class="dot">⌂</span>Dashboard</button>
+        <button class="nav-item" data-nav="reports"><span class="dot">↗</span>Favorite reports</button>
+      </div>
+      <div class="side-title">Menu</div>
+      <div class="nav-group" id="menuList"></div>
+      <div class="side-title">Utilities</div>
+      <div class="nav-group">
+        <button class="nav-item" id="resetDemo"><span class="dot">↺</span>Reset company data</button>
+        <button class="nav-item" id="exportData"><span class="dot">⇩</span>Export JSON</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="top-left">
+          <button class="hamburger" id="sidebarToggle">☰</button>
+          <div class="company-name" id="topCompanyName">Your Company</div>
+        </div>
+        <div class="search"><input id="globalSearch" placeholder="Search transactions, contacts, reports, help and more" /></div>
+        <div class="top-actions">
+          <button class="icon-btn hide-sm" id="insightsBtn" data-top-panel="insights" title="Smart insights" aria-label="Smart insights">✦</button>
+          <button class="theme-toggle" id="themeToggle" type="button" title="Switch to dark mode" aria-label="Switch to dark mode" aria-pressed="false"><span class="theme-toggle-knob">☀</span></button>
+          <button class="icon-btn hide-sm" id="helpBtn" data-top-panel="help" title="Help and support" aria-label="Help and support">?</button>
+          <button class="icon-btn" id="settingsBtn" data-top-panel="settings" title="Settings" aria-label="Settings">⚙</button>
+          <button class="icon-btn hide-sm notification-btn" id="notificationsBtn" data-top-panel="notifications" title="Notifications" aria-label="Notifications">🔔<span class="notification-dot" id="notificationDot" hidden></span></button>
+          <button class="avatar" id="profileBtn" data-top-panel="profile" title="User and company menu" aria-label="User and company menu">Q</button>
+        </div>
+      </header>
+
+      <div class="content">
+        <section class="page active" id="page-dashboard">
+          <div class="hero">
+            <h2 id="greeting">Good afternoon, Quak!</h2>
+            <div class="pill-row" id="modulePills"></div>
+          </div>
+          <div class="quick-actions">
+            <strong>Create actions</strong>
+            <button class="btn" data-modal="payment">Get paid online</button>
+            <button class="btn" data-modal="invoice">Create invoice</button>
+            <button class="btn" data-modal="expense">Record expense</button>
+            <button class="btn" data-modal="deposit">Add bank deposit</button>
+            <button class="btn" data-modal="bill">Create bill</button>
+            <button class="btn soft" data-open-create>Show all</button>
+          </div>
+          <div id="businessFeed"></div>
+          <div class="section-header"><div><h2>Business at a glance</h2><p>Live metrics calculated from invoices, expenses, bank accounts, and customer activity.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-modal="customizeDashboard">⚙ Customize</button><button class="btn" data-action="toggle-privacy">◉ Privacy</button><button class="btn" data-nav="setup">Setup</button><button class="btn square" id="dashboardRefresh">↻ Refresh</button></div></div>
+          <div class="grid dashboard">
+            <div class="grid" style="gap:16px">
+              <div class="card">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><h3 style="margin:0">Sales & Get Paid Funnel</h3><select id="dashRange" class="table-search" style="min-width:140px;padding:7px 10px"><option>Last 30 days</option><option>This month</option><option>Quarter to date</option></select></div>
+                <div class="funnel" id="funnelCards"></div>
+              </div>
+              <div class="grid two">
+                <div class="card" id="plCard"></div>
+                <div class="card" id="expensesCard"></div>
+              </div>
+              <div class="card table-card" id="recentTransactions"></div>
+            </div>
+            <div class="grid" style="gap:16px">
+              <div class="card" id="bankCard"></div>
+              <div class="card" id="cashFlowCard"></div>
+              <div class="card" id="setupCard"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" id="page-customers"></section>
+        <section class="page" id="page-accounting"></section>
+        <section class="page" id="page-sales"></section>
+        <section class="page" id="page-expenses"></section>
+        <section class="page" id="page-vendors"></section>
+        <section class="page" id="page-banking"></section>
+        <section class="page" id="page-transactions"></section>
+        <section class="page" id="page-reports"></section>
+        <section class="page" id="page-inventory"></section>
+        <section class="page" id="page-time"></section>
+        <section class="page" id="page-projects"></section>
+        <section class="page" id="page-payroll"></section>
+        <section class="page" id="page-taxes"></section>
+        <section class="page" id="page-apps"></section>
+        <section class="page" id="page-setup"></section>
+        <section class="page" id="page-settings"></section>
+      </div>
+    </main>
+  </div>
+
+  <div class="create-menu" id="createMenu">
+    <div class="create-grid v4-create-grid">
+      <div class="create-col"><h4>Customers</h4><button data-modal="invoice">Invoice</button><button data-modal="payment">Receive payment</button><button data-modal="statement">Statement</button><button data-modal="estimate">Estimate</button><button data-modal="salesOrder">Sales order</button><button data-modal="creditMemo">Credit memo</button><button data-modal="salesReceipt">Sales receipt</button><button data-modal="recurringPayment">Recurring payment</button><button data-modal="paymentLink">Payment link</button><button data-modal="shippingLabel">Shipping label</button><button data-modal="refundReceipt">Refund receipt</button><button data-modal="delayedCredit">Delayed credit</button><button data-modal="delayedCharge">Delayed charge</button><button data-modal="customer">Add customer</button></div>
+      <div class="create-col"><h4>Vendors</h4><button data-modal="expense">Expense</button><button data-modal="check">Check</button><button data-modal="bill">Bill</button><button data-modal="payBill">Pay bills</button><button data-modal="purchaseOrder">Purchase order</button><button data-modal="vendorCredit">Vendor credit</button><button data-modal="creditCardCredit">Credit card credit</button><button data-modal="printChecks">Print checks</button><button data-modal="vendor">Add vendor</button></div>
+      <div class="create-col"><h4>Team</h4><button data-modal="payroll">Payroll</button><button data-modal="singleActivity">Single time activity</button><button data-modal="weeklyTimesheet">Weekly timesheet</button><button data-modal="reviewTime">Review time</button><button data-modal="employee">Add employee</button><button data-modal="contractor">Add contractor</button></div>
+      <div class="create-col"><h4>Other</h4><button data-modal="deposit">Bank deposit</button><button data-modal="transfer">Transfer</button><button data-modal="journal">Journal entry</button><button data-modal="bankTx">Bank transaction</button><button data-modal="reconcile">Reconcile</button><button data-modal="inventoryAdjust">Inventory qty adjustment</button><button data-modal="payDownCreditCard">Pay down credit card</button><button data-modal="product">Add product/service</button></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modal-header">
+        <div><h2 id="modalTitle">Modal</h2><p id="modalSubtitle">Complete the fields below.</p></div>
+        <button class="icon-btn" id="closeModal">✕</button>
+      </div>
+      <form id="modalForm">
+        <div class="modal-body" id="modalBody"></div>
+        <div class="modal-footer" id="modalFooter"><button type="button" class="btn" id="cancelModal">Cancel</button><button type="submit" class="btn primary">Save</button></div>
+      </form>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+
+  <script src="./src/main.js"></script>
+</body>
+</html>
