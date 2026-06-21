@@ -21,6 +21,14 @@ frontend/
   index.html
   src/
     main.js
+    features/
+      sales-tax-inventory-ui.js
+      workflows-and-reporting.js
+      dashboard-widgets.js
+      navigation-search.js
+      record-workflows.js
+    runtime/
+      stability-and-api.js
     styles.css
 backend/
   src/
@@ -33,3 +41,5 @@ docs/
 ```
 
 The frontend currently preserves the original localStorage behavior. The backend is ready for the next step: replacing browser-only storage with API-backed persistence.
+
+The JavaScript has been split into ordered classic scripts. `frontend/src/main.js` initializes the legacy app core, feature modules extend the UI and workflows, and `frontend/src/runtime/stability-and-api.js` installs the backend-ready API layer.

@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node backend/src/server.js",
     "dev": "node backend/src/server.js",
-    "check": "node --check backend/src/server.js && node --check frontend/src/main.js"
+    "check": "node --check backend/src/server.js && node --check frontend/src/main.js && node --check frontend/src/features/sales-tax-inventory-ui.js && node --check frontend/src/features/workflows-and-reporting.js && node --check frontend/src/features/dashboard-widgets.js && node --check frontend/src/features/navigation-search.js && node --check frontend/src/features/record-workflows.js && node --check frontend/src/runtime/stability-and-api.js"
   },
   "engines": {
     "node": ">=18"

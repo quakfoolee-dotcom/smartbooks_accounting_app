@@ -6,7 +6,9 @@ The original `smartbooks_accounting_app.html` file has been split into a convent
 
 - `frontend/index.html` contains the app shell and markup.
 - `frontend/src/styles.css` contains the extracted CSS.
-- `frontend/src/main.js` contains the extracted JavaScript.
+- `frontend/src/main.js` contains the core app bootstrap and original state/render foundation.
+- `frontend/src/features/` contains ordered feature modules split from the original script.
+- `frontend/src/runtime/stability-and-api.js` contains late-stage state hardening and the backend-ready API layer.
 - `backend/src/server.js` serves the frontend and exposes starter API routes.
 - `backend/data/` is reserved for local backend data files.
 - `shared/constants.js` contains values shared by backend code and future frontend modules.
@@ -24,7 +26,7 @@ Next, move the localStorage access in `frontend/src/main.js` behind a small stor
 
 ## Next Refactor Targets
 
-- Split `frontend/src/main.js` by feature area: customers, vendors, invoices, banking, reports, settings, and dashboard.
+- Continue splitting the feature modules by domain: customers, vendors, invoices, banking, reports, settings, and dashboard.
 - Move formatting and calculation helpers into `frontend/src/utils/`.
 - Move data access into `frontend/src/state/` and `frontend/src/services/`.
 - Replace the starter file-backed backend state with a database once the API shape is stable.
