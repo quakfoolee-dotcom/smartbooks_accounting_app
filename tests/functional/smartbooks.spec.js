@@ -73,11 +73,38 @@ async function expectCenteredIconControls(page) {
 async function openModal(page, modalName) {
   await page.evaluate(modal => window.openModal(modal), modalName);
   await expect(page.locator("#modalBackdrop")).toHaveClass(/open/);
+  await page.evaluate(() => window.SmartBooksIcons?.fix(document));
+  await expect(page.locator("#modalForm button[type='submit']")).toBeEnabled();
+  await page.waitForTimeout(75);
 }
 
 async function submitModal(page) {
-  await page.locator("#modalForm button[type='submit']").click();
-  await expect(page.locator("#modalBackdrop")).not.toHaveClass(/open/);
+  const modalTitle = await page.locator("#modalTitle").textContent();
+  const submit = page.locator("#modalForm button[type='submit']");
+  await expect(submit, `Save button should be ready for ${modalTitle}`).toBeVisible();
+  await expect(submit, `Save button should be enabled for ${modalTitle}`).toBeEnabled();
+  await submit.click();
+  try {
+    await expect(page.locator("#modalBackdrop"), `${modalTitle} should close after saving`).not.toHaveClass(/open/);
+  } catch (error) {
+    const snapshot = await page.locator("#modalBackdrop").evaluate(backdrop => {
+      const form = backdrop.querySelector("#modalForm");
+      return {
+        title: backdrop.querySelector("#modalTitle")?.textContent?.trim(),
+        activeElement: document.activeElement?.outerHTML?.slice(0, 240),
+        invalidFields: Array.from(form?.elements || [])
+          .filter(field => field.willValidate && !field.checkValidity())
+          .map(field => ({
+            name: field.name,
+            type: field.type,
+            value: field.value,
+            validationMessage: field.validationMessage
+          })),
+        toast: document.querySelector("#toast")?.textContent?.trim()
+      };
+    });
+    throw new Error(`Modal did not close after save: ${JSON.stringify(snapshot)}\n${error.message}`);
+  }
 }
 
 async function sidebarLabels(page) {
