@@ -1,5 +1,9 @@
 # SmartBooks Accounting App
 
+<p align="left">
+  <img src="docs/assets/smartbooks-logo.svg" alt="SmartBooks Accounting App logo" width="420">
+</p>
+
 SmartBooks is a browser-based accounting app prototype for small-business workflows. It started as a single HTML file and has been refactored into a maintainable app structure with separate frontend, backend, shared constants, unit tests, functional Playwright tests, GitHub Actions CI, GitHub Pages deployment, and live-site smoke testing.
 
 The current app is still a demo/prototype. It uses browser `localStorage` for app data, so it is useful for testing workflows and UI behavior, but it is not yet a production accounting system.

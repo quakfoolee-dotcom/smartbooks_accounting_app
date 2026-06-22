@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="220" viewBox="0 0 720 220" role="img" aria-labelledby="title desc">
+  <title id="title">SmartBooks Accounting App logo</title>
+  <desc id="desc">A rounded green SmartBooks mark with an open ledger, check mark, and the SmartBooks wordmark.</desc>
+  <defs>
+    <linearGradient id="markGradient" x1="30" y1="30" x2="190" y2="190" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0aa35c"/>
+      <stop offset="1" stop-color="#006ea6"/>
+    </linearGradient>
+    <filter id="softShadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#062b45" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+
+  <rect width="720" height="220" rx="44" fill="#f7fbff"/>
+  <g filter="url(#softShadow)">
+    <rect x="34" y="30" width="160" height="160" rx="36" fill="url(#markGradient)"/>
+    <path d="M75 72h36c14 0 25 11 25 25v53H99c-13 0-24-11-24-24V72Z" fill="#ffffff" opacity="0.94"/>
+    <path d="M94 90h27c8 0 15 7 15 15v45H99c-13 0-24-11-24-24V90h19Z" fill="#dff7ec"/>
+    <path d="M136 97c0-14 11-25 25-25h17v78h-42V97Z" fill="#ffffff" opacity="0.94"/>
+    <path d="M150 91h28v59h-42v-45c0-8 6-14 14-14Z" fill="#dff7ec"/>
+    <path d="M91 109h29M91 126h29M150 109h17M150 126h17" stroke="#007a4d" stroke-width="8" stroke-linecap="round"/>
+    <path d="M84 70v57c0 15 12 27 27 27h25V97c0-15-12-27-27-27H84Z" fill="none" stroke="#ffffff" stroke-width="9" stroke-linejoin="round"/>
+    <path d="M136 97c0-15 12-27 27-27h15v84h-42V97Z" fill="none" stroke="#ffffff" stroke-width="9" stroke-linejoin="round"/>
+    <circle cx="159" cy="157" r="28" fill="#009a4f"/>
+    <path d="m146 157 9 9 18-21" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <g fill="#06233f">
+    <text x="230" y="105" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="52" font-weight="800" letter-spacing="0">SmartBooks</text>
+    <text x="234" y="145" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="21" font-weight="600" letter-spacing="0.4" fill="#496178">ACCOUNTING APP</text>
+  </g>
+  <path d="M236 165h210" stroke="#00a86b" stroke-width="8" stroke-linecap="round"/>
+  <path d="M462 165h60" stroke="#0077b6" stroke-width="8" stroke-linecap="round"/>
+</svg>
