@@ -1,0 +1,138 @@
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const vm = require("node:vm");
+
+const root = path.resolve(__dirname, "../..");
+
+function plain(value){
+  return JSON.parse(JSON.stringify(value));
+}
+
+function loadAccountingService(){
+  const sandbox = { window:{} };
+  sandbox.window = sandbox;
+  const code = fs.readFileSync(path.join(root, "frontend/src/services/accounting-service.js"), "utf8");
+  vm.runInNewContext(code, sandbox, { filename:"frontend/src/services/accounting-service.js" });
+  return sandbox.window.SmartBooksAccounting;
+}
+
+function test(name, fn){
+  try{
+    fn();
+    console.log(`ok - ${name}`);
+  }catch(error){
+    console.error(`not ok - ${name}`);
+    throw error;
+  }
+}
+
+function sampleState(){
+  return {
+    chartOfAccounts:[
+      { id:"1000", code:"1000", name:"Operating Checking", type:"Asset", normal:"Debit" },
+      { id:"1010", code:"1010", name:"Savings Reserve", type:"Asset", normal:"Debit" },
+      { id:"1200", code:"1200", name:"Accounts Receivable", type:"Asset", normal:"Debit" },
+      { id:"2000", code:"2000", name:"Accounts Payable", type:"Liability", normal:"Credit" },
+      { id:"2100", code:"2100", name:"Credit Card Payable", type:"Liability", normal:"Credit" },
+      { id:"2200", code:"2200", name:"GST/HST Payable", type:"Liability", normal:"Credit" },
+      { id:"2210", code:"2210", name:"GST/HST ITC", type:"Asset", normal:"Debit" },
+      { id:"3000", code:"3000", name:"Owner Equity", type:"Equity", normal:"Credit" },
+      { id:"4000", code:"4000", name:"Service Revenue", type:"Income", normal:"Credit" },
+      { id:"4100", code:"4100", name:"Other Income", type:"Income", normal:"Credit" },
+      { id:"6000", code:"6000", name:"Office Expenses", type:"Expense", normal:"Debit" }
+    ],
+    bankAccounts:[
+      { id:"BA-1", accountId:"1000", name:"Operating Checking" },
+      { id:"BA-2", accountId:"2100", name:"Credit Card" }
+    ],
+    journalEntries:[
+      { id:"JE-OPEN", date:"2026-01-01", memo:"Opening balance", status:"Posted", lines:[
+        { accountId:"1000", debit:1000, credit:0 },
+        { accountId:"3000", debit:0, credit:1000 }
+      ] }
+    ],
+    invoices:[
+      { id:"INV-1", customerId:"C-1", date:"2026-02-01", status:"Overdue", subtotal:200, tax:10, paid:50, incomeAccountId:"4000", items:[{ desc:"Service", qty:2, rate:100 }] }
+    ],
+    payments:[
+      { id:"PMT-1", invoiceId:"INV-1", customerId:"C-1", date:"2026-02-02", accountId:"BA-1", amount:50, memo:"Payment for INV-1" }
+    ],
+    expenses:[
+      { id:"EXP-1", vendorId:"V-1", date:"2026-02-03", expenseAccountId:"6000", memo:"Office supplies", amount:80, tax:4, paymentMethod:"Credit card", bankAccountId:"BA-2" }
+    ],
+    bills:[
+      { id:"BILL-1", vendorId:"V-1", date:"2026-02-04", status:"Open", expenseAccountId:"6000", amount:100, tax:5, paid:25 }
+    ],
+    billPayments:[
+      { id:"BP-1", billId:"BILL-1", vendorId:"V-1", date:"2026-02-05", accountId:"BA-1", amount:25, memo:"Payment for BILL-1" }
+    ],
+    deposits:[],
+    transfers:[],
+    bankTransactions:[
+      { id:"BFT-1", date:"2026-02-06", description:"Bank service fee", amount:-12, bankAccountId:"BA-1", suggestedAccountId:"6000", posted:true, linkedId:null },
+      { id:"BFT-2", date:"2026-02-07", description:"Interest", amount:7, bankAccountId:"BA-1", suggestedAccountId:"4100", posted:true, linkedId:null }
+    ]
+  };
+}
+
+test("accounting service calculates totals and open balances", () => {
+  const accounting = loadAccountingService();
+  const state = sampleState();
+  assert.equal(accounting.invoiceTotal(state.invoices[0]), 210);
+  assert.equal(accounting.openAmount(state.invoices[0]), 160);
+  assert.equal(accounting.expenseTotal(state.expenses[0]), 84);
+  assert.equal(accounting.billTotal(state.bills[0]), 105);
+  assert.equal(accounting.billOpenAmount(state.bills[0]), 80);
+  assert.deepEqual(plain(accounting.salesTaxSummary(state)), { collected:10, itc:9, net:1 });
+});
+
+test("accounting service builds balanced ledger rows and report totals", () => {
+  const accounting = loadAccountingService();
+  const state = sampleState();
+  const trialBalance = accounting.trialBalanceStatus(state);
+  assert.equal(trialBalance.ok, true);
+  assert.equal(trialBalance.debits, trialBalance.credits);
+
+  const totals = accounting.totals(state);
+  assert.equal(totals.invoiceRevenue, 200);
+  assert.equal(totals.paidRevenue, 50);
+  assert.equal(totals.overdue, 160);
+  assert.equal(totals.tax.net, 1);
+  assert.equal(accounting.normalBalance(state, "1200"), 160);
+  assert.equal(accounting.normalBalance(state, "2000"), 80);
+});
+
+test("payment application clamps overpayments to open invoice and bill balances", () => {
+  const accounting = loadAccountingService();
+  const invoice = { subtotal:100, tax:5, paid:40 };
+  const invoiceApplied = accounting.invoicePaymentApplication(invoice)(999);
+  assert.equal(invoiceApplied.appliedAmount, 65);
+  assert.equal(invoiceApplied.paid, 105);
+  assert.equal(invoiceApplied.openAmount, 0);
+  assert.equal(invoiceApplied.fullyPaid, true);
+
+  const bill = { amount:50, tax:2.5, paid:10 };
+  const billApplied = accounting.billPaymentApplication(bill)(100);
+  assert.equal(billApplied.appliedAmount, 42.5);
+  assert.equal(billApplied.paid, 52.5);
+  assert.equal(billApplied.fullyPaid, true);
+});
+
+test("bank feed posting lines debit and credit the expected accounts", () => {
+  const accounting = loadAccountingService();
+  const state = sampleState();
+  const withdrawal = accounting.bankTransactionPostingLines(state, state.bankTransactions[0]);
+  assert.deepEqual(plain(withdrawal.map(row => [row.accountId, row.debit, row.credit])), [
+    ["6000", 12, 0],
+    ["1000", 0, 12]
+  ]);
+
+  const deposit = accounting.bankTransactionPostingLines(state, state.bankTransactions[1]);
+  assert.deepEqual(plain(deposit.map(row => [row.accountId, row.debit, row.credit])), [
+    ["1000", 7, 0],
+    ["4100", 0, 7]
+  ]);
+});
+
+console.log("All accounting service tests passed.");

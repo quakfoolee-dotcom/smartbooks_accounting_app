@@ -1575,11 +1575,11 @@
   submitModal = function(e){
     if(currentModal==='payment'){
       e.preventDefault(); const f=new FormData(e.target), data=Object.fromEntries(f.entries());
-      const inv=(state.invoices||[]).find(i=>i.id===data.invoiceId); const amt=data.amount && num(data.amount)>0?num(data.amount):(inv?openAmount(inv):0);
-      if(inv && amt>0){
-        inv.paid=Math.min(invoiceTotal(inv), num(inv.paid)+amt); inv.status=openAmount(inv)<=0.01?'Paid':'Sent';
-        const acct=data.accountId||'1400'; const p={id:uid('PMT'), invoiceId:inv.id, customerId:inv.customerId, date:data.date||todayISO(), accountId:acct, amount:amt, memo:data.memo||('Payment for '+inv.id), depositId:acct==='1400'?null:'direct'};
-        state.payments.unshift(p); audit(`Payment received for ${inv.id}: ${money(amt)}`); state.settings.salesTab='invoices'; saveState(); closeModal(); renderAll(); showToast(acct==='1400'?'Payment received to Undeposited Funds. Use Bank Deposit to deposit it.':'Payment received and deposited to bank.');
+      const inv=(state.invoices||[]).find(i=>i.id===data.invoiceId); const requested=data.amount && num(data.amount)>0?num(data.amount):(inv?openAmount(inv):0); const applied=inv&&window.SmartBooksAccounting?window.SmartBooksAccounting.invoicePaymentApplication(inv)(requested):null;
+      if(inv && applied?.appliedAmount>0){
+        inv.paid=applied.paid; inv.status=applied.fullyPaid?'Paid':'Sent';
+        const acct=data.accountId||'1400'; const p={id:uid('PMT'), invoiceId:inv.id, customerId:inv.customerId, date:data.date||todayISO(), accountId:acct, amount:applied.appliedAmount, memo:data.memo||('Payment for '+inv.id), depositId:acct==='1400'?null:'direct'};
+        state.payments.unshift(p); audit(`Payment received for ${inv.id}: ${money(applied.appliedAmount)}`); state.settings.salesTab='invoices'; saveState(); closeModal(); renderAll(); showToast(requested>applied.appliedAmount?'Payment applied to remaining invoice balance.':(acct==='1400'?'Payment received to Undeposited Funds. Use Bank Deposit to deposit it.':'Payment received and deposited to bank.'));
       }else showToast('Select an open invoice and enter an amount greater than zero.');
       return;
     }
@@ -1840,11 +1840,11 @@
   submitModal = function(e){
     if(currentModal==='payment'){
       e.preventDefault(); const f=new FormData(e.target), data=Object.fromEntries(f.entries());
-      const inv=(state.invoices||[]).find(i=>i.id===data.invoiceId); const amt=data.amount && num(data.amount)>0?num(data.amount):(inv?openAmount(inv):0);
-      if(inv && amt>0){
-        inv.paid=Math.min(invoiceTotal(inv), num(inv.paid)+amt); inv.status=openAmount(inv)<=0.01?'Paid':'Sent';
-        const acct=data.accountId||'1400'; const direct=String(acct)!=='1400'; const p={id:uid('PMT'), invoiceId:inv.id, customerId:inv.customerId, date:data.date||todayISO(), accountId:acct, amount:amt, memo:data.memo||('Payment for '+inv.id), depositId:direct?'direct':null, depositedToAccountId:direct?acct:null, depositedDate:direct?(data.date||todayISO()):null};
-        state.payments.unshift(p); audit(`Payment received for ${inv.id}: ${money(amt)}`); state.settings.salesTab='invoices'; saveState(); closeModal(); renderAll(); showToast(direct?'Payment received and deposited to bank.':'Payment received to Undeposited Funds. Use Bank Deposit to deposit it.');
+      const inv=(state.invoices||[]).find(i=>i.id===data.invoiceId); const requested=data.amount && num(data.amount)>0?num(data.amount):(inv?openAmount(inv):0); const applied=inv&&window.SmartBooksAccounting?window.SmartBooksAccounting.invoicePaymentApplication(inv)(requested):null;
+      if(inv && applied?.appliedAmount>0){
+        inv.paid=applied.paid; inv.status=applied.fullyPaid?'Paid':'Sent';
+        const acct=data.accountId||'1400'; const direct=String(acct)!=='1400'; const p={id:uid('PMT'), invoiceId:inv.id, customerId:inv.customerId, date:data.date||todayISO(), accountId:acct, amount:applied.appliedAmount, memo:data.memo||('Payment for '+inv.id), depositId:direct?'direct':null, depositedToAccountId:direct?acct:null, depositedDate:direct?(data.date||todayISO()):null};
+        state.payments.unshift(p); audit(`Payment received for ${inv.id}: ${money(applied.appliedAmount)}`); state.settings.salesTab='invoices'; saveState(); closeModal(); renderAll(); showToast(requested>applied.appliedAmount?'Payment applied to remaining invoice balance.':(direct?'Payment received and deposited to bank.':'Payment received to Undeposited Funds. Use Bank Deposit to deposit it.'));
       }else showToast('Select an open invoice and enter an amount greater than zero.');
       return;
     }

@@ -50,3 +50,16 @@ test("customize menu can hide, restore, and reorder modules", async ({ page }) =
   await submitModal(page);
   await expect.poll(() => sidebarLabels(page).then(labels => labels[0])).toBe("Taxes");
 });
+
+test("customize menu prevents duplicate bookmarks", async ({ page }) => {
+  await openFreshApp(page);
+
+  await page.locator("#railCustomize").click();
+  await page.locator('.v29-menu-row[data-menu-id="banking"] [data-v29-action="bookmark-one"]').click();
+  await page.locator('.v29-menu-row[data-menu-id="banking"] [data-v29-action="bookmark-one"]').click();
+  await submitModal(page);
+
+  const saved = await state(page);
+  expect(saved.settings.bookmarks.filter(id => id === "banking")).toHaveLength(1);
+  await expect(page.locator(".bookmark-row", { hasText: "Banking" })).toHaveCount(1);
+});
