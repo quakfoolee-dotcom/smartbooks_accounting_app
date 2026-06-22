@@ -9,7 +9,7 @@
       invoices:{label:'Invoices', width:'third', html:()=>`<div class="card" id="invoiceSummaryCard"></div>`},
       expenses:{label:'Expenses', width:'third', html:()=>`<div class="card" id="expensesCard"></div>`},
       bank:{label:'Bank Accounts', width:'third', html:()=>`<div class="card" id="bankCard"></div>`},
-      feed:{label:'Business Feed', width:'full', html:()=>`<div class="dashboard-feed-block" id="businessFeedBlock"><div class="feed-header"><h3>âœ¦ Business Feed</h3><div style="display:flex;gap:8px;flex-wrap:wrap"><span class="muted small" id="businessFeedCountLabel">Compact view</span><button class="btn soft" data-action="view-all-feed">View all insights</button></div></div><div id="businessFeed"></div></div>`},
+      feed:{label:'Business Feed', width:'full', html:()=>`<div class="dashboard-feed-block" id="businessFeedBlock"><div class="feed-header"><h3>✦ Business Feed</h3><div style="display:flex;gap:8px;flex-wrap:wrap"><span class="muted small" id="businessFeedCountLabel">Compact view</span><button class="btn soft" data-action="view-all-feed">View all insights</button></div></div><div id="businessFeed"></div></div>`},
       pl:{label:'Profit & Loss', width:'third', html:()=>`<div class="card" id="plCard"></div>`},
       recent:{label:'Recent Transactions', width:'third', html:()=>`<div class="card table-card" id="recentTransactions"></div>`},
       setup:{label:'Setup Checklist', width:'third', html:()=>`<div class="card" id="setupCard"></div>`},
@@ -59,7 +59,7 @@
   function v25WidgetControls(id){
     const defs=v25DashboardDefs();
     if(!state.settings?.dashboardEditMode) return '';
-    return `<div class="v25-widget-controls"><div><span class="v25-drag-handle" aria-hidden="true">â‹®â‹®</span><strong>${escapeHTML(defs[id]?.label||id)}</strong></div><div class="v25-widget-buttons"><button type="button" class="btn square" data-action="dashboard-widget-move" data-id="${id}:top" title="Move to top">â‡±</button><button type="button" class="btn square" data-action="dashboard-widget-move" data-id="${id}:up" title="Move up">â†‘</button><button type="button" class="btn square" data-action="dashboard-widget-move" data-id="${id}:down" title="Move down">â†“</button><button type="button" class="btn square" data-action="dashboard-widget-width-cycle" data-id="${id}" title="Change width">â†”</button><button type="button" class="btn square danger" data-action="dashboard-widget-hide" data-id="${id}" title="Hide card">Hide</button></div></div>`;
+    return `<div class="v25-widget-controls"><div><span class="v25-drag-handle" aria-hidden="true">⋮⋮</span><strong>${escapeHTML(defs[id]?.label||id)}</strong></div><div class="v25-widget-buttons"><button type="button" class="btn square" data-action="dashboard-widget-move" data-id="${id}:top" title="Move to top">⇱</button><button type="button" class="btn square" data-action="dashboard-widget-move" data-id="${id}:up" title="Move up">↑</button><button type="button" class="btn square" data-action="dashboard-widget-move" data-id="${id}:down" title="Move down">↓</button><button type="button" class="btn square" data-action="dashboard-widget-width-cycle" data-id="${id}" title="Change width">↔</button><button type="button" class="btn square danger" data-action="dashboard-widget-hide" data-id="${id}" title="Hide card">Hide</button></div></div>`;
   }
   function v25WidgetHtml(id){
     const def=v25DashboardDefs()[id];
@@ -149,7 +149,7 @@
     page.innerHTML=`
       <div class="hero v8-hero"><h2 id="greeting">Good afternoon, Quak!</h2><div class="pill-row" id="modulePills"></div></div>
       ${quickActionsV814 ? quickActionsV814() : quickActionsV8()}
-      <div class="v25-dashboard-toolbar"><div><h2>Dashboard</h2><p>Move cards into the order that matches your workflow. Layout is saved on this device.</p></div><div class="v25-toolbar-actions"><button class="btn ${edit?'v25-edit-on':''}" data-action="dashboard-edit-mode">${edit?'Done customizing':'Customize layout'}</button><button class="btn" data-modal="customizeDashboard">âš™ Customize dashboard</button><button class="btn" data-action="toggle-privacy">â—‰ Privacy</button><button class="btn square" data-action="refresh-dashboard">â†» Refresh</button></div></div>
+      <div class="v25-dashboard-toolbar"><div><h2>Dashboard</h2><p>Move cards into the order that matches your workflow. Layout is saved on this device.</p></div><div class="v25-toolbar-actions"><button class="btn ${edit?'v25-edit-on':''}" data-action="dashboard-edit-mode">${edit?'Done customizing':'Customize layout'}</button><button class="btn" data-modal="customizeDashboard">⚙ Customize dashboard</button><button class="btn" data-action="toggle-privacy">◉ Privacy</button><button class="btn square" data-action="refresh-dashboard">↻ Refresh</button></div></div>
       <div class="v25-dashboard-grid" id="dashboardWidgetGrid">${v25RenderDashboardWidgets()}</div>`;
     renderModulePills();
     v25RenderAllWidgetContent();
@@ -163,7 +163,7 @@
       const def=defs[id];
       if(!def) return '';
       const w=v25WidgetWidth(id);
-      return `<div class="v25-layout-row" data-v25-layout-row="${id}"><label><input type="checkbox" name="v25WidgetVisible" value="${id}" ${visible.has(id)?'checked':''}><input type="hidden" name="v25DashboardOrder" value="${id}">${escapeHTML(def.label)}</label><select name="v25WidgetWidth_${id}" aria-label="${escapeHTML(def.label)} width"><option value="third" ${w==='third'?'selected':''}>Card width: 1/3 row</option><option value="half" ${w==='half'?'selected':''}>Card width: 1/2 row</option><option value="two-thirds" ${w==='two-thirds'?'selected':''}>Card width: 2/3 row</option><option value="full" ${w==='full'?'selected':''}>Card width: full row</option></select><div class="v25-layout-actions"><button type="button" class="btn square" data-action="dashboard-widget-move" data-id="${id}:top" title="Move to top">â‡±</button><button type="button" class="btn square" data-action="dashboard-widget-move" data-id="${id}:up" title="Move up">â†‘</button><button type="button" class="btn square" data-action="dashboard-widget-move" data-id="${id}:down" title="Move down">â†“</button><button type="button" class="btn square" data-action="dashboard-widget-move" data-id="${id}:bottom" title="Move to bottom">â‡²</button></div></div>`;
+      return `<div class="v25-layout-row" data-v25-layout-row="${id}"><label><input type="checkbox" name="v25WidgetVisible" value="${id}" ${visible.has(id)?'checked':''}><input type="hidden" name="v25DashboardOrder" value="${id}">${escapeHTML(def.label)}</label><select name="v25WidgetWidth_${id}" aria-label="${escapeHTML(def.label)} width"><option value="third" ${w==='third'?'selected':''}>Card width: 1/3 row</option><option value="half" ${w==='half'?'selected':''}>Card width: 1/2 row</option><option value="two-thirds" ${w==='two-thirds'?'selected':''}>Card width: 2/3 row</option><option value="full" ${w==='full'?'selected':''}>Card width: full row</option></select><div class="v25-layout-actions"><button type="button" class="btn square" data-action="dashboard-widget-move" data-id="${id}:top" title="Move to top">⇱</button><button type="button" class="btn square" data-action="dashboard-widget-move" data-id="${id}:up" title="Move up">↑</button><button type="button" class="btn square" data-action="dashboard-widget-move" data-id="${id}:down" title="Move down">↓</button><button type="button" class="btn square" data-action="dashboard-widget-move" data-id="${id}:bottom" title="Move to bottom">⇲</button></div></div>`;
     }).join('');
     return `<div class="v25-layout-help"><strong>Dashboard layout customization:</strong> use the arrows to move cards above or below other cards, choose each card width, and uncheck cards you do not want to show. For example, Profit & Loss can be moved above Business Feed, or Invoices can be moved above Cash Flow.</div><div class="v25-layout-list">${rows}</div><label class="v25-privacy-row"><input type="checkbox" name="privacyMode" ${state.settings.privacyMode?'checked':''}> <strong>Privacy mode: mask dollar values on the dashboard</strong></label><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button type="button" class="btn" data-action="dashboard-layout-reset">Restore default layout</button><button type="button" class="btn" data-action="dashboard-edit-mode">${state.settings.dashboardEditMode?'Exit on-page customize mode':'Use on-page customize mode'}</button></div>`;
   }
@@ -336,7 +336,7 @@
   v25WidgetControls = function(id){
     const defs=v25DashboardDefs();
     if(!state.settings?.dashboardEditMode) return '';
-    return `<div class="v25-widget-controls v26-widget-controls"><div class="v26-widget-title"><span class="v25-drag-handle" aria-hidden="true">â‹®â‹®</span><strong>${escapeHTML(defs[id]?.label||id)}</strong></div><div class="v25-widget-buttons v26-widget-buttons"><div class="v26-control-group" aria-label="Move controls"><button type="button" class="btn square" data-action="dashboard-widget-move" data-id="${id}:top" title="Move to top">â‡±</button><button type="button" class="btn square" data-action="dashboard-widget-move" data-id="${id}:up" title="Move up">â†‘</button><button type="button" class="btn square" data-action="dashboard-widget-move" data-id="${id}:down" title="Move down">â†“</button><button type="button" class="btn square" data-action="dashboard-widget-move" data-id="${id}:bottom" title="Move to bottom">â‡²</button><button type="button" class="btn square" data-action="dashboard-widget-width-cycle" data-id="${id}" title="Cycle width / move across row">â†”</button></div><div class="v26-control-group">${v26WidthSelect(id)}${v26HeightSelect(id)}</div><button type="button" class="btn square danger" data-action="dashboard-widget-hide" data-id="${id}" title="Hide card">Hide</button></div></div>`;
+    return `<div class="v25-widget-controls v26-widget-controls"><div class="v26-widget-title"><span class="v25-drag-handle" aria-hidden="true">⋮⋮</span><strong>${escapeHTML(defs[id]?.label||id)}</strong></div><div class="v25-widget-buttons v26-widget-buttons"><div class="v26-control-group" aria-label="Move controls"><button type="button" class="btn square" data-action="dashboard-widget-move" data-id="${id}:top" title="Move to top">⇱</button><button type="button" class="btn square" data-action="dashboard-widget-move" data-id="${id}:up" title="Move up">↑</button><button type="button" class="btn square" data-action="dashboard-widget-move" data-id="${id}:down" title="Move down">↓</button><button type="button" class="btn square" data-action="dashboard-widget-move" data-id="${id}:bottom" title="Move to bottom">⇲</button><button type="button" class="btn square" data-action="dashboard-widget-width-cycle" data-id="${id}" title="Cycle width / move across row">↔</button></div><div class="v26-control-group">${v26WidthSelect(id)}${v26HeightSelect(id)}</div><button type="button" class="btn square danger" data-action="dashboard-widget-hide" data-id="${id}" title="Hide card">Hide</button></div></div>`;
   };
   function v26RestoreVisibleWidgetDisplays(){
     const page=document.getElementById('page-dashboard');
@@ -435,7 +435,7 @@
       if(!def) return '';
       const w=v25WidgetWidth(id);
       const h=v26WidgetHeight(id);
-      return `<div class="v25-layout-row v26-layout-row" data-v25-layout-row="${id}"><label><input type="checkbox" name="v25WidgetVisible" value="${id}" ${visible.has(id)?'checked':''}><input type="hidden" name="v25DashboardOrder" value="${id}">${escapeHTML(def.label)}</label><select name="v25WidgetWidth_${id}" aria-label="${escapeHTML(def.label)} width">${v26Option('third',w,'Size: Small / 1/3 row')}${v26Option('half',w,'Size: Medium / 1/2 row')}${v26Option('two-thirds',w,'Size: Large / 2/3 row')}${v26Option('full',w,'Size: Full row')}</select><select name="v26WidgetHeight_${id}" aria-label="${escapeHTML(def.label)} height">${v26Option('compact',h,'Height: Compact')}${v26Option('standard',h,'Height: Standard')}${v26Option('tall',h,'Height: Tall')}${v26Option('auto',h,'Height: Auto')}</select><div class="v25-layout-actions"><button type="button" class="btn square" data-action="dashboard-widget-move" data-id="${id}:top" title="Move to top">â‡±</button><button type="button" class="btn square" data-action="dashboard-widget-move" data-id="${id}:up" title="Move up">â†‘</button><button type="button" class="btn square" data-action="dashboard-widget-move" data-id="${id}:down" title="Move down">â†“</button><button type="button" class="btn square" data-action="dashboard-widget-move" data-id="${id}:bottom" title="Move to bottom">â‡²</button></div></div>`;
+      return `<div class="v25-layout-row v26-layout-row" data-v25-layout-row="${id}"><label><input type="checkbox" name="v25WidgetVisible" value="${id}" ${visible.has(id)?'checked':''}><input type="hidden" name="v25DashboardOrder" value="${id}">${escapeHTML(def.label)}</label><select name="v25WidgetWidth_${id}" aria-label="${escapeHTML(def.label)} width">${v26Option('third',w,'Size: Small / 1/3 row')}${v26Option('half',w,'Size: Medium / 1/2 row')}${v26Option('two-thirds',w,'Size: Large / 2/3 row')}${v26Option('full',w,'Size: Full row')}</select><select name="v26WidgetHeight_${id}" aria-label="${escapeHTML(def.label)} height">${v26Option('compact',h,'Height: Compact')}${v26Option('standard',h,'Height: Standard')}${v26Option('tall',h,'Height: Tall')}${v26Option('auto',h,'Height: Auto')}</select><div class="v25-layout-actions" aria-label="${escapeHTML(def.label)} move controls"><button type="button" class="btn square" data-action="dashboard-widget-move" data-id="${id}:top" title="Move to top" aria-label="Move ${escapeHTML(def.label)} to top">↖</button><button type="button" class="btn square" data-action="dashboard-widget-move" data-id="${id}:up" title="Move up" aria-label="Move ${escapeHTML(def.label)} up">↑</button><button type="button" class="btn square" data-action="dashboard-widget-move" data-id="${id}:down" title="Move down" aria-label="Move ${escapeHTML(def.label)} down">↓</button><button type="button" class="btn square" data-action="dashboard-widget-move" data-id="${id}:bottom" title="Move to bottom" aria-label="Move ${escapeHTML(def.label)} to bottom">↘</button></div></div>`;
     }).join('');
     return `<div class="v25-layout-help"><strong>Dashboard layout customization:</strong> move cards with the arrows, resize width with Small/Medium/Large/Full, and resize height with Compact/Standard/Tall/Auto. Movement controls remain available after resizing.</div><div class="v25-layout-list">${rows}</div><label class="v25-privacy-row"><input type="checkbox" name="privacyMode" ${state.settings.privacyMode?'checked':''}> <strong>Privacy mode: mask dollar values on the dashboard</strong></label><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button type="button" class="btn" data-action="dashboard-layout-reset">Restore default layout</button><button type="button" class="btn" data-action="dashboard-edit-mode">${state.settings.dashboardEditMode?'Exit on-page customize mode':'Use on-page customize mode'}</button></div>`;
   };
@@ -518,7 +518,7 @@
   function v27Date(v){ const d=new Date(String(v||todayISO())+'T00:00:00'); return isNaN(d.getTime()) ? v27TodayDate() : d; }
   function v27DaysPastDue(dueDate){ return Math.floor((v27TodayDate()-v27Date(dueDate))/86400000); }
   function v27IsCurrentMonth(date){ return String(date||'').slice(0,7) === todayISO().slice(0,7); }
-  function v27ShortName(s,n=26){ const t=String(s||''); return t.length>n ? escapeHTML(t.slice(0,n-1)+'â€¦') : escapeHTML(t); }
+  function v27ShortName(s,n=26){ const t=String(s||''); return t.length>n ? escapeHTML(t.slice(0,n-1)+'…') : escapeHTML(t); }
   function v27Pct(value,total){ return total>0 ? Math.round((num(value)/num(total))*100) : 0; }
   function v27Bar(value,total,cls=''){
     const pct=Math.max(0,Math.min(100,v27Pct(value,total)));
@@ -550,11 +550,11 @@
     const el=document.getElementById('arAgingCard'); if(!el) return;
     const rows=v27OpenInvoices().map(i=>({id:i.id,name:getCustomer(i.customerId).name,due:i.dueDate,amount:openAmount(i),days:v27DaysPastDue(i.dueDate),status:i.status})).sort((a,b)=>b.days-a.days || b.amount-a.amount);
     const b=v27AgingTotals(rows);
-    const top=rows.slice(0,5).map(r=>`<div class="v27-list-row"><div><strong>${v27ShortName(r.name,24)}</strong><span>${escapeHTML(r.id)} Â· due ${escapeHTML(r.due)}</span></div><div class="amount">${money(r.amount)}</div></div>`).join('');
+    const top=rows.slice(0,5).map(r=>`<div class="v27-list-row"><div><strong>${v27ShortName(r.name,24)}</strong><span>${escapeHTML(r.id)} · due ${escapeHTML(r.due)}</span></div><div class="amount">${money(r.amount)}</div></div>`).join('');
     el.innerHTML=`${v27WidgetHeader('A/R Aging','Open customer invoices by due-date bucket','<button class="btn" data-nav="customers">Open A/R</button>')}
       <div class="v27-metric-grid">${v27MiniMetric('Open A/R',money(b.total))}${v27MiniMetric('Overdue',money(b.overdue),`${rows.filter(r=>r.days>0).length} invoice${rows.filter(r=>r.days>0).length===1?'':'s'}`)}</div>
       <div class="v27-aging-grid">
-        ${v27MiniMetric('Current',money(b.current))}${v27MiniMetric('1â€“30',money(b.d30))}${v27MiniMetric('31â€“60',money(b.d60))}${v27MiniMetric('61â€“90',money(b.d90))}${v27MiniMetric('90+',money(b.d90p))}
+        ${v27MiniMetric('Current',money(b.current))}${v27MiniMetric('1–30',money(b.d30))}${v27MiniMetric('31–60',money(b.d60))}${v27MiniMetric('61–90',money(b.d90))}${v27MiniMetric('90+',money(b.d90p))}
       </div>
       <div class="v27-card-note">Largest open balances</div><div class="v27-list">${top || '<div class="empty">No open receivables.</div>'}</div>`;
   }
@@ -563,10 +563,10 @@
     const rows=v27OpenBills().map(b=>({id:b.id,name:getVendor(b.vendorId).name,due:b.dueDate,amount:billOpenAmount(b),days:v27DaysPastDue(b.dueDate),status:b.status})).sort((a,b)=>b.days-a.days || b.amount-a.amount);
     const buckets=v27AgingTotals(rows);
     const due7=rows.filter(r=>r.days<=0 && r.days>=-7).reduce((s,r)=>s+r.amount,0);
-    const top=rows.slice(0,5).map(r=>`<div class="v27-list-row"><div><strong>${v27ShortName(r.name,24)}</strong><span>${escapeHTML(r.id)} Â· due ${escapeHTML(r.due)}</span></div><div class="amount">${money(r.amount)}</div></div>`).join('');
+    const top=rows.slice(0,5).map(r=>`<div class="v27-list-row"><div><strong>${v27ShortName(r.name,24)}</strong><span>${escapeHTML(r.id)} · due ${escapeHTML(r.due)}</span></div><div class="amount">${money(r.amount)}</div></div>`).join('');
     el.innerHTML=`${v27WidgetHeader('A/P Aging','Open vendor bills and upcoming cash requirements','<button class="btn" data-nav="expenses">Review bills</button>')}
       <div class="v27-metric-grid">${v27MiniMetric('Open A/P',money(buckets.total))}${v27MiniMetric('Due next 7 days',money(due7))}${v27MiniMetric('Overdue',money(buckets.overdue))}</div>
-      <div class="v27-aging-grid">${v27MiniMetric('Current',money(buckets.current))}${v27MiniMetric('1â€“30',money(buckets.d30))}${v27MiniMetric('31â€“60',money(buckets.d60))}${v27MiniMetric('61â€“90',money(buckets.d90))}${v27MiniMetric('90+',money(buckets.d90p))}</div>
+      <div class="v27-aging-grid">${v27MiniMetric('Current',money(buckets.current))}${v27MiniMetric('1–30',money(buckets.d30))}${v27MiniMetric('31–60',money(buckets.d60))}${v27MiniMetric('61–90',money(buckets.d90))}${v27MiniMetric('90+',money(buckets.d90p))}</div>
       <div class="v27-card-note">Bills needing payment attention</div><div class="v27-list">${top || '<div class="empty">No open payables.</div>'}</div>`;
   }
   function v27EstimateAmount(e){
@@ -613,7 +613,7 @@
     const out30=openBills.filter(b=>v27DaysPastDue(b.dueDate)>=-30).reduce((s,b)=>s+billOpenAmount(b),0);
     const forecast7=balance+in7-out7, forecast30=balance+in30-out30;
     el.innerHTML=`${v27WidgetHeader('Cash Forecast','Projected cash after receivables and payables','<button class="btn" data-nav="banking">Review cash</button>')}
-      <div class="v27-metric-grid">${v27MiniMetric('Today',money(balance),'operating cash')}${v27MiniMetric('7-day forecast',money(forecast7),`${money(in7)} in Â· ${money(out7)} out`)}${v27MiniMetric('30-day forecast',money(forecast30),`${money(in30)} in Â· ${money(out30)} out`)}</div>
+      <div class="v27-metric-grid">${v27MiniMetric('Today',money(balance),'operating cash')}${v27MiniMetric('7-day forecast',money(forecast7),`${money(in7)} in · ${money(out7)} out`)}${v27MiniMetric('30-day forecast',money(forecast30),`${money(in30)} in · ${money(out30)} out`)}</div>
       <div class="v27-forecast-track"><div><span>Expected receipts</span>${v27Bar(in30,Math.max(in30,out30,1),'in')}</div><div><span>Upcoming bills</span>${v27Bar(out30,Math.max(in30,out30,1),'out')}</div></div>`;
   }
   function renderRevenueCustomerWidget(){
@@ -640,16 +640,16 @@
     const byCat=Object.entries(current.reduce((acc,e)=>{ const name=(getAccount(e.expenseAccountId||expenseAccountFromName(e.account)).name)||e.account||'Expense'; acc[name]=(acc[name]||0)+expenseTotal(e); return acc; },{})).sort((a,b)=>b[1]-a[1]);
     const total=byCat.reduce((s,r)=>s+r[1],0);
     const html=byCat.slice(0,6).map(([cat,val])=>`<div class="v27-list-row with-bar"><div><strong>${v27ShortName(cat,28)}</strong>${v27Bar(val,total,'out')}</div><div class="amount">${money(val)}<span>${v27Pct(val,total)}%</span></div></div>`).join('');
-    el.innerHTML=`${v27WidgetHeader('Expense Trend / Budget Watch','Current-month expense concentration','<button class="btn" data-nav="expenses">Expenses</button>')}<div class="v27-metric-grid">${v27MiniMetric('This month',money(total),`${current.length} expense${current.length===1?'':'s'}`)}${v27MiniMetric('Largest category',byCat[0]?money(byCat[0][1]):money(0),byCat[0]?.[0]||'â€”')}</div><div class="v27-list">${html || '<div class="empty">No current-month expenses.</div>'}</div>`;
+    el.innerHTML=`${v27WidgetHeader('Expense Trend / Budget Watch','Current-month expense concentration','<button class="btn" data-nav="expenses">Expenses</button>')}<div class="v27-metric-grid">${v27MiniMetric('This month',money(total),`${current.length} expense${current.length===1?'':'s'}`)}${v27MiniMetric('Largest category',byCat[0]?money(byCat[0][1]):money(0),byCat[0]?.[0]||'—')}</div><div class="v27-list">${html || '<div class="empty">No current-month expenses.</div>'}</div>`;
   }
   function renderBankReviewQueueWidget(){
     const el=document.getElementById('bankQueueCard'); if(!el) return;
     const tx=(state.bankTransactions||[]); const need=tx.filter(x=>x.status!=='Reviewed' && x.status!=='Matched'); const suggested=need.filter(x=>String(x.status||'').toLowerCase()==='suggested'); const unreviewed=need.filter(x=>String(x.status||'').toLowerCase()==='unreviewed');
     const recs=(state.reconciliations||[]).slice().sort((a,b)=>String(b.statementDate).localeCompare(String(a.statementDate))); const last=recs[0];
-    const rows=need.slice(0,5).map(x=>`<div class="v27-list-row"><div><strong>${v27ShortName(x.description,30)}</strong><span>${escapeHTML(x.date)} Â· ${escapeHTML(x.status||'Unreviewed')}</span></div><div class="amount">${money(x.amount)}</div></div>`).join('');
+    const rows=need.slice(0,5).map(x=>`<div class="v27-list-row"><div><strong>${v27ShortName(x.description,30)}</strong><span>${escapeHTML(x.date)} · ${escapeHTML(x.status||'Unreviewed')}</span></div><div class="amount">${money(x.amount)}</div></div>`).join('');
     el.innerHTML=`${v27WidgetHeader('Bank Review Queue','Transactions needing matching, categorization, or clearing','<button class="btn" data-nav="banking">Review banking</button>')}
       <div class="v27-metric-grid">${v27MiniMetric('Need review',String(need.length))}${v27MiniMetric('Suggested matches',String(suggested.length))}${v27MiniMetric('Unreviewed',String(unreviewed.length))}</div>
-      <div class="v27-card-note">Last reconciliation: ${last?`${escapeHTML(last.statementDate)} Â· difference ${money(last.difference)}`:'No reconciliation recorded'}</div><div class="v27-list">${rows || '<div class="empty">No bank transactions need review.</div>'}</div>`;
+      <div class="v27-card-note">Last reconciliation: ${last?`${escapeHTML(last.statementDate)} · difference ${money(last.difference)}`:'No reconciliation recorded'}</div><div class="v27-list">${rows || '<div class="empty">No bank transactions need review.</div>'}</div>`;
   }
   function v27CreditTotal(list){ return (list||[]).filter(x=>!['Applied','Void','Voided'].includes(String(x.status||''))).reduce((s,x)=>s+num(x.total ?? (num(x.amount)+num(x.tax))),0); }
   function renderCreditsSummaryWidget(){
@@ -870,260 +870,7 @@
 
 
   // ---------- V29 Sidebar Menu Management ----------
-  function injectV29MenuManagementStyles(){
-    if(document.getElementById('v29-menu-management-styles')) return;
-    const style=document.createElement('style');
-    style.id='v29-menu-management-styles';
-    style.textContent=`
-      body.v8-ui .side-title.menu-title{display:flex;align-items:center;justify-content:space-between;gap:8px;}
-      body.v8-ui .side-title.menu-title .link-btn,
-      .side-title.menu-title .link-btn{border:0;background:transparent;color:inherit;font-size:12px;font-weight:800;cursor:pointer;padding:2px 4px;border-radius:8px;opacity:.76;}
-      body.v8-ui .side-title.menu-title .link-btn:hover,
-      .side-title.menu-title .link-btn:hover{background:rgba(10,143,60,.12);opacity:1;}
-      .v29-menu-note{border:1px solid #cfe6f7;background:#f4faff;color:#18476b;border-radius:14px;padding:11px 12px;font-size:12px;line-height:1.45;margin:10px 0 12px;}
-      .v29-menu-toolbar{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:8px 0 12px;}
-      .v29-menu-list{display:grid;gap:10px;margin-top:10px;}
-      .v29-menu-row{display:grid;grid-template-columns:28px 34px minmax(0,1fr) auto;gap:10px;align-items:center;border:1px solid var(--line,#dfe7ee);border-radius:14px;padding:10px 12px;background:var(--card,#fff);}
-      .v29-menu-row.is-hidden{opacity:.58;background:#fbfcfd;}
-      .v29-menu-row.is-locked{border-style:solid;background:linear-gradient(180deg,#fff,#fbfcfd);}
-      .v29-menu-row strong{display:block;line-height:1.2;}
-      .v29-menu-row small{display:block;color:var(--muted,#667085);margin-top:2px;line-height:1.25;}
-      .v29-menu-actions{display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-wrap:wrap;}
-      .v29-menu-actions button{min-width:34px;height:34px;border-radius:10px;border:1px solid var(--line,#dfe7ee);background:#fff;cursor:pointer;font-weight:900;color:#344054;}
-      .v29-menu-actions button:hover{border-color:var(--green,#0a8f3c);color:var(--green,#0a8f3c);background:#eef6f6;}
-      .v29-menu-actions button[disabled]{opacity:.38;cursor:not-allowed;}
-      .v29-chip{display:inline-flex;align-items:center;border:1px solid #d6e3ec;border-radius:999px;background:#fff;padding:4px 8px;font-size:11px;font-weight:900;color:#475467;}
-      .v29-add-bookmarks{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-      body.v8-ui.dark-mode .v29-menu-note{background:#0f2536;border-color:#264b67;color:#c8e6ff;}
-      body.v8-ui.dark-mode .v29-menu-row{background:#14202d;border-color:#2a3c4f;color:#e8edf3;}
-      body.v8-ui.dark-mode .v29-menu-row.is-hidden{background:#101b27;}
-      body.v8-ui.dark-mode .v29-menu-actions button{background:#101b27;border-color:#34495e;color:#e8edf3;}
-      body.v8-ui.dark-mode .v29-chip{background:#101b27;border-color:#34495e;color:#cbd5e1;}
-      @media(max-width:720px){.v29-menu-row{grid-template-columns:28px 32px minmax(0,1fr);}.v29-menu-actions{grid-column:3/4;justify-content:flex-start;}.v29-menu-toolbar{display:block}.v29-add-bookmarks{margin-top:8px;}}
-    `;
-    document.head.appendChild(style);
-  }
-
-  function v29DefaultMenuOrder(){
-    const moduleIds = (typeof masterModuleIds !== 'undefined' && Array.isArray(masterModuleIds)) ? masterModuleIds.slice() : menuModules.map(m=>m.id);
-    return ['getthingsdone', ...moduleIds.filter(id=>id!=='getthingsdone')];
-  }
-  function v29MenuRegistry(){
-    const moduleItems = (typeof masterModuleRegistry !== 'undefined' ? masterModuleRegistry : menuModules).map(m=>({
-      id:m.id, label:m.label, icon:m.icon, locked:!!m.locked, module:true,
-      desc: m.id==='dashboard' ? 'Dashboard and company overview.' :
-            m.id==='settings' ? 'Company and app controls.' :
-            m.id==='setup' ? 'Guided setup tasks.' :
-            m.id==='apps' ? 'Enabled module launcher.' :
-            m.id==='banking' ? 'Bank accounts, bank feed review, and reconciliation.' :
-            m.id==='transactions' ? 'All transaction activity.' :
-            m.id==='accounting' ? 'Chart of accounts, journal entries, and trial balance.' :
-            m.id==='sales' ? 'Estimates, invoices, payments, and sales orders.' :
-            m.id==='customers' ? 'Customer profiles and open receivables.' :
-            m.id==='expenses' ? 'Expenses, bills, payments, and AP workflow.' :
-            m.id==='vendors' ? 'Vendor records and purchase activity.' :
-            m.id==='reports' ? 'Financial, sales, tax, and management reports.' :
-            m.id==='inventory' ? 'Products, services, inventory, POs, and receiving.' :
-            m.id==='projects' ? 'Project budgets, costs, revenue, and profitability.' :
-            m.id==='time' ? 'Time entries and billable work.' :
-            m.id==='payroll' ? 'Payroll and employee setup.' :
-            m.id==='taxes' ? 'GST/HST returns, rates, and remittances.' : 'Module workspace.'
-    }));
-    return [{id:'getthingsdone', label:'Get Things Done', icon:'âœ“', locked:false, special:true, desc:'Guided action hub for common money-in, money-out, banking, and reporting workflows.'}, ...moduleItems];
-  }
-  function v29NormalizeMenuOrder(order){
-    const defaults=v29DefaultMenuOrder();
-    const allowed=new Set(defaults);
-    const seen=[];
-    (Array.isArray(order)?order:[]).forEach(id=>{ if(allowed.has(id) && !seen.includes(id)) seen.push(id); });
-    defaults.forEach(id=>{ if(!seen.includes(id)) seen.push(id); });
-    return seen;
-  }
-  function ensureV29MenuState(){
-    try{ if(typeof ensureV74State==='function') ensureV74State(); }catch(e){}
-    try{ if(typeof ensureV10GetThingsDonePage==='function') ensureV10GetThingsDonePage(); }catch(e){}
-    state.settings ||= {};
-    if(!Array.isArray(state.settings.menuOrder) || !state.settings.menuOrder.length) state.settings.menuOrder = v29DefaultMenuOrder();
-    state.settings.menuOrder = v29NormalizeMenuOrder(state.settings.menuOrder);
-    if(!Array.isArray(state.settings.visibleMenuItems) || !state.settings.visibleMenuItems.length) state.settings.visibleMenuItems = v29DefaultMenuOrder();
-    state.settings.visibleMenuItems = v29NormalizeMenuOrder(state.settings.visibleMenuItems);
-    if(typeof normalizeVisibleModules==='function') state.settings.visibleModules = normalizeVisibleModules(state.settings.visibleModules || (typeof masterModuleIds !== 'undefined' ? masterModuleIds : menuModules.map(m=>m.id)));
-    ['dashboard','settings'].forEach(id=>{ if(!state.settings.visibleMenuItems.includes(id)) state.settings.visibleMenuItems.push(id); });
-  }
-  function v29MenuItemById(id){ return v29MenuRegistry().find(m=>m.id===id); }
-  function v29IsMenuItemVisible(id){
-    ensureV29MenuState();
-    if(id==='dashboard' || id==='settings') return true;
-    if(id==='getthingsdone') return (state.settings.visibleMenuItems || []).includes(id);
-    if(typeof isModuleVisible==='function') return isModuleVisible(id);
-    return (state.settings.visibleMenuItems || []).includes(id);
-  }
-  function v29OrderedMenuItems(includeHidden=false){
-    ensureV29MenuState();
-    return state.settings.menuOrder.map(id=>v29MenuItemById(id)).filter(Boolean).filter(item=>includeHidden || v29IsMenuItemVisible(item.id));
-  }
-  function renderMenuTitleV29(){
-    injectV29MenuManagementStyles();
-    const list=document.getElementById('menuList');
-    const title=list?.previousElementSibling;
-    if(!title || !title.classList?.contains('side-title')) return;
-    title.classList.add('menu-title');
-    title.innerHTML='<span>Menu</span><button class="link-btn" type="button" data-modal="manageMenu">Manage</button>';
-  }
-
-  function v29MenuManagerBody(orderOverride=null, visibleOverride=null){
-    injectV29MenuManagementStyles(); ensureV29MenuState();
-    const order=v29NormalizeMenuOrder(orderOverride || state.settings.menuOrder);
-    const visibleSet=new Set(v29NormalizeMenuOrder(visibleOverride || [
-      'getthingsdone',
-      ...(state.settings.visibleModules || []),
-      'dashboard','settings'
-    ]));
-    const rows=order.map((id,idx)=>{
-      const item=v29MenuItemById(id); if(!item) return '';
-      const locked=item.locked || id==='dashboard' || id==='settings';
-      const checked=locked || visibleSet.has(id);
-      const hiddenCls=checked?'':'is-hidden';
-      const lockChip=locked?'<span class="v29-chip">Always on</span>':'';
-      const bookmarkable=id!=='settings';
-      return `<div class="v29-menu-row ${hiddenCls} ${locked?'is-locked':''}" data-menu-id="${escapeHTML(id)}">
-        <input type="checkbox" name="menuItem" value="${escapeHTML(id)}" ${checked?'checked':''} ${locked?'disabled':''} aria-label="Show ${escapeHTML(item.label)}">
-        <span class="module-icon" style="width:32px;height:32px;font-size:13px">${escapeHTML(item.icon)}</span>
-        <div><strong>${escapeHTML(item.label)}</strong><small>${escapeHTML(item.desc||'Menu item.')}</small></div>
-        <div class="v29-menu-actions">
-          ${lockChip}
-          <button type="button" data-v29-action="menu-move" data-dir="top" title="Move to top" ${idx===0?'disabled':''}>â†Ÿ</button>
-          <button type="button" data-v29-action="menu-move" data-dir="up" title="Move up" ${idx===0?'disabled':''}>â†‘</button>
-          <button type="button" data-v29-action="menu-move" data-dir="down" title="Move down" ${idx===order.length-1?'disabled':''}>â†“</button>
-          <button type="button" data-v29-action="menu-move" data-dir="bottom" title="Move to bottom" ${idx===order.length-1?'disabled':''}>â†¡</button>
-          ${bookmarkable?`<button type="button" data-v29-action="bookmark-one" title="Add to Bookmarks">â˜…</button>`:''}
-        </div>
-      </div>`;
-    }).join('');
-    return `<div class="v29-menu-note"><strong>Menu management:</strong> choose which modules appear in the left menu, reorder them, or add selected items to Bookmarks. Hidden modules are not deleted and can be restored anytime.</div>
-      <div class="v29-menu-toolbar"><div class="muted small">Dashboards and Settings stay available for safety.</div><div class="v29-add-bookmarks"><button class="btn" type="button" data-v29-action="add-checked-bookmarks">â˜… Add checked to Bookmarks</button></div></div>
-      <div class="v29-menu-list">${rows}</div>`;
-  }
-  function v29MenuOrderFromModal(){
-    return Array.from(document.querySelectorAll('#modalBody .v29-menu-row')).map(row=>row.dataset.menuId).filter(Boolean);
-  }
-  function v29VisibleFromModal(){
-    const checked=Array.from(document.querySelectorAll('#modalBody .v29-menu-row input[name="menuItem"]:checked')).map(i=>i.value);
-    ['dashboard','settings'].forEach(id=>{ if(!checked.includes(id)) checked.push(id); });
-    return checked;
-  }
-  function v29ApplyMenuModalState({save=false}={}){
-    const order=v29NormalizeMenuOrder(v29MenuOrderFromModal());
-    const visible=v29NormalizeMenuOrder(v29VisibleFromModal());
-    state.settings.menuOrder=order;
-    state.settings.visibleMenuItems=visible;
-    const moduleIds=(typeof masterModuleIds !== 'undefined' ? masterModuleIds : menuModules.map(m=>m.id));
-    state.settings.visibleModules = typeof normalizeVisibleModules==='function' ? normalizeVisibleModules(visible.filter(id=>moduleIds.includes(id))) : visible.filter(id=>moduleIds.includes(id));
-    if(save) saveState();
-  }
-  function v29ResetMenuModal(){
-    const body=document.getElementById('modalBody');
-    if(body) body.innerHTML=v29MenuManagerBody(v29DefaultMenuOrder(), v29DefaultMenuOrder());
-  }
-  function v29AddMenuItemsToBookmarks(ids){
-    try{ if(typeof ensureV816State==='function') ensureV816State(); else if(typeof ensureV815State==='function') ensureV815State(); }catch(e){}
-    const catalog = typeof bookmarkCatalog==='function' ? bookmarkCatalog() : [];
-    const byNav=new Map(catalog.map(b=>[b.nav,b.id]));
-    const byId=new Set(catalog.map(b=>b.id));
-    const existing=Array.isArray(state.settings.bookmarks) ? state.settings.bookmarks.slice() : [];
-    ids.forEach(id=>{
-      const bookmarkId = byId.has(id) ? id : byNav.get(id);
-      if(bookmarkId && !existing.includes(bookmarkId)) existing.push(bookmarkId);
-    });
-    state.settings.bookmarks=existing;
-    try{ if(typeof normalizeBookmarks==='function') normalizeBookmarks(); }catch(e){}
-    saveState();
-    try{ if(typeof renderBookmarksV816==='function') renderBookmarksV816(); else if(typeof renderBookmarks==='function') renderBookmarks(); }catch(e){}
-  }
-
-  const v29BookmarkCatalogBase = typeof bookmarkCatalog==='function' ? bookmarkCatalog : null;
-  if(v29BookmarkCatalogBase){
-    bookmarkCatalog = function(){
-      const base=v29BookmarkCatalogBase().slice();
-      if(v29IsMenuItemVisible('getthingsdone') && !base.some(b=>b.id==='getthingsdone')){
-        base.unshift({id:'getthingsdone', label:'Get Things Done', icon:'âœ“', nav:'getthingsdone', desc:'Guided workflow hub.'});
-      }
-      return base.filter(b=>b.id!=='getthingsdone' || v29IsMenuItemVisible('getthingsdone'));
-    };
-  }
-
-  const v29RenderMenuBase = renderMenu;
-  renderMenu = function(){
-    injectV29MenuManagementStyles(); ensureV29MenuState();
-    const list=document.getElementById('menuList');
-    if(!list){ return v29RenderMenuBase(); }
-    const rows=v29OrderedMenuItems(false).map(m=>`<button class="nav-item ${currentPage===m.id?'active':''}" data-nav="${escapeHTML(m.id)}"><span class="dot">${escapeHTML(m.icon)}</span>${escapeHTML(m.label)}<span class="nav-chevron">â€º</span></button>`).join('');
-    list.innerHTML=rows;
-    renderMenuTitleV29();
-    try{ if(typeof renderBookmarksV816==='function') renderBookmarksV816(); else if(typeof renderBookmarks==='function') renderBookmarks(); }catch(e){}
-  };
-
-  const v29OpenModalBase = openModal;
-  openModal = function(type){
-    if(type==='customize') type='manageMenu';
-    if(type==='manageMenu'){
-      injectV29MenuManagementStyles(); ensureV29MenuState(); currentModal='manageMenu';
-      document.getElementById('modalTitle').textContent='Manage menu';
-      document.getElementById('modalSubtitle').textContent='Show, hide, reorder, and bookmark sidebar menu items.';
-      document.getElementById('modalBody').innerHTML=v29MenuManagerBody();
-      document.getElementById('modalFooter').innerHTML='<button type="button" class="btn" data-v29-action="reset-menu">Restore defaults</button><button type="button" class="btn" id="cancelModal">Cancel</button><button type="submit" class="btn primary">Save menu</button>';
-      document.getElementById('cancelModal').addEventListener('click', closeModal);
-      document.getElementById('modalBackdrop').classList.add('open');
-      return;
-    }
-    return v29OpenModalBase(type);
-  };
-
-  const v29SubmitModalBase = submitModal;
-  submitModal = function(e){
-    if(currentModal==='manageMenu'){
-      e.preventDefault(); ensureV29MenuState();
-      v29ApplyMenuModalState({save:true});
-      if(!v29IsMenuItemVisible(currentPage) && currentPage==='getthingsdone') currentPage='dashboard';
-      if(typeof canNavigate==='function' && !canNavigate(currentPage)) currentPage='dashboard';
-      closeModal(); renderAll(); showToast('Menu updated.'); return;
-    }
-    return v29SubmitModalBase(e);
-  };
-
-  document.addEventListener('click', function(e){
-    const btn=e.target.closest?.('[data-v29-action]');
-    if(!btn) return;
-    const action=btn.dataset.v29Action;
-    if(action==='menu-move'){
-      e.preventDefault();
-      const row=btn.closest('.v29-menu-row'); if(!row) return;
-      const list=row.parentNode; const dir=btn.dataset.dir;
-      if(dir==='top') list.insertBefore(row, list.firstElementChild);
-      if(dir==='up' && row.previousElementSibling) list.insertBefore(row, row.previousElementSibling);
-      if(dir==='down' && row.nextElementSibling) list.insertBefore(row.nextElementSibling, row);
-      if(dir==='bottom') list.appendChild(row);
-      const body=document.getElementById('modalBody'); if(body) body.innerHTML=v29MenuManagerBody(v29MenuOrderFromModal(), v29VisibleFromModal());
-      return;
-    }
-    if(action==='reset-menu'){
-      e.preventDefault(); v29ResetMenuModal(); showToast('Default menu restored in the manager. Save to apply.'); return;
-    }
-    if(action==='bookmark-one'){
-      e.preventDefault();
-      const row=btn.closest('.v29-menu-row'); const id=row?.dataset.menuId;
-      if(id){ v29AddMenuItemsToBookmarks([id]); showToast('Added to Bookmarks.'); }
-      return;
-    }
-    if(action==='add-checked-bookmarks'){
-      e.preventDefault();
-      const ids=v29VisibleFromModal().filter(id=>id!=='settings');
-      v29AddMenuItemsToBookmarks(ids); showToast('Checked menu items added to Bookmarks.'); return;
-    }
-  });
-
-  const v29RenderAllBase = renderAll;
-  renderAll = function(){ injectV29MenuManagementStyles(); ensureV29MenuState(); v29RenderAllBase(); renderMenuTitleV29(); };
+  // Moved to frontend/src/features/menu-customization.js.
 
 
   // ---------- V30 Sidebar Icon Consistency Fix ----------
@@ -1159,7 +906,7 @@
   }
 
   const v30FallbackIcons = {
-    home:'âŒ‚', dashboard:'â–¦', getthingsdone:'âœ“', setup:'â˜‘', apps:'â–©', banking:'$', transactions:'â‡„', accounting:'â–¤', sales:'â†—', customers:'ðŸ‘¥', expenses:'â–¾', vendors:'âŒ‚', reports:'â–¥', inventory:'â–£', projects:'â–°', time:'â—·', payroll:'ID', taxes:'%', settings:'âš™', reportsFavorite:'â˜…'
+    home:'⌂', dashboard:'▦', getthingsdone:'✓', setup:'☑', apps:'▩', banking:'$', transactions:'⇄', accounting:'▤', sales:'↗', customers:'👥', expenses:'▾', vendors:'⌂', reports:'▥', inventory:'▣', projects:'▰', time:'◷', payroll:'ID', taxes:'%', settings:'⚙', reportsFavorite:'★'
   };
   const v30IconAliases = {'reports-favorites':'reportsFavorite'};
   const v30IconParts = {
@@ -1190,7 +937,7 @@
     const part=v30IconParts[key] || v30IconParts.dashboard;
     return `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${part}</svg>`;
   }
-  function v30IconFallback(id){ return v30FallbackIcons[v30IconKey(id)] || 'â–¡'; }
+  function v30IconFallback(id){ return v30FallbackIcons[v30IconKey(id)] || '□'; }
   function v30UpdateRegistryIcons(){
     const apply = (m)=>{ if(m && m.id) m.icon = v30IconFallback(m.id); };
     try{ if(Array.isArray(menuModules)) menuModules.forEach(apply); }catch(e){}
@@ -1203,6 +950,22 @@
     if(b.id==='getthingsdone') return 'getthingsdone';
     return b.nav || b.id;
   }
+  function v31SidebarLabel(item){
+    if(window.SmartBooksNavigation) return window.SmartBooksNavigation.displayLabel(item);
+    const labels = {dashboard:'Dashboards', apps:'My Apps', inventory:'Products & Services', expenses:'Expenses & Pay Bills'};
+    return labels[item.id] || item.label || item.id;
+  }
+  function v31SidebarItems(){
+    const modules=(typeof masterModuleRegistry !== 'undefined' && Array.isArray(masterModuleRegistry)) ? masterModuleRegistry : menuModules;
+    if(window.SmartBooksNavigation) return window.SmartBooksNavigation.orderedItems(modules, state.settings, false);
+    return (typeof v29OrderedMenuItems==='function') ? v29OrderedMenuItems(false) : menuModules.filter(m=>(state.settings.visibleModules||[]).includes(m.id));
+  }
+  function v31RefreshSidebarBookmarks(){
+    document.querySelectorAll('.sidebar-bookmarks-hidden').forEach(el => {
+      el.classList.remove('sidebar-bookmarks-hidden');
+      el.style.removeProperty('display');
+    });
+  }
 
   const v30RenderMenuBase = renderMenu;
   renderMenu = function(){
@@ -1210,10 +973,11 @@
     try{ injectV29MenuManagementStyles(); ensureV29MenuState(); }catch(e){}
     const list=document.getElementById('menuList');
     if(!list){ return v30RenderMenuBase(); }
-    const items = (typeof v29OrderedMenuItems==='function') ? v29OrderedMenuItems(false) : menuModules.filter(m=>(state.settings.visibleModules||[]).includes(m.id));
-    list.innerHTML = items.map(m=>`<button class="nav-item ${currentPage===m.id?'active':''}" data-nav="${escapeHTML(m.id)}"><span class="dot">${v30IconMarkup(m.id)}</span>${escapeHTML(m.label)}<span class="nav-chevron">â€º</span></button>`).join('');
+    const items = v31SidebarItems();
+    list.innerHTML = items.map(m=>`<button class="nav-item ${currentPage===m.id?'active':''}" data-nav="${escapeHTML(m.id)}"><span class="dot">${v30IconMarkup(m.id)}</span><span class="nav-label">${escapeHTML(v31SidebarLabel(m))}</span><span class="nav-chevron">›</span></button>`).join('');
     try{ renderMenuTitleV29(); }catch(e){}
     try{ if(typeof renderBookmarksV816==='function') renderBookmarksV816(); else if(typeof renderBookmarks==='function') renderBookmarks(); }catch(e){}
+    v31RefreshSidebarBookmarks();
   };
 
   renderModulePills = function(){
@@ -1222,7 +986,7 @@
     const mods = (typeof shortcutModuleObjects==='function') ? shortcutModuleObjects() : (typeof visibleModulesForPillsV8==='function' ? visibleModulesForPillsV8() : menuModules);
     const el=document.getElementById('modulePills');
     if(el){
-      el.innerHTML = `<div class="shortcut-shell"><button class="shortcut-arrow" type="button" data-action="shortcut-scroll" data-dir="-1" aria-label="Previous shortcuts">â€¹</button><div class="shortcut-viewport"><div class="shortcut-track" id="shortcutTrack">${mods.map(m=>`<button class="module-pill ${currentPage===m.id?'active':''}" data-nav="${escapeHTML(m.id)}"><span class="module-icon">${v30IconMarkup(m.id)}</span>${escapeHTML(m.label)}</button>`).join('')}</div></div><button class="shortcut-arrow" type="button" data-action="shortcut-scroll" data-dir="1" aria-label="More shortcuts">â€º</button><button class="shortcut-customize" type="button" data-modal="customizeShortcuts" title="Customize shortcuts" aria-label="Customize shortcuts">âš™</button></div>`;
+      el.innerHTML = `<div class="shortcut-shell"><button class="shortcut-arrow" type="button" data-action="shortcut-scroll" data-dir="-1" aria-label="Previous shortcuts">‹</button><div class="shortcut-viewport"><div class="shortcut-track" id="shortcutTrack">${mods.map(m=>`<button class="module-pill ${currentPage===m.id?'active':''}" data-nav="${escapeHTML(m.id)}"><span class="module-icon">${v30IconMarkup(m.id)}</span>${escapeHTML(m.label)}</button>`).join('')}</div></div><button class="shortcut-arrow" type="button" data-action="shortcut-scroll" data-dir="1" aria-label="More shortcuts">›</button><button class="shortcut-customize" type="button" data-modal="customizeShortcuts" title="Customize shortcuts" aria-label="Customize shortcuts">⚙</button></div>`;
       setTimeout(()=>{ const track=document.getElementById('shortcutTrack'); if(track){ track.addEventListener('scroll', updateShortcutArrows, {passive:true}); updateShortcutArrows(); } },0);
     }
     const hr=new Date().getHours(); const greeting=hr<12?'Good morning':hr<18?'Good afternoon':'Good evening';
@@ -1241,6 +1005,7 @@
       const group=title.nextElementSibling; if(!group || !group.classList.contains('nav-group')) return;
       const ids=normalizeBookmarks();
       group.innerHTML = ids.map(id=>bookmarkById(id)).filter(Boolean).map(b=>`<button class="nav-item bookmark-row ${currentPage===b.nav?'active':''}" data-nav="${escapeHTML(b.nav)}" role="button"><span class="dot">${v30IconMarkup(v30BookmarkIconKey(b))}</span>${escapeHTML(b.label)}</button>`).join('') || `<div class="empty small">No bookmarks selected.</div>`;
+      v31RefreshSidebarBookmarks();
     };
     renderBookmarks = renderBookmarksV816;
   }
@@ -1251,39 +1016,7 @@
       const saved=normalizeBookmarks();
       const catalog=bookmarkCatalog();
       const ordered=[...saved.map(id=>catalog.find(b=>b.id===id)).filter(Boolean), ...catalog.filter(b=>!saved.includes(b.id))];
-      return `<p class="muted">Choose the shortcuts that appear under Bookmarks. Bookmarks are separate from the main menu.</p><div class="bookmark-config-list">${ordered.map(b=>`<div class="bookmark-config-row" data-bookmark-id="${escapeHTML(b.id)}"><input type="checkbox" name="bookmark" value="${escapeHTML(b.id)}" ${saved.includes(b.id)?'checked':''}><span class="module-icon" style="width:32px;height:32px">${v30IconMarkup(v30BookmarkIconKey(b))}</span><div><strong>${escapeHTML(b.label)}</strong><small>${escapeHTML(b.desc)}</small></div><div class="bookmark-move"><button type="button" data-action="bookmark-move" data-dir="up">â†‘</button><button type="button" data-action="bookmark-move" data-dir="down">â†“</button></div></div>`).join('')}</div><div class="tax-form-note">If a module is hidden from the main menu, its bookmark is hidden until the module is restored.</div>`;
-    };
-  }
-
-  if(typeof v29MenuManagerBody==='function'){
-    v29MenuManagerBody = function(orderOverride=null, visibleOverride=null){
-      injectV30IconStyles(); injectV29MenuManagementStyles(); ensureV29MenuState();
-      const order=v29NormalizeMenuOrder(orderOverride || state.settings.menuOrder);
-      const visibleSet=new Set(v29NormalizeMenuOrder(visibleOverride || ['getthingsdone', ...(state.settings.visibleModules || []), 'dashboard','settings']));
-      const rows=order.map((id,idx)=>{
-        const item=v29MenuItemById(id); if(!item) return '';
-        const locked=item.locked || id==='dashboard' || id==='settings';
-        const checked=locked || visibleSet.has(id);
-        const hiddenCls=checked?'':'is-hidden';
-        const lockChip=locked?'<span class="v29-chip">Always on</span>':'';
-        const bookmarkable=id!=='settings';
-        return `<div class="v29-menu-row ${hiddenCls} ${locked?'is-locked':''}" data-menu-id="${escapeHTML(id)}">
-          <input type="checkbox" name="menuItem" value="${escapeHTML(id)}" ${checked?'checked':''} ${locked?'disabled':''} aria-label="Show ${escapeHTML(item.label)}">
-          <span class="module-icon" style="width:32px;height:32px">${v30IconMarkup(id)}</span>
-          <div><strong>${escapeHTML(item.label)}</strong><small>${escapeHTML(item.desc||'Menu item.')}</small></div>
-          <div class="v29-menu-actions">
-            ${lockChip}
-            <button type="button" data-v29-action="menu-move" data-dir="top" title="Move to top" ${idx===0?'disabled':''}>â†Ÿ</button>
-            <button type="button" data-v29-action="menu-move" data-dir="up" title="Move up" ${idx===0?'disabled':''}>â†‘</button>
-            <button type="button" data-v29-action="menu-move" data-dir="down" title="Move down" ${idx===order.length-1?'disabled':''}>â†“</button>
-            <button type="button" data-v29-action="menu-move" data-dir="bottom" title="Move to bottom" ${idx===order.length-1?'disabled':''}>â†¡</button>
-            ${bookmarkable?`<button type="button" data-v29-action="bookmark-one" title="Add to Bookmarks">â˜…</button>`:''}
-          </div>
-        </div>`;
-      }).join('');
-      return `<div class="v29-menu-note"><strong>Menu management:</strong> choose which modules appear in the left menu, reorder them, or add selected items to Bookmarks. V30 uses distinct line icons so every menu item is visually different.</div>
-        <div class="v29-menu-toolbar"><div class="muted small">Dashboards and Settings stay available for safety.</div><div class="v29-add-bookmarks"><button class="btn" type="button" data-v29-action="add-checked-bookmarks">â˜… Add checked to Bookmarks</button></div></div>
-        <div class="v29-menu-list">${rows}</div>`;
+      return `<p class="muted">Choose the shortcuts that appear under Bookmarks. Bookmarks are separate from the main menu.</p><div class="bookmark-config-list">${ordered.map(b=>`<div class="bookmark-config-row" data-bookmark-id="${escapeHTML(b.id)}"><input type="checkbox" name="bookmark" value="${escapeHTML(b.id)}" ${saved.includes(b.id)?'checked':''}><span class="module-icon" style="width:32px;height:32px">${v30IconMarkup(v30BookmarkIconKey(b))}</span><div><strong>${escapeHTML(b.label)}</strong><small>${escapeHTML(b.desc)}</small></div><div class="bookmark-move"><button type="button" data-action="bookmark-move" data-dir="up">↑</button><button type="button" data-action="bookmark-move" data-dir="down">↓</button></div></div>`).join('')}</div><div class="tax-form-note">If a module is hidden from the main menu, its bookmark is hidden until the module is restored.</div>`;
     };
   }
 
@@ -1293,11 +1026,9 @@
       injectV30IconStyles(); v30UpdateRegistryIcons();
       try{ ensureV8State(); }catch(e){}
       const el=document.getElementById('page-apps'); if(!el) return v30RenderAppsBase();
-      const descriptions = {
-        dashboard:'Business overview, Business Feed, and quick actions.', setup:'Guided setup for visible modules.', apps:'Launch enabled modules from one clean center.', banking:'Bank transactions, matching, clearing, and reconciliation.', transactions:'All posted and imported transaction activity.', accounting:'Chart of accounts, journal entries, trial balance, and audit trail.', sales:'Invoices, payment links, sales orders, recurring payments, and payouts.', customers:'Customer profiles, open balances, estimates, and receivables.', expenses:'Expenses, bills, vendor payments, and approval workflow.', vendors:'Supplier records, open bills, purchase orders, and payment history.', reports:'Financial, sales, tax, inventory, and management reports.', inventory:'Services, inventory products, non-inventory items, bundles, PO/SO workflows, receiving, and movements.', projects:'Project budgets, costs, revenue, and profitability.', time:'Time entries, billable hours, and team activity.', payroll:'Employee setup, payroll workflow, and pay-run preparation.', taxes:'Tax returns, agencies, rates, collected tax, input tax credits, and payments.', settings:'Company profile, menu customization, invoice branding, and data controls.'
-      };
+      const menuDescriptions = new Map((typeof v29MenuRegistry==='function' ? v29MenuRegistry() : []).map(item => [item.id, item.desc]));
       const apps=masterModuleRegistry.filter(m=>isModuleVisible(m.id));
-      el.innerHTML = header('My Apps', 'Open the modules enabled for this company. Hidden modules can be restored from Settings.', `<button class="btn" data-modal="customize">Customize app menus</button>`) + `<div class="app-grid">${apps.map(m=>`<div class="app-tile"><span class="tile-icon">${v30IconMarkup(m.id)}</span><h3>${escapeHTML(m.label)}</h3><p class="muted">${escapeHTML(descriptions[m.id]||'Module workspace.')}</p><button class="btn" data-nav="${escapeHTML(m.id)}">Open</button></div>`).join('')}</div>`;
+      el.innerHTML = header('My Apps', 'Open the modules enabled for this company. Hidden modules can be restored from Settings.', `<button class="btn" data-modal="customize">Customize app menus</button>`) + `<div class="app-grid">${apps.map(m=>`<div class="app-tile"><span class="tile-icon">${v30IconMarkup(m.id)}</span><h3>${escapeHTML(v31SidebarLabel(m))}</h3><p class="muted">${escapeHTML(menuDescriptions.get(m.id)||'Module workspace.')}</p><button class="btn" data-nav="${escapeHTML(m.id)}">Open</button></div>`).join('')}</div>`;
     };
   }
 
@@ -1365,12 +1096,12 @@
   function v33SafeMoney(v){ try{ return money(v); }catch(e){ return '$'+(Number(v)||0).toFixed(2); } }
   function v33CustomerName(id){ try{ return (getCustomer(id)||{}).name || id || ''; }catch(e){ return id || ''; } }
   function v33VendorName(id){ try{ return (getVendor(id)||{}).name || id || ''; }catch(e){ return id || ''; } }
-  function v33AccountName(id){ try{ return accountLabel(id); }catch(e){ const a=(state.chartOfAccounts||[]).find(x=>x.id===id||x.code===id); return a ? `${a.code} Â· ${a.name}` : id; } }
+  function v33AccountName(id){ try{ return accountLabel(id); }catch(e){ const a=(state.chartOfAccounts||[]).find(x=>x.id===id||x.code===id); return a ? `${a.code} · ${a.name}` : id; } }
   function v33InvoiceAmount(i){ try{ return invoiceTotal(i); }catch(e){ return num(i.subtotal)+num(i.tax); } }
   function v33BillAmount(b){ try{ return billTotal(b); }catch(e){ return num(b.amount)+num(b.tax); } }
   function v33OpenInvoiceAmount(i){ try{ return openAmount(i); }catch(e){ return Math.max(0, v33InvoiceAmount(i)-num(i.paid)); } }
   function v33BillOpen(b){ try{ return billOpenAmount(b); }catch(e){ return Math.max(0, v33BillAmount(b)-num(b.paid)); } }
-  function v33Icon(label){ return String(label || 'âŒ•').slice(0,2); }
+  function v33Icon(label){ return String(label || '⌕').slice(0,2); }
 
   function v33QueryAliasText(q){
     const s=v33Lower(q);
@@ -1415,7 +1146,7 @@
     try{ if(Array.isArray(masterModuleRegistry)) modules.push(...masterModuleRegistry); }catch(e){}
     if(!modules.length) modules.push(...menuModules);
     modules.forEach(m=>v33AddResult(rows,'Pages',m.label||m.id,moduleDescriptions[m.id]||'Open workspace','Page',v33Icon(m.label||m.id),`${m.id} ${m.label||''}`,{kind:'nav',page:m.id},10));
-    v33AddResult(rows,'Pages','Dashboard','Business overview, widgets, cash flow and quick actions.','Page','âŒ‚','home business at a glance',{kind:'nav',page:'dashboard'},15);
+    v33AddResult(rows,'Pages','Dashboard','Business overview, widgets, cash flow and quick actions.','Page','⌂','home business at a glance',{kind:'nav',page:'dashboard'},15);
 
     const actions=[
       ['Create invoice','Create a customer invoice and post A/R.','invoice','invoice sales get paid bill customer'],
@@ -1435,7 +1166,7 @@
       ['Customize dashboard','Show, hide, resize, and reorder dashboard widgets.','customizeDashboard','dashboard customize widgets layout'],
       ['Customize menu','Show, hide, and reorder sidebar menu modules.','manageMenu','menu manage navigation sidebar']
     ];
-    actions.forEach(([title,desc,modal,keywords])=>v33AddResult(rows,'Actions',title,desc,'Action','ï¼‹',keywords,{kind:'modal',modal},20));
+    actions.forEach(([title,desc,modal,keywords])=>v33AddResult(rows,'Actions',title,desc,'Action','＋',keywords,{kind:'modal',modal},20));
 
     try{
       const reports=(typeof reportCatalogV8==='function') ? reportCatalogV8() : [];
@@ -1447,37 +1178,37 @@
         if(r.id==='sales-tax-liability') aliases='gst hst tax cra sales tax liability remittance';
         if(r.id==='balance-sheet') aliases='assets liabilities equity financial position';
         if(r.id==='cash-flow') aliases='cash flow bank money in money out';
-        v33AddResult(rows,'Reports',r.name,r.desc||r.category,'Report','â–¤',`${r.id} ${r.category} ${aliases}`,{kind:'report',reportId:r.id},18);
+        v33AddResult(rows,'Reports',r.name,r.desc||r.category,'Report','▤',`${r.id} ${r.category} ${aliases}`,{kind:'report',reportId:r.id},18);
       });
     }catch(e){}
 
     (state.invoices||[]).forEach(i=>{
       const cname=v33CustomerName(i.customerId);
-      v33AddResult(rows,'Transactions',`${i.id} Â· ${cname}`,`${i.status || 'Invoice'} Â· ${i.date} Â· Total ${v33SafeMoney(v33InvoiceAmount(i))} Â· Open ${v33SafeMoney(v33OpenInvoiceAmount(i))}`,'Invoice','INV',`${cname} ${i.status} ${i.dueDate} accounts receivable open overdue`,{kind:'salesTab',tab:'invoices',toast:`Invoice ${i.id} opened in Sales.`},30);
+      v33AddResult(rows,'Transactions',`${i.id} · ${cname}`,`${i.status || 'Invoice'} · ${i.date} · Total ${v33SafeMoney(v33InvoiceAmount(i))} · Open ${v33SafeMoney(v33OpenInvoiceAmount(i))}`,'Invoice','INV',`${cname} ${i.status} ${i.dueDate} accounts receivable open overdue`,{kind:'salesTab',tab:'invoices',toast:`Invoice ${i.id} opened in Sales.`},30);
     });
     (state.payments||[]).forEach(p=>{
       const cname=v33CustomerName(p.customerId);
-      v33AddResult(rows,'Transactions',`${p.id} Â· ${cname}`,`Payment Â· ${p.date} Â· ${v33SafeMoney(p.amount)} ${p.invoiceId ? 'for '+p.invoiceId : ''}`,'Payment','$',`${cname} ${p.invoiceId||''} received paid`,{kind:'salesTab',tab:'payments',toast:`Payment ${p.id} opened in Sales.`},28);
+      v33AddResult(rows,'Transactions',`${p.id} · ${cname}`,`Payment · ${p.date} · ${v33SafeMoney(p.amount)} ${p.invoiceId ? 'for '+p.invoiceId : ''}`,'Payment','$',`${cname} ${p.invoiceId||''} received paid`,{kind:'salesTab',tab:'payments',toast:`Payment ${p.id} opened in Sales.`},28);
     });
     (state.estimates||[]).forEach(est=>{
       const cname=v33CustomerName(est.customerId);
-      v33AddResult(rows,'Transactions',`${est.id} Â· ${cname}`,`${est.status || 'Estimate'} Â· ${est.date} Â· ${v33SafeMoney(est.total)}`,'Estimate','EST',`${cname} quote proposal pipeline`,{kind:'salesTab',tab:'estimates',toast:`Estimate ${est.id} opened in Sales.`},28);
+      v33AddResult(rows,'Transactions',`${est.id} · ${cname}`,`${est.status || 'Estimate'} · ${est.date} · ${v33SafeMoney(est.total)}`,'Estimate','EST',`${cname} quote proposal pipeline`,{kind:'salesTab',tab:'estimates',toast:`Estimate ${est.id} opened in Sales.`},28);
     });
     (state.expenses||[]).forEach(x=>{
       const vname=v33VendorName(x.vendorId);
-      v33AddResult(rows,'Transactions',`${x.id} Â· ${vname}`,`Expense Â· ${x.date} Â· ${v33SafeMoney(num(x.amount)+num(x.tax))} Â· ${x.memo||x.account||''}`,'Expense','EXP',`${vname} ${x.memo||''} ${x.paymentMethod||''} ${v33AccountName(x.expenseAccountId||'')}`,{kind:'nav',page:'expenses',toast:`Expense ${x.id} opened in Expenses.`},24);
+      v33AddResult(rows,'Transactions',`${x.id} · ${vname}`,`Expense · ${x.date} · ${v33SafeMoney(num(x.amount)+num(x.tax))} · ${x.memo||x.account||''}`,'Expense','EXP',`${vname} ${x.memo||''} ${x.paymentMethod||''} ${v33AccountName(x.expenseAccountId||'')}`,{kind:'nav',page:'expenses',toast:`Expense ${x.id} opened in Expenses.`},24);
     });
     (state.bills||[]).forEach(b=>{
       const vname=v33VendorName(b.vendorId);
-      v33AddResult(rows,'Transactions',`${b.id} Â· ${vname}`,`${b.status || 'Bill'} Â· due ${b.dueDate} Â· Open ${v33SafeMoney(v33BillOpen(b))}`,'Bill','BILL',`${vname} accounts payable ap vendor bill pay due`,{kind:'nav',page:'expenses',toast:`Bill ${b.id} opened in Expenses.`},26);
+      v33AddResult(rows,'Transactions',`${b.id} · ${vname}`,`${b.status || 'Bill'} · due ${b.dueDate} · Open ${v33SafeMoney(v33BillOpen(b))}`,'Bill','BILL',`${vname} accounts payable ap vendor bill pay due`,{kind:'nav',page:'expenses',toast:`Bill ${b.id} opened in Expenses.`},26);
     });
-    (state.deposits||[]).forEach(d=>v33AddResult(rows,'Transactions',`${d.id} Â· Deposit`,`${d.date} Â· ${v33SafeMoney(d.amount)} Â· ${d.memo||''}`,'Deposit','DEP',`bank deposit ${d.memo||''}`,{kind:'nav',page:'banking'},22));
-    (state.bankTransactions||[]).forEach(tx=>v33AddResult(rows,'Transactions',`${tx.id} Â· ${tx.description}`,`${tx.date} Â· ${v33SafeMoney(tx.amount)} Â· ${tx.status || 'Bank feed'} Â· ${tx.matchType || ''}`,'Bank feed','BANK',`${tx.description} ${tx.note||''} bank review reconcile match categorize`,{kind:'banktx',id:tx.id},26));
+    (state.deposits||[]).forEach(d=>v33AddResult(rows,'Transactions',`${d.id} · Deposit`,`${d.date} · ${v33SafeMoney(d.amount)} · ${d.memo||''}`,'Deposit','DEP',`bank deposit ${d.memo||''}`,{kind:'nav',page:'banking'},22));
+    (state.bankTransactions||[]).forEach(tx=>v33AddResult(rows,'Transactions',`${tx.id} · ${tx.description}`,`${tx.date} · ${v33SafeMoney(tx.amount)} · ${tx.status || 'Bank feed'} · ${tx.matchType || ''}`,'Bank feed','BANK',`${tx.description} ${tx.note||''} bank review reconcile match categorize`,{kind:'banktx',id:tx.id},26));
 
-    (state.customers||[]).forEach(c=>v33AddResult(rows,'Customers',c.name,`${c.company || ''} Â· ${c.email || ''} Â· Open balance ${v33SafeMoney(typeof customerOpenBalance==='function' ? customerOpenBalance(c.id) : 0)}`,'Customer','ðŸ‘¥',`${c.id} ${c.company||''} ${c.email||''} ${c.phone||''} receivable invoice estimate`,{kind:'nav',page:'customers'},24));
-    (state.vendors||[]).forEach(v=>v33AddResult(rows,'Vendors',v.name,`${v.category || 'Vendor'} Â· ${v.email || ''}`,'Vendor','ðŸª',`${v.id} ${v.email||''} ${v.phone||''} bill supplier payable`,{kind:'nav',page:'vendors'},24));
-    (state.products||[]).forEach(p=>v33AddResult(rows,'Products & Services',p.name,`${p.type || 'Item'} Â· ${v33SafeMoney(p.price)} Â· ${v33AccountName(p.incomeAccountId||'')}`,'Item','â–£',`${p.id} product service sku inventory item revenue`,{kind:'nav',page:'inventory'},22));
-    (state.chartOfAccounts||[]).forEach(a=>v33AddResult(rows,'Accounting',`${a.code} Â· ${a.name}`,`${a.type} Â· ${a.detail || ''}`,'Account','â–¤',`${a.id} ${a.normal} chart of accounts ledger debit credit`,{kind:'nav',page:'accounting'},18));
+    (state.customers||[]).forEach(c=>v33AddResult(rows,'Customers',c.name,`${c.company || ''} · ${c.email || ''} · Open balance ${v33SafeMoney(typeof customerOpenBalance==='function' ? customerOpenBalance(c.id) : 0)}`,'Customer','👥',`${c.id} ${c.company||''} ${c.email||''} ${c.phone||''} receivable invoice estimate`,{kind:'nav',page:'customers'},24));
+    (state.vendors||[]).forEach(v=>v33AddResult(rows,'Vendors',v.name,`${v.category || 'Vendor'} · ${v.email || ''}`,'Vendor','🏪',`${v.id} ${v.email||''} ${v.phone||''} bill supplier payable`,{kind:'nav',page:'vendors'},24));
+    (state.products||[]).forEach(p=>v33AddResult(rows,'Products & Services',p.name,`${p.type || 'Item'} · ${v33SafeMoney(p.price)} · ${v33AccountName(p.incomeAccountId||'')}`,'Item','▣',`${p.id} product service sku inventory item revenue`,{kind:'nav',page:'inventory'},22));
+    (state.chartOfAccounts||[]).forEach(a=>v33AddResult(rows,'Accounting',`${a.code} · ${a.name}`,`${a.type} · ${a.detail || ''}`,'Account','▤',`${a.id} ${a.normal} chart of accounts ledger debit credit`,{kind:'nav',page:'accounting'},18));
 
     v33AddResult(rows,'Help','Where do these numbers come from?','Explains dashboard values, cash flow, invoices, expenses and bank balances.','Help','?','numbers dashboard source explain data lineage cash flow',{kind:'nav',page:'dashboard'},12);
     v33AddResult(rows,'Help','Bank transactions need review','Open the bank review queue for matching and categorization.','Help','?','review banking transactions match categorize clearing',{kind:'nav',page:'banking'},12);
@@ -1532,7 +1263,7 @@
     }
     const grouped=[];
     v33SearchResults.forEach((r,i)=>{ let g=grouped.find(x=>x.group===r.group); if(!g){ g={group:r.group,items:[]}; grouped.push(g); } g.items.push([r,i]); });
-    box.innerHTML=`<div class="v33-search-head"><strong>${q ? 'Search results for â€œ'+escapeHTML(q)+'â€' : 'Suggested shortcuts'}</strong><span>â†‘ â†“ Enter Â· Esc</span></div><div class="v33-search-scroll">${grouped.map(g=>`<div class="v33-search-group"><div class="v33-search-group-title">${escapeHTML(g.group)}</div>${g.items.map(([r,i])=>`<button type="button" class="v33-search-row ${i===v33SearchActiveIndex?'active':''}" data-v33-search-result="${i}" role="option" aria-selected="${i===v33SearchActiveIndex}"><span class="v33-search-icon">${escapeHTML(r.icon)}</span><span class="v33-search-main"><span class="v33-search-title">${v33Highlight(r.title,q)}</span><span class="v33-search-desc">${v33Highlight(r.desc,q)}</span></span><span class="v33-search-badge">${escapeHTML(r.badge||r.group)}</span></button>`).join('')}</div>`).join('')}</div>`;
+    box.innerHTML=`<div class="v33-search-head"><strong>${q ? 'Search results for “'+escapeHTML(q)+'”' : 'Suggested shortcuts'}</strong><span>↑ ↓ Enter · Esc</span></div><div class="v33-search-scroll">${grouped.map(g=>`<div class="v33-search-group"><div class="v33-search-group-title">${escapeHTML(g.group)}</div>${g.items.map(([r,i])=>`<button type="button" class="v33-search-row ${i===v33SearchActiveIndex?'active':''}" data-v33-search-result="${i}" role="option" aria-selected="${i===v33SearchActiveIndex}"><span class="v33-search-icon">${escapeHTML(r.icon)}</span><span class="v33-search-main"><span class="v33-search-title">${v33Highlight(r.title,q)}</span><span class="v33-search-desc">${v33Highlight(r.desc,q)}</span></span><span class="v33-search-badge">${escapeHTML(r.badge||r.group)}</span></button>`).join('')}</div>`).join('')}</div>`;
     box.classList.add('open');
   }
 
@@ -1633,7 +1364,7 @@
       <button class="btn square" data-action="duplicate-invoice" data-id="${safeId}">Duplicate</button>
       ${voidBtn}
     `;
-    return `<div class="invoice-actions"><details class="invoice-more"><summary class="btn square row-action-summary">View <span aria-hidden="true">â–¾</span></summary><div class="invoice-more-menu">${menu}</div></details></div>`;
+    return `<div class="invoice-actions"><details class="invoice-more"><summary class="btn square row-action-summary">View <span aria-hidden="true">▾</span></summary><div class="invoice-more-menu">${menu}</div></details></div>`;
   };
 
   function setupV35RowActionDropdowns(){
@@ -1662,14 +1393,14 @@
 
 
   /* V37 invoice tracking popover cleanup: compact table cell + click-through details */
-  function v37TrackingDate(value){ return value ? escapeHTML(value) : 'â€”'; }
+  function v37TrackingDate(value){ return value ? escapeHTML(value) : '—'; }
   function v37InvoiceTrackingSummary(inv){
     const parts=[];
     if(inv.lastViewed) parts.push('Viewed');
     const reminders=num(inv.reminderCount);
     if(reminders>0) parts.push(`${reminders} reminder${reminders===1?'':'s'}`);
     if(!parts.length && (inv.emailStatus||'Draft')==='Draft') parts.push('Not sent');
-    return parts.join(' Â· ');
+    return parts.join(' · ');
   }
   function v37TrackingStatusLabel(inv){
     const status=inv.emailStatus || invoiceDisplayStatus(inv) || 'Draft';
@@ -1698,8 +1429,8 @@
     pop.setAttribute('aria-label',`Invoice tracking ${inv.id}`);
     pop.innerHTML=`
       <div class="tracking-popover-head">
-        <div><h4>Invoice tracking</h4><p>${escapeHTML(inv.id)} Â· ${escapeHTML(customer?.name||'Customer')}</p></div>
-        <button type="button" class="tracking-popover-close" aria-label="Close tracking details">Ã—</button>
+        <div><h4>Invoice tracking</h4><p>${escapeHTML(inv.id)} · ${escapeHTML(customer?.name||'Customer')}</p></div>
+        <button type="button" class="tracking-popover-close" aria-label="Close tracking details">×</button>
       </div>
       <div class="tracking-popover-list">
         <div class="tracking-popover-row"><span>Status</span><strong>${escapeHTML(v37TrackingStatusLabel(inv))}</strong></div>
@@ -1896,7 +1627,7 @@
     const more=tabs.filter(t=>!primaryIds.has(t[0]));
     const tabButton=([id,label], extra='')=>`<button class="tab-btn ${active===id?'active':''} ${extra}" data-action="set-sales-tab" data-id="${id}">${escapeHTML(label)}</button>`;
     const moreActive=more.some(([id])=>id===active);
-    return `<div class="tabbar sales-tabbar-v38">${primary.map(t=>tabButton(t)).join('')}<div class="sales-more-tabs"><button type="button" class="tab-btn sales-more-trigger ${moreActive?'active':''}" aria-haspopup="true" aria-expanded="false">More â–¾</button><div class="sales-more-menu">${more.map(t=>tabButton(t)).join('')}</div></div></div>`;
+    return `<div class="tabbar sales-tabbar-v38">${primary.map(t=>tabButton(t)).join('')}<div class="sales-more-tabs"><button type="button" class="tab-btn sales-more-trigger ${moreActive?'active':''}" aria-haspopup="true" aria-expanded="false">More ▾</button><div class="sales-more-menu">${more.map(t=>tabButton(t)).join('')}</div></div></div>`;
   }
   salesTabbar = v38SalesTabbar;
   if(typeof v17SalesTabs === 'function') v17SalesTabs = v38SalesTabbar;

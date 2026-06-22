@@ -20,6 +20,9 @@ http://localhost:3000
 frontend/
   index.html
   src/
+    services/
+      icon-service.js
+      storage-service.js
     main.js
     features/
       sales-tax-inventory-ui.js
@@ -42,4 +45,4 @@ docs/
 
 The frontend currently preserves the original localStorage behavior. The backend is ready for the next step: replacing browser-only storage with API-backed persistence.
 
-The JavaScript has been split into ordered classic scripts. `frontend/src/main.js` initializes the legacy app core, feature modules extend the UI and workflows, and `frontend/src/runtime/stability-and-api.js` installs the backend-ready API layer.
+The JavaScript has been split into ordered classic scripts. `frontend/src/services/icon-service.js` normalizes legacy icon glyphs into inline SVG, `frontend/src/services/storage-service.js` owns browser persistence, `frontend/src/main.js` initializes the legacy app core, feature modules extend the UI and workflows, and `frontend/src/runtime/stability-and-api.js` installs the backend-ready API layer.

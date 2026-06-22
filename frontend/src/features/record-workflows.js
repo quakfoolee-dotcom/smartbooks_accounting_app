@@ -163,14 +163,14 @@
     const c=(state.customers||[]).find(x=>x.id===id); if(!c) return v47DetailMissing('Customer',id);
     const invoices=(state.invoices||[]).filter(i=>i.customerId===id); const estimates=(state.estimates||[]).filter(e=>e.customerId===id); const open=(typeof customerOpenBalance==='function'?customerOpenBalance(id):invoices.reduce((s,i)=>s+v47InvOpen(i),0));
     return `<div class="v49-note">Customer master record. Use <strong>Edit customer</strong> to update billing, contact, terms, tax setting, status, and notes without changing the customer ID.</div>
-      <div class="v47-detail-grid"><div class="v47-detail-card"><h3>${escapeHTML(c.name||'Customer')} ${v49StatusTag(c)}</h3>${v47Line('Customer ID',c.id)}${v47Line('Company',c.company||'â€”')}${v47Line('Contact',c.contact||'â€”')}${v47Line('Email',c.email||'â€”')}${v47Line('Phone',c.phone||'â€”')}${v47Line('Terms',c.terms||'â€”')}${v47Line('Tax setting',c.taxSetting||'â€”')}</div><div class="v47-detail-card"><h3>Receivables</h3>${v47Line('Open balance',v47Money(open))}${v47Line('Invoice count',invoices.length)}${v47Line('Estimates',estimates.length)}${v47Line('Billing address',c.billingAddress||c.address||'â€”')}</div></div>
+      <div class="v47-detail-grid"><div class="v47-detail-card"><h3>${escapeHTML(c.name||'Customer')} ${v49StatusTag(c)}</h3>${v47Line('Customer ID',c.id)}${v47Line('Company',c.company||'—')}${v47Line('Contact',c.contact||'—')}${v47Line('Email',c.email||'—')}${v47Line('Phone',c.phone||'—')}${v47Line('Terms',c.terms||'—')}${v47Line('Tax setting',c.taxSetting||'—')}</div><div class="v47-detail-card"><h3>Receivables</h3>${v47Line('Open balance',v47Money(open))}${v47Line('Invoice count',invoices.length)}${v47Line('Estimates',estimates.length)}${v47Line('Billing address',c.billingAddress||c.address||'—')}</div></div>
       <div class="card table-card v47-detail-table" style="margin-top:14px">${table(['Invoice','Date','Status','Total','Open'], invoices.slice(0,8).map(i=>[`<button type="button" class="v49-record-button" data-action="view-invoice" data-id="${escapeHTML(i.id)}">${escapeHTML(i.id)}</button>`,i.date||'',i.status||'',v47Money(v47InvTotal(i)),v47Money(v47InvOpen(i))]))}</div>`;
   }
   function v49VendorDetail(id){
     const v=(state.vendors||[]).find(x=>x.id===id); if(!v) return v47DetailMissing('Vendor',id);
     const bills=(state.bills||[]).filter(b=>b.vendorId===id), expenses=(state.expenses||[]).filter(x=>x.vendorId===id), open=bills.reduce((s,b)=>s+v47BillOpen(b),0);
     return `<div class="v49-note">Vendor master record. Use <strong>Edit vendor</strong> to update contact, category, terms, default expense account, status, and notes without changing the vendor ID.</div>
-      <div class="v47-detail-grid"><div class="v47-detail-card"><h3>${escapeHTML(v.name||'Vendor')} ${v49StatusTag(v)}</h3>${v47Line('Vendor ID',v.id)}${v47Line('Company',v.company||'â€”')}${v47Line('Contact',v.contact||'â€”')}${v47Line('Email',v.email||'â€”')}${v47Line('Phone',v.phone||'â€”')}${v47Line('Category',v.category||'â€”')}${v47Line('Terms',v.terms||'â€”')}</div><div class="v47-detail-card"><h3>Payables</h3>${v47Line('Open bills',v47Money(open))}${v47Line('Bill count',bills.length)}${v47Line('Expense count',expenses.length)}${v47Line('Default expense account',v47AccountLabel(v.expenseAccountId||''))}</div></div>
+      <div class="v47-detail-grid"><div class="v47-detail-card"><h3>${escapeHTML(v.name||'Vendor')} ${v49StatusTag(v)}</h3>${v47Line('Vendor ID',v.id)}${v47Line('Company',v.company||'—')}${v47Line('Contact',v.contact||'—')}${v47Line('Email',v.email||'—')}${v47Line('Phone',v.phone||'—')}${v47Line('Category',v.category||'—')}${v47Line('Terms',v.terms||'—')}</div><div class="v47-detail-card"><h3>Payables</h3>${v47Line('Open bills',v47Money(open))}${v47Line('Bill count',bills.length)}${v47Line('Expense count',expenses.length)}${v47Line('Default expense account',v47AccountLabel(v.expenseAccountId||''))}</div></div>
       <div class="card table-card v47-detail-table" style="margin-top:14px">${table(['Bill','Due','Status','Total','Open'], bills.slice(0,8).map(b=>[`<button type="button" class="v49-record-button" data-action="view-bill" data-id="${escapeHTML(b.id)}">${escapeHTML(b.id)}</button>`,b.dueDate||'',b.status||'',v47Money(v47BillTotal(b)),v47Money(v47BillOpen(b))]))}</div>`;
   }
   try{ v47CustomerDetail = v49CustomerDetail; v47VendorDetail = v49VendorDetail; }catch(e){}
@@ -187,7 +187,7 @@
       const actions=`<div class="v49-estimate-row-actions"><button type="button" class="btn" data-action="view-estimate" data-id="${escapeHTML(e.id)}">View</button>${status==='Converted'?`<button type="button" class="btn primary" data-action="open-converted-invoice" data-id="${escapeHTML(e.convertedInvoiceId||'')}">View invoice</button>`:`<button type="button" class="btn" data-action="edit-estimate" data-id="${escapeHTML(e.id)}">Edit</button>`}</div>`;
       return [`<button type="button" class="v49-record-button" data-action="view-estimate" data-id="${escapeHTML(e.id)}">${escapeHTML(e.estimateNumber||e.id)}</button>${converted}`,escapeHTML(getCustomer(e.customerId).name),escapeHTML(e.date||''),typeof v17EstimateStatusTag==='function'?v17EstimateStatusTag(e):estimateStatusTag(e.status),`<span class="amount">${money(estimateAmount(e))}</span>`,actions];
     });
-    return `<div class="card table-card" style="margin-top:16px"><div class="toolbar"><div><h3 style="margin:0">Recent estimates</h3><div class="muted small">Newest estimates created from + New or Sales â†’ Estimates. Click an estimate to view, edit, convert, or open the linked invoice.</div></div><button class="btn" data-modal="estimate">New estimate</button></div>${table(['Estimate','Customer','Date','Status','Total','Actions'], rows)}</div>`;
+    return `<div class="card table-card" style="margin-top:16px"><div class="toolbar"><div><h3 style="margin:0">Recent estimates</h3><div class="muted small">Newest estimates created from + New or Sales → Estimates. Click an estimate to view, edit, convert, or open the linked invoice.</div></div><button class="btn" data-modal="estimate">New estimate</button></div>${table(['Estimate','Customer','Date','Status','Total','Actions'], rows)}</div>`;
   }
   function v49CustomerActions(c){
     const id=escapeHTML(c.id), inactive=v49IsInactive(c);
@@ -344,7 +344,7 @@
   // Keep company name in the edit form and detail view, but use contact-first display in lists/search.
   function v51ContactDisplay(record){
     const raw = (record && (record.contact || record.contactPerson || record.primaryContact || record.attention || record.email || record.phone)) || '';
-    return String(raw || '').trim() || 'â€”';
+    return String(raw || '').trim() || '—';
   }
   function v51ContactSearchText(record){
     return [record?.contact, record?.contactPerson, record?.primaryContact, record?.attention, record?.email, record?.phone].filter(Boolean).join(' ');
@@ -405,14 +405,14 @@
     const c=(state.customers||[]).find(x=>x.id===id); if(!c) return '<div class="empty">Customer not found.</div>';
     const invoices=(state.invoices||[]).filter(i=>i.customerId===id), estimates=(state.estimates||[]).filter(e=>e.customerId===id), open=typeof customerOpenBalance==='function'?customerOpenBalance(id):0;
     return `<div class="v49-note">Customer master record. Use <strong>Edit customer</strong> to update contact, billing, terms, tax setting, status, and notes without changing the customer ID.</div>
-      <div class="v47-detail-grid"><div class="v47-detail-card"><h3>${escapeHTML(c.name||'Customer')} ${v49StatusTag(c)}</h3>${v47Line('Customer ID',c.id)}${v47Line('Contact',v51ContactDisplay(c))}${v47Line('Email',c.email||'â€”')}${v47Line('Phone',c.phone||'â€”')}${v47Line('Company / organization',c.company||'â€”')}${v47Line('Terms',c.terms||'â€”')}${v47Line('Tax setting',c.taxSetting||'â€”')}</div><div class="v47-detail-card"><h3>Receivables</h3>${v47Line('Open balance',v47Money(open))}${v47Line('Invoice count',invoices.length)}${v47Line('Estimates',estimates.length)}${v47Line('Billing address',c.billingAddress||c.address||'â€”')}</div></div>
+      <div class="v47-detail-grid"><div class="v47-detail-card"><h3>${escapeHTML(c.name||'Customer')} ${v49StatusTag(c)}</h3>${v47Line('Customer ID',c.id)}${v47Line('Contact',v51ContactDisplay(c))}${v47Line('Email',c.email||'—')}${v47Line('Phone',c.phone||'—')}${v47Line('Company / organization',c.company||'—')}${v47Line('Terms',c.terms||'—')}${v47Line('Tax setting',c.taxSetting||'—')}</div><div class="v47-detail-card"><h3>Receivables</h3>${v47Line('Open balance',v47Money(open))}${v47Line('Invoice count',invoices.length)}${v47Line('Estimates',estimates.length)}${v47Line('Billing address',c.billingAddress||c.address||'—')}</div></div>
       <div class="card table-card v47-detail-table" style="margin-top:14px">${table(['Invoice','Date','Status','Total','Open'], invoices.slice(0,8).map(i=>[`<button type="button" class="v49-record-button" data-action="view-invoice" data-id="${escapeHTML(i.id)}">${escapeHTML(i.id)}</button>`,i.date||'',i.status||'',v47Money(v47InvTotal(i)),v47Money(v47InvOpen(i))]))}</div>`;
   }
   function v51VendorDetail(id){
     const v=(state.vendors||[]).find(x=>x.id===id); if(!v) return '<div class="empty">Vendor not found.</div>';
     const bills=(state.bills||[]).filter(b=>b.vendorId===id), expenses=(state.expenses||[]).filter(x=>x.vendorId===id), open=typeof vendorOpenBalance==='function'?vendorOpenBalance(id):0;
     return `<div class="v49-note">Vendor master record. Use <strong>Edit vendor</strong> to update contact, category, terms, default expense account, status, and notes without changing the vendor ID.</div>
-      <div class="v47-detail-grid"><div class="v47-detail-card"><h3>${escapeHTML(v.name||'Vendor')} ${v49StatusTag(v)}</h3>${v47Line('Vendor ID',v.id)}${v47Line('Contact',v51ContactDisplay(v))}${v47Line('Email',v.email||'â€”')}${v47Line('Phone',v.phone||'â€”')}${v47Line('Company / organization',v.company||'â€”')}${v47Line('Category',v.category||'â€”')}${v47Line('Terms',v.terms||'â€”')}</div><div class="v47-detail-card"><h3>Payables</h3>${v47Line('Open bills',v47Money(open))}${v47Line('Bill count',bills.length)}${v47Line('Expense count',expenses.length)}${v47Line('Default expense account',v47AccountLabel(v.expenseAccountId||''))}</div></div>
+      <div class="v47-detail-grid"><div class="v47-detail-card"><h3>${escapeHTML(v.name||'Vendor')} ${v49StatusTag(v)}</h3>${v47Line('Vendor ID',v.id)}${v47Line('Contact',v51ContactDisplay(v))}${v47Line('Email',v.email||'—')}${v47Line('Phone',v.phone||'—')}${v47Line('Company / organization',v.company||'—')}${v47Line('Category',v.category||'—')}${v47Line('Terms',v.terms||'—')}</div><div class="v47-detail-card"><h3>Payables</h3>${v47Line('Open bills',v47Money(open))}${v47Line('Bill count',bills.length)}${v47Line('Expense count',expenses.length)}${v47Line('Default expense account',v47AccountLabel(v.expenseAccountId||''))}</div></div>
       <div class="card table-card v47-detail-table" style="margin-top:14px">${table(['Bill','Due','Status','Total','Open'], bills.slice(0,8).map(b=>[`<button type="button" class="v49-record-button" data-action="view-bill" data-id="${escapeHTML(b.id)}">${escapeHTML(b.id)}</button>`,b.dueDate||'',b.status||'',v47Money(v47BillTotal(b)),v47Money(v47BillOpen(b))]))}</div>`;
   }
   try{ v47CustomerDetail = v51CustomerDetail; v47VendorDetail = v51VendorDetail; }catch(e){}
@@ -426,7 +426,7 @@
         const c=(state.customers||[]).find(x=>x.id===r.target.id);
         if(c){
           const open=(typeof customerOpenBalance==='function'?customerOpenBalance(c.id):0);
-          r.desc=`Contact: ${v51ContactDisplay(c)} Â· ${c.email||''} Â· Open balance ${v47Money(open)}`;
+          r.desc=`Contact: ${v51ContactDisplay(c)} · ${c.email||''} · Open balance ${v47Money(open)}`;
           r.keywords=v47Lower([r.title,r.desc,r.badge,r.path,r.target.id,c.name,c.company,v51ContactSearchText(c),c.type,'customer contact receivable invoice estimate'].join(' '));
           r.norm=v47Norm([r.title,r.desc,r.badge,r.path,r.target.id,r.keywords].join(' '));
         }
@@ -434,7 +434,7 @@
       if(r?.target?.kind==='vendor'){
         const v=(state.vendors||[]).find(x=>x.id===r.target.id);
         if(v){
-          r.desc=`Contact: ${v51ContactDisplay(v)} Â· ${v.category||'Vendor'} Â· ${v.email||''}`;
+          r.desc=`Contact: ${v51ContactDisplay(v)} · ${v.category||'Vendor'} · ${v.email||''}`;
           r.keywords=v47Lower([r.title,r.desc,r.badge,r.path,r.target.id,v.name,v.company,v51ContactSearchText(v),v.category,'vendor supplier payable bill contact'].join(' '));
           r.norm=v47Norm([r.title,r.desc,r.badge,r.path,r.target.id,r.keywords].join(' '));
         }
@@ -503,7 +503,7 @@
     currentModal='v52CustomerStatements';
     document.getElementById('modalTitle').textContent='Customer statements';
     document.getElementById('modalSubtitle').textContent='Statement batch preview for selected customers.';
-    document.getElementById('modalBody').innerHTML=`<div class="v49-note"><strong>Statement batch:</strong> This prepares statements for the selected customers. No emails are sent automatically in this demo app.</div>${table(['Customer','Contact','Email','Open balance','Status'], rows.map(c=>[`<strong>${escapeHTML(c.name||'')}</strong><div class="muted small">${escapeHTML(c.id)}</div>`,escapeHTML(v51ContactDisplay(c)),escapeHTML(c.email||'â€”'),`<span class="amount">${money(customerOpenBalance(c.id))}</span>`,v49StatusTag(c)]))}`;
+    document.getElementById('modalBody').innerHTML=`<div class="v49-note"><strong>Statement batch:</strong> This prepares statements for the selected customers. No emails are sent automatically in this demo app.</div>${table(['Customer','Contact','Email','Open balance','Status'], rows.map(c=>[`<strong>${escapeHTML(c.name||'')}</strong><div class="muted small">${escapeHTML(c.id)}</div>`,escapeHTML(v51ContactDisplay(c)),escapeHTML(c.email||'—'),`<span class="amount">${money(customerOpenBalance(c.id))}</span>`,v49StatusTag(c)]))}`;
     document.getElementById('modalFooter').innerHTML='<button type="button" class="btn" id="cancelModal">Close</button><button type="button" class="btn primary" data-action="customer-bulk-export-csv">Export CSV</button>';
     document.getElementById('cancelModal')?.addEventListener('click', closeModal);
     document.getElementById('modalBackdrop').classList.add('open');
@@ -631,7 +631,7 @@
       const actions=`<div class="v49-estimate-row-actions"><button type="button" class="btn" data-action="view-estimate" data-id="${escapeHTML(e.id)}">View</button>${status==='Converted'?`<button type="button" class="btn primary" data-action="open-converted-invoice" data-id="${escapeHTML(inv)}">View invoice</button>`:`<button type="button" class="btn" data-action="edit-estimate" data-id="${escapeHTML(e.id)}">Edit</button>`}</div>`;
       return [`<button type="button" class="v49-record-button" data-action="view-estimate" data-id="${escapeHTML(e.id)}">${escapeHTML(e.estimateNumber||e.id)}</button>${linked}`,escapeHTML(getCustomer(e.customerId).name),escapeHTML(e.date||''),v52EstimateStatusTag(e),`<span class="amount">${money(estimateAmount(e))}</span>`,actions];
     });
-    return `<div class="card table-card" style="margin-top:16px"><div class="toolbar"><div><h3 style="margin:0">Recent estimates</h3><div class="muted small">Newest estimates created from + New or Sales â†’ Estimates. Converted estimates reconcile from linked invoices automatically.</div></div><button class="btn" data-modal="estimate">New estimate</button></div>${table(['Estimate','Customer','Date','Status','Total','Actions'], rows)}</div>`;
+    return `<div class="card table-card" style="margin-top:16px"><div class="toolbar"><div><h3 style="margin:0">Recent estimates</h3><div class="muted small">Newest estimates created from + New or Sales → Estimates. Converted estimates reconcile from linked invoices automatically.</div></div><button class="btn" data-modal="estimate">New estimate</button></div>${table(['Estimate','Customer','Date','Status','Total','Actions'], rows)}</div>`;
   };
 
   const v52RenderEstimateHubBase = renderEstimateHub;
@@ -712,7 +712,7 @@
         const e=(state.estimates||[]).find(x=>x.id===r.target.id);
         if(e){
           const status=v52EstimateDisplayStatus(e), inv=v52LinkedInvoiceId(e);
-          r.desc=`${status} Â· ${e.date||''} Â· ${v47Money(estimateAmount(e))}${inv?' Â· Invoice '+inv:''}`;
+          r.desc=`${status} · ${e.date||''} · ${v47Money(estimateAmount(e))}${inv?' · Invoice '+inv:''}`;
           r.keywords=v47Lower([r.keywords,status,inv,'converted linked invoice estimate quote'].join(' '));
           r.norm=v47Norm([r.title,r.desc,r.path,r.keywords].join(' '));
         }
@@ -1018,7 +1018,7 @@
       const linked=inv?`<div class="v54-linked-invoice">Linked invoice: <button type="button" class="v49-record-button" data-action="open-converted-invoice" data-id="${escapeHTML(inv)}">${escapeHTML(inv)}</button></div>`:'';
       return [`<button type="button" class="v49-record-button" data-action="view-estimate" data-id="${escapeHTML(e.id)}">${escapeHTML(e.estimateNumber||e.id)}</button>${linked}`,escapeHTML(getCustomer(e.customerId).name),escapeHTML(e.date||''),v54EstimateStatusTag(e),`<span class="amount">${money(n.amount)}</span>`,v54EstimateActionButtons(e)];
     });
-    return `<div class="card table-card" style="margin-top:16px"><div class="toolbar"><div><h3 style="margin:0">Recent estimates</h3><div class="muted small">Newest estimates created from + New or Sales â†’ Estimates. Status is reconciled from linked and matching invoices.</div></div><button class="btn" data-modal="estimate">New estimate</button></div>${table(['Estimate','Customer','Date','Status','Total','Actions'], rows)}</div>`;
+    return `<div class="card table-card" style="margin-top:16px"><div class="toolbar"><div><h3 style="margin:0">Recent estimates</h3><div class="muted small">Newest estimates created from + New or Sales → Estimates. Status is reconciled from linked and matching invoices.</div></div><button class="btn" data-modal="estimate">New estimate</button></div>${table(['Estimate','Customer','Date','Status','Total','Actions'], rows)}</div>`;
   };
 
   renderEstimateHub = function(){
@@ -1230,7 +1230,7 @@
       const n=v54EstimateNormalizedRecord(e,false);
       return [v55EstimateNumberCell(e,n.invoiceId),escapeHTML(getCustomer(e.customerId).name),escapeHTML(e.date||''),v55EstimateStatusCell(e),`<span class="amount">${money(n.amount)}</span>`,v54EstimateActionButtons(e)];
     });
-    return `<div class="card table-card" style="margin-top:16px"><div class="toolbar"><div><h3 style="margin:0">Recent estimates</h3><div class="muted small">Newest estimates created from + New or Sales â†’ Estimates. Status and actions use the same reconciliation as the main Estimates table.</div></div><button class="btn" data-modal="estimate">New estimate</button></div>${table(['Estimate','Customer','Date','Status','Total','Actions'], rows)}</div>`;
+    return `<div class="card table-card" style="margin-top:16px"><div class="toolbar"><div><h3 style="margin:0">Recent estimates</h3><div class="muted small">Newest estimates created from + New or Sales → Estimates. Status and actions use the same reconciliation as the main Estimates table.</div></div><button class="btn" data-modal="estimate">New estimate</button></div>${table(['Estimate','Customer','Date','Status','Total','Actions'], rows)}</div>`;
   };
 
   renderEstimateHub = function(){
@@ -1246,7 +1246,7 @@
       const n=v54EstimateNormalizedRecord(e,false);
       return [v55EstimateNumberCell(e,n.invoiceId),escapeHTML(getCustomer(e.customerId).name),escapeHTML(e.date||''),escapeHTML(e.expiryDate||''),v55EstimateStatusCell(e),`<span class="amount">${money(n.amount)}</span>`,v54EstimateActionButtons(e)];
     });
-    return `<div class="estimate-hub"><div class="v55-reconciled-note">V55 sync: Sales â†’ Estimates and Recent Estimates use one status/action helper. Accepted estimates stay Accepted and cannot be downgraded to Sent by older activity widgets.</div>
+    return `<div class="estimate-hub"><div class="v55-reconciled-note">V55 sync: Sales → Estimates and Recent Estimates use one status/action helper. Accepted estimates stay Accepted and cannot be downgraded to Sent by older activity widgets.</div>
       <div class="v54-sync-note"><span>Estimate status is centralized: Converted status is derived from explicit links, invoice references, and legacy customer/amount/date matches.</span><button class="btn" data-action="estimate-sync-refresh">Refresh sync</button></div>
       <div class="section-header"><div><h2>Estimates</h2><p>Create, send, accept, decline, and convert non-posting estimates into invoices.</p></div><button class="btn primary" data-modal="estimate">Create estimate</button></div>
       <div class="estimate-kpi-grid"><div class="estimate-kpi"><span>Total estimate value</span><strong>${money(total)}</strong></div><div class="estimate-kpi"><span>Draft</span><strong>${draft}</strong></div><div class="estimate-kpi"><span>Sent / accepted</span><strong>${sent+accepted}</strong></div><div class="estimate-kpi"><span>Converted</span><strong>${converted}</strong></div></div>
@@ -1323,7 +1323,7 @@
     const el=document.getElementById('page-'+page);
     if(!el) return;
     const label=(typeof v45PageLabel==='function') ? v45PageLabel(page) : (page==='sales'?'Sales & Get Paid':page==='customers'?'Customers & Leads':page);
-    const actions=(typeof v45PageActions==='function') ? v45PageActions(page) : '<button class="btn primary" data-open-create>ï¼‹ New</button>';
+    const actions=(typeof v45PageActions==='function') ? v45PageActions(page) : '<button class="btn primary" data-open-create>＋ New</button>';
     el.innerHTML=`${header(escapeHTML(label), 'This workspace opened, but one content block could not render.', actions)}<div class="v56-render-error"><h3>Workspace content render issue</h3><p>${escapeHTML(err?.message || String(err || 'Unknown render error'))}</p><button class="btn" data-action="v56-refresh-active">Try refresh</button></div>`;
   }
   function v56RenderWorkspace(page){

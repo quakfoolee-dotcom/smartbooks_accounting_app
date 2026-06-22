@@ -16,6 +16,8 @@
       <button class="rail-btn active" data-nav="dashboard"><span class="rail-icon">▦</span><span>Dash</span></button>
       <button class="rail-btn" data-nav="reports"><span class="rail-icon">↗</span><span>Reports</span></button>
       <button class="rail-btn" data-nav="apps"><span class="rail-icon">▩</span><span>Apps</span></button>
+      <button class="rail-btn" data-nav="setup"><span class="rail-icon">☑</span><span>Setup</span></button>
+      <button class="rail-btn" data-nav="settings"><span class="rail-icon">⚙</span><span>Settings</span></button>
       <div class="rail-spacer"></div>
       <button class="rail-btn" id="railCustomize"><span class="rail-icon">⚙</span><span>Customize</span></button>
     </aside>
@@ -136,10 +138,14 @@
     </div>
   </div>
   <div class="toast" id="toast"></div>
+  <script src="./src/services/navigation-model.js"></script>
+  <script src="./src/services/icon-service.js"></script>
+  <script src="./src/services/storage-service.js"></script>
   <script src="./src/main.js"></script>
   <script src="./src/features/sales-tax-inventory-ui.js"></script>
   <script src="./src/features/workflows-and-reporting.js"></script>
   <script src="./src/features/dashboard-widgets.js"></script>
+  <script src="./src/features/menu-customization.js"></script>
   <script src="./src/features/navigation-search.js"></script>
   <script src="./src/features/record-workflows.js"></script>
   <script src="./src/runtime/stability-and-api.js"></script>

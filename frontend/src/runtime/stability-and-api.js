@@ -449,7 +449,7 @@
 
   // ---------- V59: post-refactor audit fixes for persistence, natural dedupe, and status sync ----------
   // This layer keeps V58's central routing model, but tightens confirmed audit findings:
-  // 1) localStorage now saves through a guarded writer with a last-good backup.
+  // 1) persistence now saves through a guarded writer with a last-good backup.
   // 2) duplicate detection uses natural business keys where IDs differ because of duplicate submits.
   // 3) customer/vendor/invoice/estimate/bill references are rewired after dedupe.
   // 4) status reconciliation is dirty-gated to reduce menu/icon click latency.
@@ -729,16 +729,25 @@
     try{
       v59Runtime.dirty=true;
       v58ReconcileData(true);
-      const payload=JSON.stringify(state);
-      localStorage.setItem(STORE_KEY, payload);
-      try{ localStorage.setItem(STORE_KEY+'_v59_last_good', payload); }catch(backupErr){ console.warn('V59 backup save skipped', backupErr); }
+      const persistence = window.SmartBooksPersistence;
+      const result = persistence
+        ? persistence.save(state, { key:STORE_KEY, backupKey:STORE_KEY+'_v59_last_good' })
+        : { ok:true, payload:JSON.stringify(state) };
+      if(!persistence){
+        localStorage.setItem(STORE_KEY, result.payload);
+        try{ localStorage.setItem(STORE_KEY+'_v59_last_good', result.payload); }catch(backupErr){ console.warn('V59 backup save skipped', backupErr); }
+      }
+      if(!result.ok) throw result.error;
       v59Runtime.lastSavedAt=Date.now();
       v59Runtime.lastSaveError=null;
       return true;
     }catch(err){
       v59Runtime.lastSaveError=err;
       console.warn('V59 localStorage save failed', err);
-      try{ sessionStorage.setItem(STORE_KEY+'_v59_unsaved_session_copy', JSON.stringify(state)); }catch(sessionErr){}
+      try{
+        if(window.SmartBooksPersistence) window.SmartBooksPersistence.saveSessionCopy(state, { key:STORE_KEY+'_v59_unsaved_session_copy' });
+        else sessionStorage.setItem(STORE_KEY+'_v59_unsaved_session_copy', JSON.stringify(state));
+      }catch(sessionErr){}
       try{ showToast('Save warning: browser storage did not accept the latest update. Export a backup.'); }catch(toastErr){}
       return false;
     }
@@ -1186,15 +1195,21 @@
 
     const Storage = {
       key: (typeof STORE_KEY !== 'undefined') ? STORE_KEY : 'smartbooks_state',
-      mode: 'local',
+      get mode(){ return window.SmartBooksPersistence?.mode || 'local'; },
+      set mode(value){ window.SmartBooksPersistence?.configure?.({ mode:value }); },
       getState(){ return canUseState() ? state : null; },
-      export(){ return clone(canUseState() ? state : {}); },
+      export(){ return window.SmartBooksPersistence ? window.SmartBooksPersistence.exportState(canUseState() ? state : {}) : clone(canUseState() ? state : {}); },
       save(){ return saveExisting(); },
       backup(label){
         if(!canUseState()) return false;
         try{
           const suffix = label ? String(label).replace(/[^a-z0-9_-]/gi,'_') : 'manual';
-          localStorage.setItem(this.key + '_v61_' + suffix + '_backup', JSON.stringify(state));
+          if(window.SmartBooksPersistence){
+            const result = window.SmartBooksPersistence.backup(state, 'v61_' + suffix, { key:this.key });
+            if(!result.ok) throw result.error;
+          }else{
+            localStorage.setItem(this.key + '_v61_' + suffix + '_backup', JSON.stringify(state));
+          }
           runtime.stats.backups++;
           return true;
         }catch(err){ safeWarn('V61 backup failed', err); return false; }
@@ -1239,7 +1254,10 @@
 
     const API = {
       get mode(){ return runtime.mode; },
-      set mode(value){ runtime.mode = ['local','backend','hybrid'].includes(String(value)) ? String(value) : 'local'; },
+      set mode(value){
+        runtime.mode = ['local','backend','hybrid'].includes(String(value)) ? String(value) : 'local';
+        try{ window.SmartBooksPersistence?.configure?.({ mode:runtime.mode }); }catch(e){}
+      },
       customers:{ list:()=>Data.list('customers'), create:(d,o)=>Data.create('customers',d,o), update:(id,d,o)=>Data.update('customers',id,d,o) },
       vendors:{ list:()=>Data.list('vendors'), create:(d,o)=>Data.create('vendors',d,o), update:(id,d,o)=>Data.update('vendors',id,d,o) },
       estimates:{ list:()=>Data.list('estimates'), create:(d,o)=>Data.create('estimates',d,o), update:(id,d,o)=>Data.update('estimates',id,d,o) },
@@ -1247,6 +1265,7 @@
       payments:{ list:()=>Data.list('payments'), create:(d,o)=>Data.create('payments',d,o) },
       bills:{ list:()=>Data.list('bills'), create:(d,o)=>Data.create('bills',d,o), update:(id,d,o)=>Data.update('bills',id,d,o) },
       storage: Storage,
+      persistence: window.SmartBooksPersistence || null,
       events: Events,
       status: Status,
       runtime: runtime

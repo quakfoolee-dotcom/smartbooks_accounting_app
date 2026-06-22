@@ -235,41 +235,41 @@
     return `<button type="button" class="gtd-step ${cls}" ${attrs}><span class="gtd-step-icon">${step.icon}</span>${step.badge||''}<strong>${escapeHTML(step.title)}</strong><small>${escapeHTML(step.sub||'')}</small></button>`;
   }
   function v10FlowRow(label,steps){
-    return `<div class="gtd-lane"><div class="gtd-lane-label">${escapeHTML(label)}</div><div class="gtd-lane-flow">${steps.map((s,i)=>v10Step(s)+(i<steps.length-1?'<span class="gtd-arrow">â†’</span>':'')).join('')}</div></div>`;
+    return `<div class="gtd-lane"><div class="gtd-lane-label">${escapeHTML(label)}</div><div class="gtd-lane-flow">${steps.map((s,i)=>v10Step(s)+(i<steps.length-1?'<span class="gtd-arrow">→</span>':'')).join('')}</div></div>`;
   }
   function renderGetThingsDoneFlow(){
     const s=v10Summary();
     const moneyIn=[
-      {title:'Add products & services',sub:`${s.products} active items`,icon:'â–£',nav:'inventory',badge:v10StepBadge(s.products,'good')},
-      {title:'Manage customers',sub:`${s.customers} customer records`,icon:'â˜˜',nav:'customers',badge:v10StepBadge(s.customers,'good')},
-      {title:'Create estimates',sub:`${s.estimates} estimates`,icon:'â–¤',modal:'estimate',badge:v10StepBadge(s.estimates,'info')},
-      {title:'Send invoices',sub:`${s.draftInvoices.length} draft or unsent`,icon:'â–§',modal:'invoice',attention:s.draftInvoices.length>0,badge:v10StepBadge(s.draftInvoices.length,'warn')},
-      {title:'Receive payments',sub:`${v10MoneyValue(s.openAmountTotal)} open A/R`,icon:'â–£',modal:'payment',attention:s.openInvoices.length>0,badge:v10StepBadge(s.openInvoices.length,'warn')},
-      {title:'Deposit to bank',sub:`${s.deposits} deposits recorded`,icon:'â—‰',modal:'deposit',badge:v10StepBadge(s.deposits,'good')}
+      {title:'Add products & services',sub:`${s.products} active items`,icon:'▣',nav:'inventory',badge:v10StepBadge(s.products,'good')},
+      {title:'Manage customers',sub:`${s.customers} customer records`,icon:'☘',nav:'customers',badge:v10StepBadge(s.customers,'good')},
+      {title:'Create estimates',sub:`${s.estimates} estimates`,icon:'▤',modal:'estimate',badge:v10StepBadge(s.estimates,'info')},
+      {title:'Send invoices',sub:`${s.draftInvoices.length} draft or unsent`,icon:'▧',modal:'invoice',attention:s.draftInvoices.length>0,badge:v10StepBadge(s.draftInvoices.length,'warn')},
+      {title:'Receive payments',sub:`${v10MoneyValue(s.openAmountTotal)} open A/R`,icon:'▣',modal:'payment',attention:s.openInvoices.length>0,badge:v10StepBadge(s.openInvoices.length,'warn')},
+      {title:'Deposit to bank',sub:`${s.deposits} deposits recorded`,icon:'◉',modal:'deposit',badge:v10StepBadge(s.deposits,'good')}
     ];
     const moneyOut=[
-      {title:'Add vendors',sub:`${(state.vendors||[]).length} vendor records`,icon:'â–¡',modal:'vendor',badge:v10StepBadge((state.vendors||[]).length,'good')},
-      {title:'Record bill / expense',sub:'Capture purchases and tax',icon:'â–¸',modal:'bill'},
-      {title:'Pay bills',sub:`${v10MoneyValue(s.openBillTotal)} open A/P`,icon:'â–£',modal:'payBill',attention:s.openBills.length>0,badge:v10StepBadge(s.dueBills.length || s.openBills.length,'warn')},
-      {title:'Review bank feed',sub:`${s.bankToReview.length} to review`,icon:'â‡„',nav:'banking',attention:s.bankToReview.length>0,badge:v10StepBadge(s.bankToReview.length,'warn')}
+      {title:'Add vendors',sub:`${(state.vendors||[]).length} vendor records`,icon:'□',modal:'vendor',badge:v10StepBadge((state.vendors||[]).length,'good')},
+      {title:'Record bill / expense',sub:'Capture purchases and tax',icon:'▸',modal:'bill'},
+      {title:'Pay bills',sub:`${v10MoneyValue(s.openBillTotal)} open A/P`,icon:'▣',modal:'payBill',attention:s.openBills.length>0,badge:v10StepBadge(s.dueBills.length || s.openBills.length,'warn')},
+      {title:'Review bank feed',sub:`${s.bankToReview.length} to review`,icon:'⇄',nav:'banking',attention:s.bankToReview.length>0,badge:v10StepBadge(s.bankToReview.length,'warn')}
     ];
     const accounting=[
-      {title:'Connect / manage bank',sub:'Bank accounts and feeds',icon:'â—‰',nav:'banking'},
-      {title:'Review transactions',sub:`${s.bankToReview.length} review items`,icon:'âœ“',nav:'transactions',attention:s.bankToReview.length>0,badge:v10StepBadge(s.bankToReview.length,'warn')},
-      {title:'Reconcile',sub:s.recLabel,icon:'â—Ž',modal:'reconcile',muted:!s.latestRec},
-      {title:'See reports & trends',sub:'P&L, Balance Sheet, A/R, A/P',icon:'â†—',nav:'reports'}
+      {title:'Connect / manage bank',sub:'Bank accounts and feeds',icon:'◉',nav:'banking'},
+      {title:'Review transactions',sub:`${s.bankToReview.length} review items`,icon:'✓',nav:'transactions',attention:s.bankToReview.length>0,badge:v10StepBadge(s.bankToReview.length,'warn')},
+      {title:'Reconcile',sub:s.recLabel,icon:'◎',modal:'reconcile',muted:!s.latestRec},
+      {title:'See reports & trends',sub:'P&L, Balance Sheet, A/R, A/P',icon:'↗',nav:'reports'}
     ];
     return `<div class="gtd-workspace"><div class="gtd-workspace-head"><div><h3>Workspace</h3><p>Follow the main accounting flow from setup to cash collection, vendor payment, bank review, reconciliation, and reporting.</p></div><button class="btn" data-modal="customize">Customize menu</button></div><div class="gtd-lanes">${v10FlowRow('Money in',moneyIn)}${v10FlowRow('Money out',moneyOut)}${v10FlowRow('Accounting and reports',accounting)}</div></div><div class="gtd-note"><strong>Design intent:</strong> this page keeps the dashboard clean while giving non-accounting users a guided place to start common workflows.</div>`;
   }
   function renderGetThingsDoneTasks(){
     const s=v10Summary();
     const tasks=[
-      {cls:s.bankToReview.length?'priority':'good',icon:'â‡„',title:'Review bank transactions',desc:`${s.bankToReview.length} bank-feed transactions need matching, categorization, or review.`,nav:'banking',label:'Review'},
-      {cls:s.openInvoices.length?'priority':'good',icon:'â–£',title:'Receive customer payments',desc:`${s.openInvoices.length} open invoices totaling ${v10MoneyValue(s.openAmountTotal)}.`,modal:'payment',label:'Receive payment'},
-      {cls:s.openBills.length?'priority':'good',icon:'â–¸',title:'Pay vendor bills',desc:`${s.openBills.length} open bills totaling ${v10MoneyValue(s.openBillTotal)}; ${s.dueBills.length} due or overdue.`,modal:'payBill',label:'Pay bill'},
-      {cls:s.draftInvoices.length?'priority':'good',icon:'â–§',title:'Send draft invoices',desc:`${s.draftInvoices.length} invoices appear draft or not yet sent.`,nav:'sales',label:'Open sales'},
-      {cls:!s.latestRec?'priority':'good',icon:'â—Ž',title:'Bank reconciliation',desc:s.recLabel,modal:'reconcile',label:'Reconcile'},
-      {cls:'good',icon:'â†—',title:'Run management reports',desc:'Review profit and loss, balance sheet, A/R aging, A/P aging, and tax summary.',nav:'reports',label:'Reports'}
+      {cls:s.bankToReview.length?'priority':'good',icon:'⇄',title:'Review bank transactions',desc:`${s.bankToReview.length} bank-feed transactions need matching, categorization, or review.`,nav:'banking',label:'Review'},
+      {cls:s.openInvoices.length?'priority':'good',icon:'▣',title:'Receive customer payments',desc:`${s.openInvoices.length} open invoices totaling ${v10MoneyValue(s.openAmountTotal)}.`,modal:'payment',label:'Receive payment'},
+      {cls:s.openBills.length?'priority':'good',icon:'▸',title:'Pay vendor bills',desc:`${s.openBills.length} open bills totaling ${v10MoneyValue(s.openBillTotal)}; ${s.dueBills.length} due or overdue.`,modal:'payBill',label:'Pay bill'},
+      {cls:s.draftInvoices.length?'priority':'good',icon:'▧',title:'Send draft invoices',desc:`${s.draftInvoices.length} invoices appear draft or not yet sent.`,nav:'sales',label:'Open sales'},
+      {cls:!s.latestRec?'priority':'good',icon:'◎',title:'Bank reconciliation',desc:s.recLabel,modal:'reconcile',label:'Reconcile'},
+      {cls:'good',icon:'↗',title:'Run management reports',desc:'Review profit and loss, balance sheet, A/R aging, A/P aging, and tax summary.',nav:'reports',label:'Reports'}
     ];
     return `<div class="gtd-task-grid"><div class="card"><h3>Priority tasks</h3><div class="gtd-task-list">${tasks.map(t=>`<div class="gtd-task ${t.cls}"><span class="gtd-task-icon">${t.icon}</span><div><strong>${escapeHTML(t.title)}</strong><span>${escapeHTML(t.desc)}</span></div><button class="btn" ${t.modal?`data-modal="${t.modal}"`:`data-nav="${t.nav}"`}>${escapeHTML(t.label)}</button></div>`).join('')}</div></div><div class="card"><h3>Task summary</h3><div class="report-line"><span>Open A/R</span><strong>${v10MoneyValue(s.openAmountTotal)}</strong></div><div class="report-line"><span>Open A/P</span><strong>${v10MoneyValue(s.openBillTotal)}</strong></div><div class="report-line"><span>Bank items to review</span><strong>${s.bankToReview.length}</strong></div><div class="report-line"><span>Reconciliation</span><strong>${escapeHTML(s.latestRec?'Started':'Not started')}</strong></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn" data-nav="banking">Banking</button><button class="btn" data-nav="sales">Sales</button><button class="btn" data-nav="expenses">Expenses</button></div></div></div>`;
   }
@@ -290,7 +290,7 @@
     const tab=['overview','tasks','workflows'].includes(state.settings.getThingsDoneTab) ? state.settings.getThingsDoneTab : 'overview';
     const s=v10Summary();
     const body=tab==='tasks' ? renderGetThingsDoneTasks() : tab==='workflows' ? renderGetThingsDoneTemplates() : renderGetThingsDoneFlow();
-    el.innerHTML=`<div class="gtd-hero"><div><h2>Get Things Done</h2><p>Guided workflows for money in, money out, banking, reconciliation, and reporting. This page is a navigation hub, so the dashboard can stay clean and lean.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-modal="invoice">Create invoice</button><button class="btn" data-modal="expense">Record expense</button><button class="btn primary" data-nav="banking">Review banking</button></div></div><div class="gtd-tabs"><button class="gtd-tab ${tab==='overview'?'active':''}" data-action="gtd-tab" data-id="overview">â–¦ Get things done</button><button class="gtd-tab ${tab==='tasks'?'active':''}" data-action="gtd-tab" data-id="tasks">âœ“ Tasks</button><button class="gtd-tab ${tab==='workflows'?'active':''}" data-action="gtd-tab" data-id="workflows">â† Workflows</button></div><div class="gtd-kpi-grid"><div class="gtd-kpi"><h3>Open A/R</h3><strong>${v10MoneyValue(s.openAmountTotal)}</strong><span>${s.openInvoices.length} invoices to collect</span></div><div class="gtd-kpi"><h3>Open A/P</h3><strong>${v10MoneyValue(s.openBillTotal)}</strong><span>${s.openBills.length} bills to manage</span></div><div class="gtd-kpi"><h3>Bank review</h3><strong>${s.bankToReview.length}</strong><span>transactions to review</span></div><div class="gtd-kpi"><h3>Reconciliation</h3><strong>${s.latestRec?'Active':'Start'}</strong><span>${escapeHTML(s.recLabel)}</span></div></div>${body}`;
+    el.innerHTML=`<div class="gtd-hero"><div><h2>Get Things Done</h2><p>Guided workflows for money in, money out, banking, reconciliation, and reporting. This page is a navigation hub, so the dashboard can stay clean and lean.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-modal="invoice">Create invoice</button><button class="btn" data-modal="expense">Record expense</button><button class="btn primary" data-nav="banking">Review banking</button></div></div><div class="gtd-tabs"><button class="gtd-tab ${tab==='overview'?'active':''}" data-action="gtd-tab" data-id="overview">▦ Get things done</button><button class="gtd-tab ${tab==='tasks'?'active':''}" data-action="gtd-tab" data-id="tasks">✓ Tasks</button><button class="gtd-tab ${tab==='workflows'?'active':''}" data-action="gtd-tab" data-id="workflows">↝ Workflows</button></div><div class="gtd-kpi-grid"><div class="gtd-kpi"><h3>Open A/R</h3><strong>${v10MoneyValue(s.openAmountTotal)}</strong><span>${s.openInvoices.length} invoices to collect</span></div><div class="gtd-kpi"><h3>Open A/P</h3><strong>${v10MoneyValue(s.openBillTotal)}</strong><span>${s.openBills.length} bills to manage</span></div><div class="gtd-kpi"><h3>Bank review</h3><strong>${s.bankToReview.length}</strong><span>transactions to review</span></div><div class="gtd-kpi"><h3>Reconciliation</h3><strong>${s.latestRec?'Active':'Start'}</strong><span>${escapeHTML(s.recLabel)}</span></div></div>${body}`;
   }
   const v10RenderMenuBase = renderMenu;
   renderMenu = function(){
@@ -299,7 +299,7 @@
     const list=document.getElementById('menuList'); if(!list) return;
     const existing=list.querySelector('[data-nav="getthingsdone"]');
     if(existing) existing.remove();
-    list.insertAdjacentHTML('afterbegin',`<button class="nav-item ${currentPage==='getthingsdone'?'active':''}" data-nav="getthingsdone"><span class="dot">âœ“</span>Get Things Done<span class="nav-chevron">â€º</span></button>`);
+    list.insertAdjacentHTML('afterbegin',`<button class="nav-item ${currentPage==='getthingsdone'?'active':''}" data-nav="getthingsdone"><span class="dot">✓</span>Get Things Done<span class="nav-chevron">›</span></button>`);
   };
   const v10RenderPageBase = renderPage;
   renderPage = function(page){
@@ -349,21 +349,21 @@
   }
   function v11Text(v){ return escapeHTML(v ?? ''); }
   function v11CustomerInvoiceOptions(){
-    const opts=(state.invoices||[]).map(i=>`<option value="${i.id}">${v11Text(i.id)} Â· ${v11Text(getCustomer(i.customerId).name)} Â· open ${money(openAmount(i))}</option>`).join('');
+    const opts=(state.invoices||[]).map(i=>`<option value="${i.id}">${v11Text(i.id)} · ${v11Text(getCustomer(i.customerId).name)} · open ${money(openAmount(i))}</option>`).join('');
     return `<option value="">Do not apply now</option>${opts}`;
   }
   function v11OpenBillOptions(){
-    const opts=(state.bills||[]).filter(b=>billOpenAmount(b)>0.005).map(b=>`<option value="${b.id}">${v11Text(b.id)} Â· ${v11Text(getVendor(b.vendorId).name)} Â· open ${money(billOpenAmount(b))}</option>`).join('');
+    const opts=(state.bills||[]).filter(b=>billOpenAmount(b)>0.005).map(b=>`<option value="${b.id}">${v11Text(b.id)} · ${v11Text(getVendor(b.vendorId).name)} · open ${money(billOpenAmount(b))}</option>`).join('');
     return `<option value="">Do not apply now</option>${opts}`;
   }
   function v11EmployeeOptions(){
     ensureV11State();
-    const employees=(state.employees||[]).map(e=>`<option value="${v11Text(e.name)}">${v11Text(e.name)}${e.title?` Â· ${v11Text(e.title)}`:''}</option>`).join('');
+    const employees=(state.employees||[]).map(e=>`<option value="${v11Text(e.name)}">${v11Text(e.name)}${e.title?` · ${v11Text(e.title)}`:''}</option>`).join('');
     const existingTimeNames=[...new Set((state.timeEntries||[]).map(t=>t.employee).filter(Boolean))].map(n=>`<option value="${v11Text(n)}">${v11Text(n)}</option>`).join('');
     return employees || existingTimeNames || '<option value="Alex Chen">Alex Chen</option>';
   }
   function v11CreditCardAccountOptions(){
-    const opts=(state.chartOfAccounts||[]).filter(a=>a.type==='Liability' || a.detail==='Credit Card').map(a=>`<option value="${a.id}">${v11Text(a.code)} Â· ${v11Text(a.name)}</option>`).join('');
+    const opts=(state.chartOfAccounts||[]).filter(a=>a.type==='Liability' || a.detail==='Credit Card').map(a=>`<option value="${a.id}">${v11Text(a.code)} · ${v11Text(a.name)}</option>`).join('');
     return opts || accountOptions(['Liability']);
   }
   function v11CheckNumber(){
@@ -382,7 +382,7 @@
     ensureV11State();
     if(type==='statement') return `<div class="form-grid"><div class="field"><label>Customer</label><select name="customerId">${customerOptions()}</select></div><div class="field"><label>Statement date</label><input type="date" name="date" value="${todayISO()}"></div><div class="field"><label>Start period</label><input type="date" name="startDate" value="${addDaysISO(-30)}"></div><div class="field"><label>End period</label><input type="date" name="endDate" value="${todayISO()}"></div><div class="field"><label>Include</label><select name="includeMode"><option>Open invoices only</option><option>All activity in period</option><option>Open invoices plus payments</option></select></div><div class="field"><label>Delivery method</label><select name="delivery"><option>Email</option><option>Print / PDF</option><option>Internal preview only</option></select></div><div class="field full"><label>Customer message</label><textarea name="message">Please find your account statement attached. Thank you for your business.</textarea></div></div>${v11StatementPreviewNote()}`;
     if(type==='creditMemo') return `<div class="form-grid"><div class="field"><label>Customer</label><select name="customerId">${customerOptions()}</select></div><div class="field"><label>Date</label><input type="date" name="date" value="${todayISO()}"></div><div class="field full"><label>Apply to invoice</label><select name="invoiceId">${v11CustomerInvoiceOptions()}</select></div><div class="field"><label>Product / service</label><select name="productId">${productOptions()}</select></div><div class="field"><label>Income account</label><select name="incomeAccountId">${accountOptions(['Income'])}</select></div><div class="field"><label>Amount before tax</label><input type="number" step="0.01" min="0" name="amount" value="100"></div><div class="field"><label>Tax adjustment</label><input type="number" step="0.01" min="0" name="tax" value="5"></div><div class="field full"><label>Reason</label><input name="reason" value="Customer credit / service adjustment"></div></div><div class="tax-form-note">A credit memo reduces customer receivables when applied to an open invoice. If not applied now, it stays available as an unapplied customer credit.</div>`;
-    if(type==='shippingLabel') return `<div class="form-grid"><div class="field"><label>Customer / order</label><select name="customerId">${customerOptions()}</select></div><div class="field"><label>Ship date</label><input type="date" name="shipDate" value="${todayISO()}"></div><div class="field full"><label>Ship from</label><input name="shipFrom" value="${v11Text(state.company.name || 'Your Company')}, BC, Canada"></div><div class="field full"><label>Ship to</label><input name="shipTo" value="Customer shipping address"></div><div class="field"><label>Carrier</label><select name="carrier"><option>Canada Post</option><option>UPS</option><option>FedEx</option><option>DHL</option><option>Local courier</option></select></div><div class="field"><label>Service level</label><select name="serviceLevel"><option>Ground</option><option>Express</option><option>Priority</option><option>Pickup / local delivery</option></select></div><div class="field"><label>Package weight kg</label><input type="number" step="0.01" min="0" name="weightKg" value="1.00"></div><div class="field"><label>Dimensions LÃ—WÃ—H cm</label><input name="dimensions" value="30 x 20 x 10"></div><div class="field full"><label>Tracking number</label><input name="trackingNo" value=""></div></div>`;
+    if(type==='shippingLabel') return `<div class="form-grid"><div class="field"><label>Customer / order</label><select name="customerId">${customerOptions()}</select></div><div class="field"><label>Ship date</label><input type="date" name="shipDate" value="${todayISO()}"></div><div class="field full"><label>Ship from</label><input name="shipFrom" value="${v11Text(state.company.name || 'Your Company')}, BC, Canada"></div><div class="field full"><label>Ship to</label><input name="shipTo" value="Customer shipping address"></div><div class="field"><label>Carrier</label><select name="carrier"><option>Canada Post</option><option>UPS</option><option>FedEx</option><option>DHL</option><option>Local courier</option></select></div><div class="field"><label>Service level</label><select name="serviceLevel"><option>Ground</option><option>Express</option><option>Priority</option><option>Pickup / local delivery</option></select></div><div class="field"><label>Package weight kg</label><input type="number" step="0.01" min="0" name="weightKg" value="1.00"></div><div class="field"><label>Dimensions L×W×H cm</label><input name="dimensions" value="30 x 20 x 10"></div><div class="field full"><label>Tracking number</label><input name="trackingNo" value=""></div></div>`;
     if(type==='refundReceipt') return `<div class="form-grid"><div class="field"><label>Customer</label><select name="customerId">${customerOptions()}</select></div><div class="field"><label>Date</label><input type="date" name="date" value="${todayISO()}"></div><div class="field"><label>Refund from</label><select name="accountId">${bankOptions()}</select></div><div class="field"><label>Product / service</label><select name="productId">${productOptions()}</select></div><div class="field"><label>Amount before tax</label><input type="number" step="0.01" min="0" name="amount" value="100"></div><div class="field"><label>Tax refunded</label><input type="number" step="0.01" min="0" name="tax" value="5"></div><div class="field full"><label>Reason</label><input name="reason" value="Customer refund"></div></div><div class="tax-form-note">Refund receipt records money returned to the customer from the selected bank account.</div>`;
     if(type==='delayedCredit') return `<div class="form-grid"><div class="field"><label>Customer</label><select name="customerId">${customerOptions()}</select></div><div class="field"><label>Date</label><input type="date" name="date" value="${todayISO()}"></div><div class="field"><label>Product / service</label><select name="productId">${productOptions()}</select></div><div class="field"><label>Amount before tax</label><input type="number" step="0.01" min="0" name="amount" value="100"></div><div class="field"><label>Tax</label><input type="number" step="0.01" min="0" name="tax" value="5"></div><div class="field"><label>Status</label><select name="status"><option>Available</option><option>Applied</option><option>Void</option></select></div><div class="field full"><label>Reason</label><input name="reason" value="Credit to apply later"></div></div>`;
     if(type==='delayedCharge') return `<div class="form-grid"><div class="field"><label>Customer</label><select name="customerId">${customerOptions()}</select></div><div class="field"><label>Date</label><input type="date" name="date" value="${todayISO()}"></div><div class="field"><label>Product / service</label><select name="productId">${productOptions()}</select></div><div class="field"><label>Amount before tax</label><input type="number" step="0.01" min="0" name="amount" value="100"></div><div class="field"><label>Tax</label><input type="number" step="0.01" min="0" name="tax" value="5"></div><div class="field"><label>Billable</label><select name="billable"><option>Yes, add to future invoice</option><option>No, internal only</option></select></div><div class="field full"><label>Description</label><input name="description" value="Charge to add to next invoice"></div></div>`;
@@ -395,7 +395,7 @@
     if(type==='weeklyTimesheet') return `<div class="form-grid"><div class="field"><label>Week start date</label><input type="date" name="weekStart" value="${todayISO()}"></div><div class="field"><label>Team member</label><select name="employee">${v11EmployeeOptions()}</select></div><div class="field full"><label>Customer / project</label><select name="customerId">${customerOptions()}</select></div>${v11WeekdayInputs()}<div class="field"><label>Billable</label><select name="billable"><option value="true">Billable</option><option value="false">Non-billable</option></select></div><div class="field full"><label>Notes</label><input name="notes" value="Weekly timesheet"></div></div>`;
     if(type==='reviewTime'){
       const entries=(state.timeEntries||[]).filter(t=>t.status!=='Approved').slice(0,8);
-      const rows=entries.map(t=>`<label class="check-row"><input type="checkbox" name="timeEntryIds" value="${v11Text(t.id)}" checked><div><strong>${v11Text(t.employee||'Team member')} Â· ${v11Text(t.date||'No date')}</strong><div class="muted small">${num(t.hours)} hours Â· ${t.billable?'Billable':'Non-billable'} Â· ${v11Text(getCustomer(t.customerId||'').name||'No customer')}</div></div><span class="tag open">${v11Text(t.status||'Submitted')}</span></label>`).join('');
+      const rows=entries.map(t=>`<label class="check-row"><input type="checkbox" name="timeEntryIds" value="${v11Text(t.id)}" checked><div><strong>${v11Text(t.employee||'Team member')} · ${v11Text(t.date||'No date')}</strong><div class="muted small">${num(t.hours)} hours · ${t.billable?'Billable':'Non-billable'} · ${v11Text(getCustomer(t.customerId||'').name||'No customer')}</div></div><span class="tag open">${v11Text(t.status||'Submitted')}</span></label>`).join('');
       return `<div class="form-grid"><div class="field"><label>Review action</label><select name="reviewAction"><option value="Approved">Approve selected</option><option value="Rejected">Reject selected</option><option value="Needs revision">Needs revision</option></select></div><div class="field"><label>Reviewer</label><input name="reviewer" value="Quak"></div><div class="field full"><label>Reviewer notes</label><input name="notes" value="Reviewed from + New workflow"></div></div><div class="checklist" style="margin-top:14px">${rows || '<div class="empty">No submitted time entries to review.</div>'}</div>`;
     }
     if(type==='employee') return `<div class="form-grid"><div class="field"><label>Full name</label><input name="name" required></div><div class="field"><label>Email</label><input type="email" name="email"></div><div class="field"><label>Phone</label><input name="phone"></div><div class="field"><label>Start date</label><input type="date" name="startDate" value="${todayISO()}"></div><div class="field"><label>Job title</label><input name="title" value="Team member"></div><div class="field"><label>Department</label><input name="department" value="Operations"></div><div class="field"><label>Pay type</label><select name="payType"><option>Hourly</option><option>Salary</option><option>Commission</option></select></div><div class="field"><label>Pay rate</label><input type="number" step="0.01" min="0" name="rate" value="30"></div><div class="field"><label>Status</label><select name="status"><option>Active</option><option>Onboarding</option><option>Inactive</option></select></div></div>`;
@@ -564,10 +564,10 @@
     state.creditCardCredits ||= []; state.checkPrintRuns ||= []; state.payrollRuns ||= []; state.weeklyTimesheets ||= [];
     state.timeApprovals ||= []; state.employees ||= []; state.contractors ||= []; state.creditCardPayments ||= [];
   }
-  function v12Date(v){ return escapeHTML(v || 'â€”'); }
+  function v12Date(v){ return escapeHTML(v || '—'); }
   function v12Status(s){ return tagForStatus(s || 'Draft'); }
-  function v12CustomerName(id){ return escapeHTML((getCustomer(id)||{}).name || 'â€”'); }
-  function v12VendorName(id){ return escapeHTML((getVendor(id)||{}).name || 'â€”'); }
+  function v12CustomerName(id){ return escapeHTML((getCustomer(id)||{}).name || '—'); }
+  function v12VendorName(id){ return escapeHTML((getVendor(id)||{}).name || '—'); }
   function v12MetricCards(cards){
     return `<div class="v12-record-grid">${cards.map(c=>`<div class="v12-record-card"><h4>${escapeHTML(c.label)}</h4><strong>${c.value}</strong><span>${escapeHTML(c.sub||'')}</span></div>`).join('')}</div>`;
   }
@@ -587,14 +587,14 @@
         {label:'Pending charges',value:pendingDelayed.length,sub:'ready to add to future invoice'},
         {label:'Unapplied credits',value:unappliedCredits,sub:'available customer credits'}
       ])+
-      `<div class="grid two"><div class="card table-card"><div class="toolbar"><div><h3 style="margin:0">Statements</h3><div class="muted small">Customer statements prepared from + New.</div></div></div>${table(['Statement','Customer','Period','Open balance','Delivery','Status'], v12SafeRows(state.statements, r=>[`<strong>${escapeHTML(r.id)}</strong>`,v12CustomerName(r.customerId),`${v12Date(r.startDate)} â†’ ${v12Date(r.endDate)}`,`<span class="amount">${money(r.openBalance)}</span>`,escapeHTML(r.delivery||'â€”'),v12Status(r.status)]))}</div>`+
+      `<div class="grid two"><div class="card table-card"><div class="toolbar"><div><h3 style="margin:0">Statements</h3><div class="muted small">Customer statements prepared from + New.</div></div></div>${table(['Statement','Customer','Period','Open balance','Delivery','Status'], v12SafeRows(state.statements, r=>[`<strong>${escapeHTML(r.id)}</strong>`,v12CustomerName(r.customerId),`${v12Date(r.startDate)} → ${v12Date(r.endDate)}`,`<span class="amount">${money(r.openBalance)}</span>`,escapeHTML(r.delivery||'—'),v12Status(r.status)]))}</div>`+
       `<div class="card table-card"><div class="toolbar"><div><h3 style="margin:0">Customer credits, refunds, and delayed items</h3><div class="muted small">Credit memos, refund receipts, delayed credits, and delayed charges.</div></div></div>${table(['Type','Reference','Customer','Date','Amount','Status'], [
         ...v12SafeRows(state.creditMemos, r=>['Credit memo',`<strong>${escapeHTML(r.id)}</strong>`,v12CustomerName(r.customerId),v12Date(r.date),`<span class="amount">${money(r.total)}</span>`,v12Status(r.status)]),
         ...v12SafeRows(state.refundReceipts, r=>['Refund receipt',`<strong>${escapeHTML(r.id)}</strong>`,v12CustomerName(r.customerId),v12Date(r.date),`<span class="amount">${money(r.total)}</span>`,v12Status(r.status)]),
         ...v12SafeRows(state.delayedCredits, r=>['Delayed credit',`<strong>${escapeHTML(r.id)}</strong>`,v12CustomerName(r.customerId),v12Date(r.date),`<span class="amount">${money(r.total)}</span>`,v12Status(r.status)]),
         ...v12SafeRows(state.delayedCharges, r=>['Delayed charge',`<strong>${escapeHTML(r.id)}</strong>`,v12CustomerName(r.customerId),v12Date(r.date),`<span class="amount">${money(r.total)}</span>`,v12Status(r.status)])
       ].sort((a,b)=>String(b[3]).localeCompare(String(a[3]))))}</div></div>`+
-      `<div class="card table-card" style="margin-top:16px"><div class="toolbar"><div><h3 style="margin:0">Shipping labels</h3><div class="muted small">Shipment records created from + New.</div></div><button class="btn" data-modal="shippingLabel">Create label</button></div>${table(['Label','Customer','Ship date','Carrier','Service','Tracking','Status'], v12SafeRows(state.shippingLabels, r=>[`<strong>${escapeHTML(r.id)}</strong>`,v12CustomerName(r.customerId),v12Date(r.shipDate),escapeHTML(r.carrier||'â€”'),escapeHTML(r.serviceLevel||'â€”'),escapeHTML(r.trackingNo||'â€”'),v12Status(r.status)]))}</div>`;
+      `<div class="card table-card" style="margin-top:16px"><div class="toolbar"><div><h3 style="margin:0">Shipping labels</h3><div class="muted small">Shipment records created from + New.</div></div><button class="btn" data-modal="shippingLabel">Create label</button></div>${table(['Label','Customer','Ship date','Carrier','Service','Tracking','Status'], v12SafeRows(state.shippingLabels, r=>[`<strong>${escapeHTML(r.id)}</strong>`,v12CustomerName(r.customerId),v12Date(r.shipDate),escapeHTML(r.carrier||'—'),escapeHTML(r.serviceLevel||'—'),escapeHTML(r.trackingNo||'—'),v12Status(r.status)]))}</div>`;
   }
   function v12ExpenseRecordHub(){
     ensureV12State();
@@ -608,13 +608,13 @@
         {label:'Card payments',value:money(ccPayments),sub:'credit-card paydown recorded'},
         {label:'Print runs',value:(state.checkPrintRuns||[]).length,sub:'prepared check batches'}
       ])+
-      `<div class="grid two"><div class="card table-card"><div class="toolbar"><div><h3 style="margin:0">Checks and print runs</h3><div class="muted small">Checks posted from + New and optional check print batches.</div></div><button class="btn" data-action="v12-mark-checks-printed">Mark all printed</button></div>${table(['Check','Vendor','Date','No.','Total','Printed','Status'], v12SafeRows(state.checks, r=>[`<strong>${escapeHTML(r.id)}</strong>`,v12VendorName(r.vendorId),v12Date(r.date),escapeHTML(r.checkNo||'â€”'),`<span class="amount">${money(r.total)}</span>`,r.printed?'Yes':'No',v12Status(r.status)]))}</div>`+
+      `<div class="grid two"><div class="card table-card"><div class="toolbar"><div><h3 style="margin:0">Checks and print runs</h3><div class="muted small">Checks posted from + New and optional check print batches.</div></div><button class="btn" data-action="v12-mark-checks-printed">Mark all printed</button></div>${table(['Check','Vendor','Date','No.','Total','Printed','Status'], v12SafeRows(state.checks, r=>[`<strong>${escapeHTML(r.id)}</strong>`,v12VendorName(r.vendorId),v12Date(r.date),escapeHTML(r.checkNo||'—'),`<span class="amount">${money(r.total)}</span>`,r.printed?'Yes':'No',v12Status(r.status)]))}</div>`+
       `<div class="card table-card"><div class="toolbar"><div><h3 style="margin:0">Vendor and credit-card credits</h3><div class="muted small">Credits and card-credit records saved from + New.</div></div></div>${table(['Type','Reference','Vendor','Date','Amount','Status'], [
         ...v12SafeRows(state.vendorCredits, r=>['Vendor credit',`<strong>${escapeHTML(r.id)}</strong>`,v12VendorName(r.vendorId),v12Date(r.date),`<span class="amount">${money(r.total)}</span>`,v12Status(r.status)]),
         ...v12SafeRows(state.creditCardCredits, r=>['Credit-card credit',`<strong>${escapeHTML(r.id)}</strong>`,v12VendorName(r.vendorId),v12Date(r.date),`<span class="amount">${money(r.total)}</span>`,v12Status(r.status)]),
         ...v12SafeRows(state.creditCardPayments, r=>['Card payment',`<strong>${escapeHTML(r.id)}</strong>`,escapeHTML(accountLabel(r.creditCardAccountId)||'Credit card'),v12Date(r.date),`<span class="amount">${money(r.amount)}</span>`,v12Status(r.status)])
       ].sort((a,b)=>String(b[3]).localeCompare(String(a[3]))))}</div></div>`+
-      `<div class="card table-card" style="margin-top:16px"><div class="toolbar"><div><h3 style="margin:0">Check print runs</h3><div class="muted small">Prepared check printing batches.</div></div><button class="btn" data-modal="printChecks">Print checks</button></div>${table(['Run','Date','Bank','Starting no.','Format','Marked printed','Status'], v12SafeRows(state.checkPrintRuns, r=>[`<strong>${escapeHTML(r.id)}</strong>`,v12Date(r.date),escapeHTML(getBank(r.bankAccountId).name||'â€”'),escapeHTML(r.startNo||'â€”'),escapeHTML(r.format||'â€”'),r.markPrinted?'Yes':'No',v12Status(r.status)]))}</div>`;
+      `<div class="card table-card" style="margin-top:16px"><div class="toolbar"><div><h3 style="margin:0">Check print runs</h3><div class="muted small">Prepared check printing batches.</div></div><button class="btn" data-modal="printChecks">Print checks</button></div>${table(['Run','Date','Bank','Starting no.','Format','Marked printed','Status'], v12SafeRows(state.checkPrintRuns, r=>[`<strong>${escapeHTML(r.id)}</strong>`,v12Date(r.date),escapeHTML(getBank(r.bankAccountId).name||'—'),escapeHTML(r.startNo||'—'),escapeHTML(r.format||'—'),r.markPrinted?'Yes':'No',v12Status(r.status)]))}</div>`;
   }
   function v12TimeRecordHub(){
     ensureV12State();
@@ -629,8 +629,8 @@
         {label:'Timesheets',value:(state.weeklyTimesheets||[]).length,sub:'weekly submissions'}
       ])+
       (submitted.length?`<div class="v12-task-callout warn"><div><strong>${submitted.length} time entries need review</strong><span>Approve submitted time or reject entries before billing/payroll.</span></div><button class="btn primary" data-modal="reviewTime">Review time</button></div>`:'')+
-      `<div class="grid two"><div class="card table-card"><div class="toolbar"><div><h3 style="margin:0">Weekly timesheets</h3><div class="muted small">Weekly submissions from + New.</div></div></div>${table(['Timesheet','Team member','Week start','Customer','Hours','Billable','Status'], v12SafeRows(state.weeklyTimesheets, r=>[`<strong>${escapeHTML(r.id)}</strong>`,escapeHTML(r.employee||'â€”'),v12Date(r.weekStart),v12CustomerName(r.customerId),num(r.totalHours).toFixed(2),r.billable?'Yes':'No',v12Status(r.status)]))}</div>`+
-      `<div class="card table-card"><div class="toolbar"><div><h3 style="margin:0">Time reviews</h3><div class="muted small">Approval/rejection history.</div></div></div>${table(['Review','Date','Reviewer','Action','Entries','Notes'], v12SafeRows(state.timeApprovals, r=>[`<strong>${escapeHTML(r.id)}</strong>`,v12Date(r.date),escapeHTML(r.reviewer||'â€”'),v12Status(r.action),Array.isArray(r.timeEntryIds)?r.timeEntryIds.length:0,escapeHTML(r.notes||'')]))}</div></div>`;
+      `<div class="grid two"><div class="card table-card"><div class="toolbar"><div><h3 style="margin:0">Weekly timesheets</h3><div class="muted small">Weekly submissions from + New.</div></div></div>${table(['Timesheet','Team member','Week start','Customer','Hours','Billable','Status'], v12SafeRows(state.weeklyTimesheets, r=>[`<strong>${escapeHTML(r.id)}</strong>`,escapeHTML(r.employee||'—'),v12Date(r.weekStart),v12CustomerName(r.customerId),num(r.totalHours).toFixed(2),r.billable?'Yes':'No',v12Status(r.status)]))}</div>`+
+      `<div class="card table-card"><div class="toolbar"><div><h3 style="margin:0">Time reviews</h3><div class="muted small">Approval/rejection history.</div></div></div>${table(['Review','Date','Reviewer','Action','Entries','Notes'], v12SafeRows(state.timeApprovals, r=>[`<strong>${escapeHTML(r.id)}</strong>`,v12Date(r.date),escapeHTML(r.reviewer||'—'),v12Status(r.action),Array.isArray(r.timeEntryIds)?r.timeEntryIds.length:0,escapeHTML(r.notes||'')]))}</div></div>`;
   }
   function v12PayrollHub(){
     ensureV12State();
@@ -642,18 +642,18 @@
         {label:'Gross payroll',value:money(gross),sub:'saved payroll runs'},
         {label:'Net pay',value:money(net),sub:'after deductions'}
       ])+
-      `<div class="grid two"><div class="card table-card"><div class="toolbar"><div><h3 style="margin:0">Payroll runs</h3><div class="muted small">Pay summaries saved from + New.</div></div></div>${table(['Run','Employee','Pay date','Period','Gross','Deductions','Net','Status'], v12SafeRows(state.payrollRuns, r=>[`<strong>${escapeHTML(r.id)}</strong>`,escapeHTML(r.employee||'â€”'),v12Date(r.payDate),`${v12Date(r.periodStart)} â†’ ${v12Date(r.periodEnd)}`,`<span class="amount">${money(r.grossPay)}</span>`,`<span class="amount">${money(r.deductions)}</span>`,`<span class="amount">${money(r.netPay)}</span>`,v12Status(r.status)]))}</div>`+
-      `<div class="card table-card"><div class="toolbar"><div><h3 style="margin:0">Employees</h3><div class="muted small">Employee setup records.</div></div></div>${table(['Employee','Title','Department','Pay type','Rate','Status'], v12SafeRows(state.employees, r=>[`<strong>${escapeHTML(r.name||'â€”')}</strong><div class="muted small">${escapeHTML(r.email||'')}</div>`,escapeHTML(r.title||'â€”'),escapeHTML(r.department||'â€”'),escapeHTML(r.payType||'â€”'),`<span class="amount">${money(r.rate)}</span>`,v12Status(r.status||'Active')]))}</div></div>`+
-      `<div class="card table-card" style="margin-top:16px"><div class="toolbar"><div><h3 style="margin:0">Contractors</h3><div class="muted small">Contractor records and optional vendor links.</div></div><button class="btn" data-modal="contractor">Add contractor</button></div>${table(['Contractor','Service type','Rate type','Rate','Payment terms','Vendor link'], v12SafeRows(state.contractors, r=>[`<strong>${escapeHTML(r.name||'â€”')}</strong><div class="muted small">${escapeHTML(r.email||'')}</div>`,escapeHTML(r.serviceType||'â€”'),escapeHTML(r.rateType||'â€”'),`<span class="amount">${money(r.rate)}</span>`,escapeHTML(r.terms||'â€”'),r.vendorId?escapeHTML(getVendor(r.vendorId).name):'â€”']))}</div>`;
+      `<div class="grid two"><div class="card table-card"><div class="toolbar"><div><h3 style="margin:0">Payroll runs</h3><div class="muted small">Pay summaries saved from + New.</div></div></div>${table(['Run','Employee','Pay date','Period','Gross','Deductions','Net','Status'], v12SafeRows(state.payrollRuns, r=>[`<strong>${escapeHTML(r.id)}</strong>`,escapeHTML(r.employee||'—'),v12Date(r.payDate),`${v12Date(r.periodStart)} → ${v12Date(r.periodEnd)}`,`<span class="amount">${money(r.grossPay)}</span>`,`<span class="amount">${money(r.deductions)}</span>`,`<span class="amount">${money(r.netPay)}</span>`,v12Status(r.status)]))}</div>`+
+      `<div class="card table-card"><div class="toolbar"><div><h3 style="margin:0">Employees</h3><div class="muted small">Employee setup records.</div></div></div>${table(['Employee','Title','Department','Pay type','Rate','Status'], v12SafeRows(state.employees, r=>[`<strong>${escapeHTML(r.name||'—')}</strong><div class="muted small">${escapeHTML(r.email||'')}</div>`,escapeHTML(r.title||'—'),escapeHTML(r.department||'—'),escapeHTML(r.payType||'—'),`<span class="amount">${money(r.rate)}</span>`,v12Status(r.status||'Active')]))}</div></div>`+
+      `<div class="card table-card" style="margin-top:16px"><div class="toolbar"><div><h3 style="margin:0">Contractors</h3><div class="muted small">Contractor records and optional vendor links.</div></div><button class="btn" data-modal="contractor">Add contractor</button></div>${table(['Contractor','Service type','Rate type','Rate','Payment terms','Vendor link'], v12SafeRows(state.contractors, r=>[`<strong>${escapeHTML(r.name||'—')}</strong><div class="muted small">${escapeHTML(r.email||'')}</div>`,escapeHTML(r.serviceType||'—'),escapeHTML(r.rateType||'—'),`<span class="amount">${money(r.rate)}</span>`,escapeHTML(r.terms||'—'),r.vendorId?escapeHTML(getVendor(r.vendorId).name):'—']))}</div>`;
   }
   const v12RenderSalesBase=renderSales;
   renderSales=function(){ injectV12RecordStyles(); ensureV12State(); v12RenderSalesBase(); document.getElementById('page-sales')?.insertAdjacentHTML('beforeend', v12SalesRecordHub()); };
   const v12RenderCustomersBase=renderCustomers;
-  renderCustomers=function(){ injectV12RecordStyles(); ensureV12State(); v12RenderCustomersBase(); const el=document.getElementById('page-customers'); el?.insertAdjacentHTML('beforeend', v12SectionTitle('Customer statement history','Prepared statements are connected to customer records.',`<button class="btn" data-modal="statement">Prepare statement</button>`)+`<div class="card table-card">${table(['Statement','Customer','Date','Period','Open balance','Status'], v12SafeRows(state.statements, r=>[`<strong>${escapeHTML(r.id)}</strong>`,v12CustomerName(r.customerId),v12Date(r.date),`${v12Date(r.startDate)} â†’ ${v12Date(r.endDate)}`,`<span class="amount">${money(r.openBalance)}</span>`,v12Status(r.status)]))}</div>`); };
+  renderCustomers=function(){ injectV12RecordStyles(); ensureV12State(); v12RenderCustomersBase(); const el=document.getElementById('page-customers'); el?.insertAdjacentHTML('beforeend', v12SectionTitle('Customer statement history','Prepared statements are connected to customer records.',`<button class="btn" data-modal="statement">Prepare statement</button>`)+`<div class="card table-card">${table(['Statement','Customer','Date','Period','Open balance','Status'], v12SafeRows(state.statements, r=>[`<strong>${escapeHTML(r.id)}</strong>`,v12CustomerName(r.customerId),v12Date(r.date),`${v12Date(r.startDate)} → ${v12Date(r.endDate)}`,`<span class="amount">${money(r.openBalance)}</span>`,v12Status(r.status)]))}</div>`); };
   const v12RenderExpensesBase=renderExpenses;
   renderExpenses=function(){ injectV12RecordStyles(); ensureV12State(); v12RenderExpensesBase(); document.getElementById('page-expenses')?.insertAdjacentHTML('beforeend', v12ExpenseRecordHub()); };
   const v12RenderVendorsBase=renderVendors;
-  renderVendors=function(){ injectV12RecordStyles(); ensureV12State(); v12RenderVendorsBase(); const el=document.getElementById('page-vendors'); el?.insertAdjacentHTML('beforeend', v12SectionTitle('Vendor credit history','Vendor credits and check payments linked to vendor workflows.',`<button class="btn" data-modal="vendorCredit">Vendor credit</button><button class="btn" data-modal="check">Write check</button>`)+`<div class="grid two"><div class="card table-card">${table(['Credit','Vendor','Date','Amount','Status'], v12SafeRows(state.vendorCredits, r=>[`<strong>${escapeHTML(r.id)}</strong>`,v12VendorName(r.vendorId),v12Date(r.date),`<span class="amount">${money(r.total)}</span>`,v12Status(r.status)]))}</div><div class="card table-card">${table(['Check','Vendor','Date','No.','Total','Status'], v12SafeRows(state.checks, r=>[`<strong>${escapeHTML(r.id)}</strong>`,v12VendorName(r.vendorId),v12Date(r.date),escapeHTML(r.checkNo||'â€”'),`<span class="amount">${money(r.total)}</span>`,v12Status(r.status)]))}</div></div>`); };
+  renderVendors=function(){ injectV12RecordStyles(); ensureV12State(); v12RenderVendorsBase(); const el=document.getElementById('page-vendors'); el?.insertAdjacentHTML('beforeend', v12SectionTitle('Vendor credit history','Vendor credits and check payments linked to vendor workflows.',`<button class="btn" data-modal="vendorCredit">Vendor credit</button><button class="btn" data-modal="check">Write check</button>`)+`<div class="grid two"><div class="card table-card">${table(['Credit','Vendor','Date','Amount','Status'], v12SafeRows(state.vendorCredits, r=>[`<strong>${escapeHTML(r.id)}</strong>`,v12VendorName(r.vendorId),v12Date(r.date),`<span class="amount">${money(r.total)}</span>`,v12Status(r.status)]))}</div><div class="card table-card">${table(['Check','Vendor','Date','No.','Total','Status'], v12SafeRows(state.checks, r=>[`<strong>${escapeHTML(r.id)}</strong>`,v12VendorName(r.vendorId),v12Date(r.date),escapeHTML(r.checkNo||'—'),`<span class="amount">${money(r.total)}</span>`,v12Status(r.status)]))}</div></div>`); };
   const v12RenderTimeBase=renderTime;
   renderTime=function(){ injectV12RecordStyles(); ensureV12State(); v12RenderTimeBase(); document.getElementById('page-time')?.insertAdjacentHTML('beforeend', v12TimeRecordHub()); };
   renderPayroll=function(){ injectV12RecordStyles(); ensureV12State(); const el=document.getElementById('page-payroll'); if(el) el.innerHTML=v12PayrollHub(); };
@@ -666,7 +666,7 @@
       ...v12SafeRows(state.checks, r=>({date:r.date,source:'Check',ref:r.id,name:(getVendor(r.vendorId)||{}).name,amount:-num(r.total),status:r.status})),
       ...v12SafeRows(state.creditCardPayments, r=>({date:r.date,source:'Credit-card payment',ref:r.id,name:accountLabel(r.creditCardAccountId),amount:-num(r.amount),status:r.status}))
     ].sort((a,b)=>String(b.date).localeCompare(String(a.date)));
-    document.getElementById('page-transactions')?.insertAdjacentHTML('beforeend', v12SectionTitle('Additional + New records','Additional records created from + New are visible here.')+`<div class="card table-card">${table(['Date','Source','Reference','Name / Memo','Status','Amount'], records.map(r=>[v12Date(r.date),escapeHTML(r.source),`<strong>${escapeHTML(r.ref)}</strong>`,escapeHTML(r.name||'â€”'),v12Status(r.status),`<span class="amount">${money(r.amount)}</span>`]))}</div>`); };
+    document.getElementById('page-transactions')?.insertAdjacentHTML('beforeend', v12SectionTitle('Additional + New records','Additional records created from + New are visible here.')+`<div class="card table-card">${table(['Date','Source','Reference','Name / Memo','Status','Amount'], records.map(r=>[v12Date(r.date),escapeHTML(r.source),`<strong>${escapeHTML(r.ref)}</strong>`,escapeHTML(r.name||'—'),v12Status(r.status),`<span class="amount">${money(r.amount)}</span>`]))}</div>`); };
   function v12Summary(){
     const base=typeof v10Summary==='function'?v10Summary():{};
     ensureV12State();
@@ -683,16 +683,16 @@
     injectV12RecordStyles(); ensureV12State();
     const s=v12Summary();
     const tasks=[
-      {cls:s.bankToReview?.length?'priority':'good',icon:'â‡„',title:'Review bank transactions',desc:`${s.bankToReview?.length||0} bank-feed transactions need matching, categorization, or review.`,nav:'banking',label:'Review'},
-      {cls:s.openInvoices?.length?'priority':'good',icon:'â–£',title:'Receive customer payments',desc:`${s.openInvoices?.length||0} open invoices totaling ${v10MoneyValue(s.openAmountTotal||0)}.`,modal:'payment',label:'Receive payment'},
-      {cls:s.pendingDelayedCharges.length?'priority':'good',icon:'ï¼‹',title:'Invoice delayed charges',desc:`${s.pendingDelayedCharges.length} delayed charges are ready to add to future invoices.`,modal:'invoice',label:'Create invoice'},
-      {cls:s.unappliedCredits.length?'priority':'good',icon:'â†©',title:'Apply customer credits',desc:`${s.unappliedCredits.length} customer credit records are available or unapplied.`,nav:'sales',label:'Open sales'},
-      {cls:s.openBills?.length?'priority':'good',icon:'â–¸',title:'Pay vendor bills',desc:`${s.openBills?.length||0} open bills totaling ${v10MoneyValue(s.openBillTotal||0)}; ${s.dueBills?.length||0} due or overdue.`,modal:'payBill',label:'Pay bill'},
-      {cls:s.unappliedVendorCredits.length?'priority':'good',icon:'â–¡',title:'Apply vendor credits',desc:`${s.unappliedVendorCredits.length} vendor credits are unapplied.`,nav:'expenses',label:'Open expenses'},
-      {cls:s.submittedTime.length?'priority':'good',icon:'â—·',title:'Review time entries',desc:`${s.submittedTime.length} submitted time entries are waiting for review.`,modal:'reviewTime',label:'Review time'},
-      {cls:s.unprintedChecks.length?'priority':'good',icon:'â˜‘',title:'Print or mark checks',desc:`${s.unprintedChecks.length} checks have not been marked printed.`,modal:'printChecks',label:'Print checks'},
-      {cls:!s.latestRec?'priority':'good',icon:'â—Ž',title:'Bank reconciliation',desc:s.recLabel||'No reconciliation saved yet',modal:'reconcile',label:'Reconcile'},
-      {cls:'good',icon:'â†—',title:'Run management reports',desc:'Review profit and loss, balance sheet, A/R aging, A/P aging, and tax summary.',nav:'reports',label:'Reports'}
+      {cls:s.bankToReview?.length?'priority':'good',icon:'⇄',title:'Review bank transactions',desc:`${s.bankToReview?.length||0} bank-feed transactions need matching, categorization, or review.`,nav:'banking',label:'Review'},
+      {cls:s.openInvoices?.length?'priority':'good',icon:'▣',title:'Receive customer payments',desc:`${s.openInvoices?.length||0} open invoices totaling ${v10MoneyValue(s.openAmountTotal||0)}.`,modal:'payment',label:'Receive payment'},
+      {cls:s.pendingDelayedCharges.length?'priority':'good',icon:'＋',title:'Invoice delayed charges',desc:`${s.pendingDelayedCharges.length} delayed charges are ready to add to future invoices.`,modal:'invoice',label:'Create invoice'},
+      {cls:s.unappliedCredits.length?'priority':'good',icon:'↩',title:'Apply customer credits',desc:`${s.unappliedCredits.length} customer credit records are available or unapplied.`,nav:'sales',label:'Open sales'},
+      {cls:s.openBills?.length?'priority':'good',icon:'▸',title:'Pay vendor bills',desc:`${s.openBills?.length||0} open bills totaling ${v10MoneyValue(s.openBillTotal||0)}; ${s.dueBills?.length||0} due or overdue.`,modal:'payBill',label:'Pay bill'},
+      {cls:s.unappliedVendorCredits.length?'priority':'good',icon:'□',title:'Apply vendor credits',desc:`${s.unappliedVendorCredits.length} vendor credits are unapplied.`,nav:'expenses',label:'Open expenses'},
+      {cls:s.submittedTime.length?'priority':'good',icon:'◷',title:'Review time entries',desc:`${s.submittedTime.length} submitted time entries are waiting for review.`,modal:'reviewTime',label:'Review time'},
+      {cls:s.unprintedChecks.length?'priority':'good',icon:'☑',title:'Print or mark checks',desc:`${s.unprintedChecks.length} checks have not been marked printed.`,modal:'printChecks',label:'Print checks'},
+      {cls:!s.latestRec?'priority':'good',icon:'◎',title:'Bank reconciliation',desc:s.recLabel||'No reconciliation saved yet',modal:'reconcile',label:'Reconcile'},
+      {cls:'good',icon:'↗',title:'Run management reports',desc:'Review profit and loss, balance sheet, A/R aging, A/P aging, and tax summary.',nav:'reports',label:'Reports'}
     ];
     return `<div class="gtd-task-grid"><div class="card"><h3>Priority tasks</h3><div class="gtd-task-list">${tasks.map(t=>`<div class="gtd-task ${t.cls}"><span class="gtd-task-icon">${t.icon}</span><div><strong>${escapeHTML(t.title)}</strong><span>${escapeHTML(t.desc)}</span></div><button class="btn" ${t.modal?`data-modal="${t.modal}"`:`data-nav="${t.nav}"`}>${escapeHTML(t.label)}</button></div>`).join('')}</div></div><div class="card"><h3>Workflow summary</h3><div class="report-line"><span>Delayed charges</span><strong>${s.pendingDelayedCharges.length}</strong></div><div class="report-line"><span>Customer credits</span><strong>${s.unappliedCredits.length}</strong></div><div class="report-line"><span>Vendor credits</span><strong>${s.unappliedVendorCredits.length}</strong></div><div class="report-line"><span>Time entries to review</span><strong>${s.submittedTime.length}</strong></div><div class="report-line"><span>Employees / contractors</span><strong>${s.employees.length} / ${s.contractors.length}</strong></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn" data-nav="sales">Sales records</button><button class="btn" data-nav="expenses">Expense records</button><button class="btn" data-nav="time">Time</button><button class="btn" data-nav="payroll">Payroll</button></div></div></div>`;
   };
@@ -784,12 +784,12 @@
   }
   function v13WorkflowSummaryCard(s){
     const stats=[
-      {icon:'ï¼‹',label:'Delayed charges ready to invoice',value:s.pendingDelayedCharges.length,type:s.pendingDelayedCharges.length?'warn':'good'},
-      {icon:'â†©',label:'Customer credits to apply',value:s.unappliedCredits.length,type:s.unappliedCredits.length?'warn':'good'},
-      {icon:'â–¡',label:'Vendor credits to apply',value:s.unappliedVendorCredits.length,type:s.unappliedVendorCredits.length?'warn':'good'},
-      {icon:'â—·',label:'Submitted time entries to review',value:s.submittedTime.length,type:s.submittedTime.length?'warn':'good'},
-      {icon:'â˜‘',label:'Checks not marked printed',value:s.unprintedChecks.length,type:s.unprintedChecks.length?'warn':'good'},
-      {icon:'â™¢',label:`Payroll runs; ${s.employees.length} employees / ${s.contractors.length} contractors`,value:s.payrollRuns.length,type:'info'}
+      {icon:'＋',label:'Delayed charges ready to invoice',value:s.pendingDelayedCharges.length,type:s.pendingDelayedCharges.length?'warn':'good'},
+      {icon:'↩',label:'Customer credits to apply',value:s.unappliedCredits.length,type:s.unappliedCredits.length?'warn':'good'},
+      {icon:'□',label:'Vendor credits to apply',value:s.unappliedVendorCredits.length,type:s.unappliedVendorCredits.length?'warn':'good'},
+      {icon:'◷',label:'Submitted time entries to review',value:s.submittedTime.length,type:s.submittedTime.length?'warn':'good'},
+      {icon:'☑',label:'Checks not marked printed',value:s.unprintedChecks.length,type:s.unprintedChecks.length?'warn':'good'},
+      {icon:'♢',label:`Payroll runs; ${s.employees.length} employees / ${s.contractors.length} contractors`,value:s.payrollRuns.length,type:'info'}
     ];
     return `<div class="v13-summary-card"><div class="v13-summary-head"><div><h3>Workflow summary</h3><p>Key follow-up records from + New are now visible on the first Get Things Done page, not hidden only in the Tasks tab.</p></div><div class="v13-action-strip"><button class="btn" data-nav="sales">Sales records</button><button class="btn" data-nav="expenses">Expense records</button><button class="btn" data-nav="time">Time</button><button class="btn" data-nav="payroll">Payroll</button></div></div><div class="v13-summary-grid">${stats.map(v13MiniStat).join('')}</div></div>`;
   }
@@ -798,36 +798,36 @@
     injectV13GetThingsDoneStyles();
     const s=v13Summary();
     const moneyIn=[
-      {title:'Add products & services',sub:`${s.products} active items`,icon:'â–£',nav:'inventory',badge:v13Badge(s.products,'good')},
-      {title:'Manage customers',sub:`${s.customers} customer records`,icon:'â˜˜',nav:'customers',badge:v13Badge(s.customers,'good')},
-      {title:'Create estimates',sub:`${s.estimates} estimates`,icon:'â–¤',modal:'estimate',badge:v13Badge(s.estimates,'info')},
-      {title:'Send invoices',sub:`${s.draftInvoices.length} draft or unsent`,icon:'â–§',modal:'invoice',attention:s.draftInvoices.length>0,badge:v13Badge(s.draftInvoices.length,'warn')},
-      {title:'Invoice delayed charges',sub:`${s.pendingDelayedCharges.length} pending charges`,icon:'ï¼‹',modal:'invoice',attention:s.pendingDelayedCharges.length>0,badge:v13Badge(s.pendingDelayedCharges.length,'warn')},
-      {title:'Apply customer credits',sub:`${s.unappliedCredits.length} credits available`,icon:'â†©',nav:'sales',attention:s.unappliedCredits.length>0,badge:v13Badge(s.unappliedCredits.length,'warn')},
-      {title:'Receive payments',sub:`${v10MoneyValue(s.openAmountTotal)} open A/R`,icon:'â–£',modal:'payment',attention:s.openInvoices.length>0,badge:v13Badge(s.openInvoices.length,'warn')},
-      {title:'Deposit to bank',sub:`${s.deposits} deposits recorded`,icon:'â—‰',modal:'deposit',badge:v13Badge(s.deposits,'good')}
+      {title:'Add products & services',sub:`${s.products} active items`,icon:'▣',nav:'inventory',badge:v13Badge(s.products,'good')},
+      {title:'Manage customers',sub:`${s.customers} customer records`,icon:'☘',nav:'customers',badge:v13Badge(s.customers,'good')},
+      {title:'Create estimates',sub:`${s.estimates} estimates`,icon:'▤',modal:'estimate',badge:v13Badge(s.estimates,'info')},
+      {title:'Send invoices',sub:`${s.draftInvoices.length} draft or unsent`,icon:'▧',modal:'invoice',attention:s.draftInvoices.length>0,badge:v13Badge(s.draftInvoices.length,'warn')},
+      {title:'Invoice delayed charges',sub:`${s.pendingDelayedCharges.length} pending charges`,icon:'＋',modal:'invoice',attention:s.pendingDelayedCharges.length>0,badge:v13Badge(s.pendingDelayedCharges.length,'warn')},
+      {title:'Apply customer credits',sub:`${s.unappliedCredits.length} credits available`,icon:'↩',nav:'sales',attention:s.unappliedCredits.length>0,badge:v13Badge(s.unappliedCredits.length,'warn')},
+      {title:'Receive payments',sub:`${v10MoneyValue(s.openAmountTotal)} open A/R`,icon:'▣',modal:'payment',attention:s.openInvoices.length>0,badge:v13Badge(s.openInvoices.length,'warn')},
+      {title:'Deposit to bank',sub:`${s.deposits} deposits recorded`,icon:'◉',modal:'deposit',badge:v13Badge(s.deposits,'good')}
     ];
     const moneyOut=[
-      {title:'Add vendors',sub:`${(state.vendors||[]).length} vendor records`,icon:'â–¡',modal:'vendor',badge:v13Badge((state.vendors||[]).length,'good')},
-      {title:'Record bill / expense',sub:'Capture purchases and tax',icon:'â–¸',modal:'bill'},
-      {title:'Apply vendor credits',sub:`${s.unappliedVendorCredits.length} credits available`,icon:'â†©',nav:'expenses',attention:s.unappliedVendorCredits.length>0,badge:v13Badge(s.unappliedVendorCredits.length,'warn')},
-      {title:'Pay bills',sub:`${v10MoneyValue(s.openBillTotal)} open A/P`,icon:'â–£',modal:'payBill',attention:s.openBills.length>0,badge:v13Badge(s.dueBills.length || s.openBills.length,'warn')},
-      {title:'Print checks',sub:`${s.unprintedChecks.length} checks not printed`,icon:'â˜‘',modal:'printChecks',attention:s.unprintedChecks.length>0,badge:v13Badge(s.unprintedChecks.length,'warn')},
-      {title:'Review bank feed',sub:`${s.bankToReview.length} to review`,icon:'â‡„',nav:'banking',attention:s.bankToReview.length>0,badge:v13Badge(s.bankToReview.length,'warn')}
+      {title:'Add vendors',sub:`${(state.vendors||[]).length} vendor records`,icon:'□',modal:'vendor',badge:v13Badge((state.vendors||[]).length,'good')},
+      {title:'Record bill / expense',sub:'Capture purchases and tax',icon:'▸',modal:'bill'},
+      {title:'Apply vendor credits',sub:`${s.unappliedVendorCredits.length} credits available`,icon:'↩',nav:'expenses',attention:s.unappliedVendorCredits.length>0,badge:v13Badge(s.unappliedVendorCredits.length,'warn')},
+      {title:'Pay bills',sub:`${v10MoneyValue(s.openBillTotal)} open A/P`,icon:'▣',modal:'payBill',attention:s.openBills.length>0,badge:v13Badge(s.dueBills.length || s.openBills.length,'warn')},
+      {title:'Print checks',sub:`${s.unprintedChecks.length} checks not printed`,icon:'☑',modal:'printChecks',attention:s.unprintedChecks.length>0,badge:v13Badge(s.unprintedChecks.length,'warn')},
+      {title:'Review bank feed',sub:`${s.bankToReview.length} to review`,icon:'⇄',nav:'banking',attention:s.bankToReview.length>0,badge:v13Badge(s.bankToReview.length,'warn')}
     ];
     const timePayroll=[
-      {title:'Add employee',sub:`${s.employees.length} employees`,icon:'â™™',modal:'employee',badge:v13Badge(s.employees.length,'good')},
-      {title:'Add contractor',sub:`${s.contractors.length} contractors`,icon:'â™¢',modal:'contractor',badge:v13Badge(s.contractors.length,'good')},
-      {title:'Single time activity',sub:'Capture one-off time',icon:'â—·',modal:'singleActivity'},
-      {title:'Weekly timesheet',sub:'Capture weekly hours',icon:'â–¦',modal:'weeklyTimesheet'},
-      {title:'Review time',sub:`${s.submittedTime.length} entries submitted`,icon:'âœ“',modal:'reviewTime',attention:s.submittedTime.length>0,badge:v13Badge(s.submittedTime.length,'warn')},
-      {title:'Run payroll',sub:`${s.payrollRuns.length} payroll runs`,icon:'â™¢',modal:'payroll',badge:v13Badge(s.payrollRuns.length,'info')}
+      {title:'Add employee',sub:`${s.employees.length} employees`,icon:'♙',modal:'employee',badge:v13Badge(s.employees.length,'good')},
+      {title:'Add contractor',sub:`${s.contractors.length} contractors`,icon:'♢',modal:'contractor',badge:v13Badge(s.contractors.length,'good')},
+      {title:'Single time activity',sub:'Capture one-off time',icon:'◷',modal:'singleActivity'},
+      {title:'Weekly timesheet',sub:'Capture weekly hours',icon:'▦',modal:'weeklyTimesheet'},
+      {title:'Review time',sub:`${s.submittedTime.length} entries submitted`,icon:'✓',modal:'reviewTime',attention:s.submittedTime.length>0,badge:v13Badge(s.submittedTime.length,'warn')},
+      {title:'Run payroll',sub:`${s.payrollRuns.length} payroll runs`,icon:'♢',modal:'payroll',badge:v13Badge(s.payrollRuns.length,'info')}
     ];
     const accounting=[
-      {title:'Connect / manage bank',sub:'Bank accounts and feeds',icon:'â—‰',nav:'banking'},
-      {title:'Review transactions',sub:`${s.bankToReview.length} review items`,icon:'âœ“',nav:'transactions',attention:s.bankToReview.length>0,badge:v13Badge(s.bankToReview.length,'warn')},
-      {title:'Reconcile',sub:s.recLabel,icon:'â—Ž',modal:'reconcile',muted:!s.latestRec},
-      {title:'See reports & trends',sub:'P&L, Balance Sheet, A/R, A/P',icon:'â†—',nav:'reports'}
+      {title:'Connect / manage bank',sub:'Bank accounts and feeds',icon:'◉',nav:'banking'},
+      {title:'Review transactions',sub:`${s.bankToReview.length} review items`,icon:'✓',nav:'transactions',attention:s.bankToReview.length>0,badge:v13Badge(s.bankToReview.length,'warn')},
+      {title:'Reconcile',sub:s.recLabel,icon:'◎',modal:'reconcile',muted:!s.latestRec},
+      {title:'See reports & trends',sub:'P&L, Balance Sheet, A/R, A/P',icon:'↗',nav:'reports'}
     ];
     return `${v13WorkflowSummaryCard(s)}<div class="gtd-workspace"><div class="gtd-workspace-head"><div><h3>Workspace</h3><p>Follow the full accounting flow, including delayed charges, credits, time review, check printing, and payroll.</p></div><button class="btn" data-nav="setup">Setup</button></div><div class="gtd-lanes">${v10FlowRow('Money in',moneyIn)}${v10FlowRow('Money out',moneyOut)}${v10FlowRow('Time and payroll',timePayroll)}${v10FlowRow('Accounting and reports',accounting)}</div></div><div class="gtd-note"><strong>Workflow hub:</strong> use this page for guided, action-oriented accounting tasks while the dashboard stays focused on key metrics.</div>`;
   };
@@ -835,17 +835,17 @@
     injectV13GetThingsDoneStyles();
     const s=v13Summary();
     const tasks=[
-      {cls:s.bankToReview.length?'priority':'good',icon:'â‡„',title:'Review bank transactions',desc:`${s.bankToReview.length} bank-feed transactions need matching, categorization, or review.`,nav:'banking',label:'Review'},
-      {cls:s.openInvoices.length?'priority':'good',icon:'â–£',title:'Receive customer payments',desc:`${s.openInvoices.length} open invoices totaling ${v10MoneyValue(s.openAmountTotal)}.`,modal:'payment',label:'Receive payment'},
-      {cls:s.pendingDelayedCharges.length?'priority':'good',icon:'ï¼‹',title:'Invoice delayed charges',desc:`${s.pendingDelayedCharges.length} delayed charges are ready to add to future invoices.`,modal:'invoice',label:'Create invoice'},
-      {cls:s.unappliedCredits.length?'priority':'good',icon:'â†©',title:'Apply customer credits',desc:`${s.unappliedCredits.length} customer credit records are available or unapplied.`,nav:'sales',label:'Open sales'},
-      {cls:s.openBills.length?'priority':'good',icon:'â–¸',title:'Pay vendor bills',desc:`${s.openBills.length} open bills totaling ${v10MoneyValue(s.openBillTotal)}; ${s.dueBills.length} due or overdue.`,modal:'payBill',label:'Pay bill'},
-      {cls:s.unappliedVendorCredits.length?'priority':'good',icon:'â–¡',title:'Apply vendor credits',desc:`${s.unappliedVendorCredits.length} vendor credits are unapplied.`,nav:'expenses',label:'Open expenses'},
-      {cls:s.submittedTime.length?'priority':'good',icon:'â—·',title:'Review time entries',desc:`${s.submittedTime.length} submitted time entries are waiting for review.`,modal:'reviewTime',label:'Review time'},
-      {cls:s.unprintedChecks.length?'priority':'good',icon:'â˜‘',title:'Print or mark checks',desc:`${s.unprintedChecks.length} checks have not been marked printed.`,modal:'printChecks',label:'Print checks'},
-      {cls:(s.employees.length||s.contractors.length||s.payrollRuns.length)?'good':'priority',icon:'â™¢',title:'Payroll records',desc:`${s.employees.length} employees, ${s.contractors.length} contractors, and ${s.payrollRuns.length} payroll runs recorded.`,nav:'payroll',label:'Open payroll'},
-      {cls:!s.latestRec?'priority':'good',icon:'â—Ž',title:'Bank reconciliation',desc:s.recLabel||'No reconciliation saved yet',modal:'reconcile',label:'Reconcile'},
-      {cls:'good',icon:'â†—',title:'Run management reports',desc:'Review profit and loss, balance sheet, A/R aging, A/P aging, and tax summary.',nav:'reports',label:'Reports'}
+      {cls:s.bankToReview.length?'priority':'good',icon:'⇄',title:'Review bank transactions',desc:`${s.bankToReview.length} bank-feed transactions need matching, categorization, or review.`,nav:'banking',label:'Review'},
+      {cls:s.openInvoices.length?'priority':'good',icon:'▣',title:'Receive customer payments',desc:`${s.openInvoices.length} open invoices totaling ${v10MoneyValue(s.openAmountTotal)}.`,modal:'payment',label:'Receive payment'},
+      {cls:s.pendingDelayedCharges.length?'priority':'good',icon:'＋',title:'Invoice delayed charges',desc:`${s.pendingDelayedCharges.length} delayed charges are ready to add to future invoices.`,modal:'invoice',label:'Create invoice'},
+      {cls:s.unappliedCredits.length?'priority':'good',icon:'↩',title:'Apply customer credits',desc:`${s.unappliedCredits.length} customer credit records are available or unapplied.`,nav:'sales',label:'Open sales'},
+      {cls:s.openBills.length?'priority':'good',icon:'▸',title:'Pay vendor bills',desc:`${s.openBills.length} open bills totaling ${v10MoneyValue(s.openBillTotal)}; ${s.dueBills.length} due or overdue.`,modal:'payBill',label:'Pay bill'},
+      {cls:s.unappliedVendorCredits.length?'priority':'good',icon:'□',title:'Apply vendor credits',desc:`${s.unappliedVendorCredits.length} vendor credits are unapplied.`,nav:'expenses',label:'Open expenses'},
+      {cls:s.submittedTime.length?'priority':'good',icon:'◷',title:'Review time entries',desc:`${s.submittedTime.length} submitted time entries are waiting for review.`,modal:'reviewTime',label:'Review time'},
+      {cls:s.unprintedChecks.length?'priority':'good',icon:'☑',title:'Print or mark checks',desc:`${s.unprintedChecks.length} checks have not been marked printed.`,modal:'printChecks',label:'Print checks'},
+      {cls:(s.employees.length||s.contractors.length||s.payrollRuns.length)?'good':'priority',icon:'♢',title:'Payroll records',desc:`${s.employees.length} employees, ${s.contractors.length} contractors, and ${s.payrollRuns.length} payroll runs recorded.`,nav:'payroll',label:'Open payroll'},
+      {cls:!s.latestRec?'priority':'good',icon:'◎',title:'Bank reconciliation',desc:s.recLabel||'No reconciliation saved yet',modal:'reconcile',label:'Reconcile'},
+      {cls:'good',icon:'↗',title:'Run management reports',desc:'Review profit and loss, balance sheet, A/R aging, A/P aging, and tax summary.',nav:'reports',label:'Reports'}
     ];
     return `<div class="gtd-task-grid"><div class="card"><h3>Priority tasks</h3><div class="gtd-task-list">${tasks.map(t=>`<div class="gtd-task ${t.cls}"><span class="gtd-task-icon">${t.icon}</span><div><strong>${escapeHTML(t.title)}</strong><span>${escapeHTML(t.desc)}</span></div><button class="btn" ${t.modal?`data-modal="${t.modal}"`:`data-nav="${t.nav}"`}>${escapeHTML(t.label)}</button></div>`).join('')}</div></div><div class="card v13-task-summary-card"><h3>Workflow summary</h3><div class="report-line"><span>Delayed charges</span><strong>${s.pendingDelayedCharges.length}</strong></div><div class="report-line"><span>Customer credits</span><strong>${s.unappliedCredits.length}</strong></div><div class="report-line"><span>Vendor credits</span><strong>${s.unappliedVendorCredits.length}</strong></div><div class="report-line"><span>Time entries to review</span><strong>${s.submittedTime.length}</strong></div><div class="report-line"><span>Checks to print</span><strong>${s.unprintedChecks.length}</strong></div><div class="report-line"><span>Payroll runs</span><strong>${s.payrollRuns.length}</strong></div><div class="report-line"><span>Employees / contractors</span><strong>${s.employees.length} / ${s.contractors.length}</strong></div><div class="v13-action-strip"><button class="btn" data-nav="sales">Sales records</button><button class="btn" data-nav="expenses">Expense records</button><button class="btn" data-nav="time">Time</button><button class="btn" data-nav="payroll">Payroll</button></div></div></div>`;
   };
@@ -976,7 +976,7 @@
       <td style="width:110px"><input class="num" data-estimate-rate name="lineRate" type="number" min="0" step="0.01" value="${l.rate}"></td>
       <td style="width:92px"><input class="num" data-estimate-tax name="lineTaxRate" type="number" min="0" step="0.01" value="${l.taxRate}"></td>
       <td style="width:120px"><input class="num" data-estimate-line-amount value="${money(l.qty*l.rate)}" readonly></td>
-      <td style="width:70px;text-align:center"><button class="btn square" type="button" data-estimate-remove-line title="Remove line">Ã—</button></td>
+      <td style="width:70px;text-align:center"><button class="btn square" type="button" data-estimate-remove-line title="Remove line">×</button></td>
     </tr>`;
   }
   function estimateFormHTML(record=null){
@@ -1008,7 +1008,7 @@
           </table>
         </div>
         <div class="estimate-line-actions">
-          <button class="btn" type="button" data-estimate-add-line>ï¼‹ Add line</button>
+          <button class="btn" type="button" data-estimate-add-line>＋ Add line</button>
           <span class="muted small">Amounts update automatically from quantity, rate, discount, tax, and deposit.</span>
         </div>
       </div>
@@ -1096,7 +1096,7 @@
       const rate=row.querySelector('[data-estimate-rate]');
       const desc=row.querySelector('input[name="lineDesc"]');
       if(rate && !num(rate.value)) rate.value=Number(opt.dataset.price||0).toFixed(2);
-      if(desc && (!desc.value || desc.value==='Service item')) desc.value=(opt.textContent||'').split(' Â· ')[0];
+      if(desc && (!desc.value || desc.value==='Service item')) desc.value=(opt.textContent||'').split(' · ')[0];
       recalc();
     };
     body.addEventListener('input', recalc);
@@ -1160,13 +1160,13 @@
         if(idx>=0){
           state.estimates[idx]={...state.estimates[idx],...data, id:state.estimates[idx].id, estimateNumber:data.estimateNumber||state.estimates[idx].estimateNumber||state.estimates[idx].id, updatedAt:new Date().toISOString()};
           audit(`Estimate ${state.estimates[idx].estimateNumber||state.estimates[idx].id} updated`);
-          showToast('Estimate updated. View it under Sales â†’ Estimates.');
+          showToast('Estimate updated. View it under Sales → Estimates.');
         }
       }else{
         const est={id:uid('EST'), ...data, estimateNumber:data.estimateNumber||estimateNextNumber(), createdAt:new Date().toISOString()};
         state.estimates.unshift(est);
         audit(`Estimate ${est.estimateNumber||est.id} created for ${getCustomer(est.customerId).name}`);
-        showToast('Estimate saved. View it under Sales â†’ Estimates.');
+        showToast('Estimate saved. View it under Sales → Estimates.');
       }
       saveState(); closeModal(); renderAll(); return;
     }
@@ -1222,7 +1222,7 @@
   function estimateCustomerActivityHTML(){
     const estimates=(state.estimates||[]).slice(0,8);
     if(!estimates.length) return '';
-    return `<div class="card table-card" style="margin-top:16px"><div class="toolbar"><div><h3 style="margin:0">Recent estimates by customer</h3><div class="muted small">Estimates created from + New are visible here and under Sales â†’ Estimates.</div></div><button class="btn" data-modal="estimate">New estimate</button></div>${table(['Estimate','Customer','Date','Status','Total'], estimates.map(e=>[`<strong>${escapeHTML(e.estimateNumber||e.id)}</strong>`,escapeHTML(getCustomer(e.customerId).name),escapeHTML(e.date||''),estimateStatusTag(e.status),`<span class="amount">${money(estimateAmount(e))}</span>`]))}</div>`;
+    return `<div class="card table-card" style="margin-top:16px"><div class="toolbar"><div><h3 style="margin:0">Recent estimates by customer</h3><div class="muted small">Estimates created from + New are visible here and under Sales → Estimates.</div></div><button class="btn" data-modal="estimate">New estimate</button></div>${table(['Estimate','Customer','Date','Status','Total'], estimates.map(e=>[`<strong>${escapeHTML(e.estimateNumber||e.id)}</strong>`,escapeHTML(getCustomer(e.customerId).name),escapeHTML(e.date||''),estimateStatusTag(e.status),`<span class="amount">${money(estimateAmount(e))}</span>`]))}</div>`;
   }
   const estimateRenderCustomersBase=renderCustomers;
   renderCustomers=function(){
@@ -1261,7 +1261,7 @@
     const base=estimateRenderGetThingsDoneTasksBase();
     const accepted=(state.estimates||[]).filter(e=>String(e.status||'')==='Accepted' && !e.convertedInvoiceId);
     if(!accepted.length) return base;
-    const card=`<div class="card" style="margin-top:16px"><h3>Estimate follow-up</h3><div class="gtd-task-list">${accepted.map(e=>`<div class="gtd-task priority"><span class="gtd-task-icon">â–¤</span><div><strong>${escapeHTML(e.estimateNumber||e.id)} is accepted</strong><span>Convert this estimate for ${escapeHTML(getCustomer(e.customerId).name)} into a draft invoice.</span></div><button class="btn primary" data-action="convert-estimate-invoice" data-id="${escapeHTML(e.id)}">Convert</button></div>`).join('')}</div></div>`;
+    const card=`<div class="card" style="margin-top:16px"><h3>Estimate follow-up</h3><div class="gtd-task-list">${accepted.map(e=>`<div class="gtd-task priority"><span class="gtd-task-icon">▤</span><div><strong>${escapeHTML(e.estimateNumber||e.id)} is accepted</strong><span>Convert this estimate for ${escapeHTML(getCustomer(e.customerId).name)} into a draft invoice.</span></div><button class="btn primary" data-action="convert-estimate-invoice" data-id="${escapeHTML(e.id)}">Convert</button></div>`).join('')}</div></div>`;
     return base + card;
   };
   injectEstimateWorkflowStyles();
@@ -1284,7 +1284,7 @@
       body.v8-ui .estimate-payment-stat strong{display:block;font-size:22px;margin-top:5px;letter-spacing:-.03em;color:#172033}
       body.v8-ui .estimate-payment-flow{display:grid;grid-template-columns:repeat(7,minmax(108px,1fr));gap:10px;align-items:stretch}
       body.v8-ui .estimate-payment-step{position:relative;border:1px solid #e1e8ef;background:#fff;border-radius:16px;padding:13px 10px;min-height:132px;display:grid;grid-template-rows:auto auto 1fr auto;gap:6px;text-align:center;box-shadow:0 2px 8px rgba(16,24,40,.035)}
-      body.v8-ui .estimate-payment-step:after{content:"â†’";position:absolute;right:-13px;top:48%;transform:translateY(-50%);color:#98a2b3;font-weight:950;font-size:18px;z-index:2}
+      body.v8-ui .estimate-payment-step:after{content:"→";position:absolute;right:-13px;top:48%;transform:translateY(-50%);color:#98a2b3;font-weight:950;font-size:18px;z-index:2}
       body.v8-ui .estimate-payment-step:last-child:after{display:none}
       body.v8-ui .estimate-payment-icon{width:42px;height:42px;border-radius:50%;border:2px solid #63ad52;background:#f8fffb;color:#0a8f3c;display:grid;place-items:center;margin:0 auto;font-weight:950;font-size:18px}
       body.v8-ui .estimate-payment-step strong{font-size:13px;line-height:1.2;color:#172033}
@@ -1329,13 +1329,13 @@
     const openInvoiceText=s.openInv.length ? `${s.openInv.length} open invoice${s.openInv.length===1?'':'s'}` : 'No open invoices';
     const depositText=s.paymentsToDeposit.length ? `${s.paymentsToDeposit.length} payment${s.paymentsToDeposit.length===1?'':'s'} to deposit` : 'Payments deposited to bank';
     const steps=[
-      {icon:'â–¤',title:'Create estimate',desc:`${s.draftEst.length} draft estimate${s.draftEst.length===1?'':'s'}`,cls:estimatePaymentStepClass(s.draftEst.length),button:'Create',modal:'estimate'},
-      {icon:'âœ‰',title:'Send estimate',desc:`${s.sentEst.length} sent estimate${s.sentEst.length===1?'':'s'}`,cls:estimatePaymentStepClass(s.sentEst.length),button:'Open estimates',nav:'sales'},
-      {icon:'âœ“',title:'Customer accepts',desc:acceptedText,cls:estimatePaymentStepClass(s.acceptedWaiting.length),button:'Review',nav:'sales'},
-      {icon:'â‡¢',title:'Convert to invoice',desc:`${s.converted.length} converted estimate${s.converted.length===1?'':'s'}`,cls:estimatePaymentStepClass(s.acceptedWaiting.length),button:'Convert',nav:'sales'},
-      {icon:'â–§',title:'Send invoice',desc:`${s.draftInv.length} draft invoice${s.draftInv.length===1?'':'s'}`,cls:estimatePaymentStepClass(s.draftInv.length),button:'Invoices',nav:'sales'},
+      {icon:'▤',title:'Create estimate',desc:`${s.draftEst.length} draft estimate${s.draftEst.length===1?'':'s'}`,cls:estimatePaymentStepClass(s.draftEst.length),button:'Create',modal:'estimate'},
+      {icon:'✉',title:'Send estimate',desc:`${s.sentEst.length} sent estimate${s.sentEst.length===1?'':'s'}`,cls:estimatePaymentStepClass(s.sentEst.length),button:'Open estimates',nav:'sales'},
+      {icon:'✓',title:'Customer accepts',desc:acceptedText,cls:estimatePaymentStepClass(s.acceptedWaiting.length),button:'Review',nav:'sales'},
+      {icon:'⇢',title:'Convert to invoice',desc:`${s.converted.length} converted estimate${s.converted.length===1?'':'s'}`,cls:estimatePaymentStepClass(s.acceptedWaiting.length),button:'Convert',nav:'sales'},
+      {icon:'▧',title:'Send invoice',desc:`${s.draftInv.length} draft invoice${s.draftInv.length===1?'':'s'}`,cls:estimatePaymentStepClass(s.draftInv.length),button:'Invoices',nav:'sales'},
       {icon:'$',title:'Receive payment',desc:openInvoiceText,cls:estimatePaymentStepClass(s.openInv.length),button:'Receive',modal:'payment'},
-      {icon:'â—‰',title:'Deposit to bank',desc:depositText,cls:estimatePaymentStepClass(s.paymentsToDeposit.length),button:'Deposit',modal:'deposit'}
+      {icon:'◉',title:'Deposit to bank',desc:depositText,cls:estimatePaymentStepClass(s.paymentsToDeposit.length),button:'Deposit',modal:'deposit'}
     ];
     const stat = (label,value)=>`<div class="estimate-payment-stat"><span>${escapeHTML(label)}</span><strong>${escapeHTML(String(value))}</strong></div>`;
     return `<div class="estimate-payment-card" data-estimate-payment-workflow>
@@ -1355,7 +1355,7 @@
         ${steps.map(step=>`<div class="estimate-payment-step ${step.cls}"><span class="estimate-payment-icon">${step.icon}</span><strong>${escapeHTML(step.title)}</strong><small>${escapeHTML(step.desc)}</small><button class="btn ${step.modal==='payment'||step.modal==='deposit'?'primary':''}" ${step.modal?`data-modal="${step.modal}"`:`data-nav="${step.nav}"`}>${escapeHTML(step.button)}</button></div>`).join('')}
       </div>
       <div class="estimate-payment-followups">
-        <div class="estimate-payment-followup"><strong>Where estimates go</strong><span>Saved estimates appear in Sales â†’ Estimates and in customer activity.</span></div>
+        <div class="estimate-payment-followup"><strong>Where estimates go</strong><span>Saved estimates appear in Sales → Estimates and in customer activity.</span></div>
         <div class="estimate-payment-followup"><strong>Next action after acceptance</strong><span>Accepted estimates should be converted into draft invoices before billing.</span></div>
         <div class="estimate-payment-followup"><strong>Cash-flow impact</strong><span>Cash flow updates after payment is received and deposited to a bank account.</span></div>
       </div>
@@ -1376,10 +1376,10 @@
     const base=estimatePaymentRenderGetThingsDoneTasksBase();
     const s=estimatePaymentWorkflowSummary();
     const rows=[];
-    if(s.draftEst.length) rows.push({icon:'â–¤',title:'Send draft estimates',desc:`${s.draftEst.length} draft estimate${s.draftEst.length===1?'':'s'} can be reviewed and sent from Sales â†’ Estimates.`,nav:'sales',label:'Open estimates'});
-    if(s.acceptedWaiting.length) rows.push({icon:'â‡¢',title:'Convert accepted estimates',desc:`${s.acceptedWaiting.length} accepted estimate${s.acceptedWaiting.length===1?'':'s'} should be converted to invoice.`,nav:'sales',label:'Convert'});
-    if(s.draftInv.length) rows.push({icon:'â–§',title:'Send draft invoices',desc:`${s.draftInv.length} draft invoice${s.draftInv.length===1?'':'s'} need to be sent to customers.`,nav:'sales',label:'Open invoices'});
-    if(s.paymentsToDeposit.length) rows.push({icon:'â—‰',title:'Deposit received payments',desc:`${s.paymentsToDeposit.length} payment${s.paymentsToDeposit.length===1?'':'s'} should be deposited to a bank account.`,modal:'deposit',label:'Deposit'});
+    if(s.draftEst.length) rows.push({icon:'▤',title:'Send draft estimates',desc:`${s.draftEst.length} draft estimate${s.draftEst.length===1?'':'s'} can be reviewed and sent from Sales → Estimates.`,nav:'sales',label:'Open estimates'});
+    if(s.acceptedWaiting.length) rows.push({icon:'⇢',title:'Convert accepted estimates',desc:`${s.acceptedWaiting.length} accepted estimate${s.acceptedWaiting.length===1?'':'s'} should be converted to invoice.`,nav:'sales',label:'Convert'});
+    if(s.draftInv.length) rows.push({icon:'▧',title:'Send draft invoices',desc:`${s.draftInv.length} draft invoice${s.draftInv.length===1?'':'s'} need to be sent to customers.`,nav:'sales',label:'Open invoices'});
+    if(s.paymentsToDeposit.length) rows.push({icon:'◉',title:'Deposit received payments',desc:`${s.paymentsToDeposit.length} payment${s.paymentsToDeposit.length===1?'':'s'} should be deposited to a bank account.`,modal:'deposit',label:'Deposit'});
     if(!rows.length) return base;
     const card=`<div class="card" style="margin-top:16px"><h3>Estimate-to-payment actions</h3><div class="gtd-task-list">${rows.map(r=>`<div class="gtd-task priority"><span class="gtd-task-icon">${r.icon}</span><div><strong>${escapeHTML(r.title)}</strong><span>${escapeHTML(r.desc)}</span></div><button class="btn ${r.modal?'primary':''}" ${r.modal?`data-modal="${r.modal}"`:`data-nav="${r.nav}"`}>${escapeHTML(r.label)}</button></div>`).join('')}</div></div>`;
     return base + card;
@@ -1426,7 +1426,7 @@
   };
   function v17BankAndUndepositedOptions(selected='1400'){
     const opts=[`<option value="1400" ${String(selected)==='1400'?'selected':''}>Undeposited Funds</option>`]
-      .concat((state.bankAccounts||[]).map(b=>`<option value="${escapeHTML(b.id)}" ${String(selected)===String(b.id)?'selected':''}>${escapeHTML(b.name)} Â· ${money(normalBalance(b.accountId))}</option>`));
+      .concat((state.bankAccounts||[]).map(b=>`<option value="${escapeHTML(b.id)}" ${String(selected)===String(b.id)?'selected':''}>${escapeHTML(b.name)} · ${money(normalBalance(b.accountId))}</option>`));
     return opts.join('');
   }
   function v17CustomerOptionsSelected(selected){
@@ -1441,12 +1441,12 @@
   modalBodyContent = function(type){
     if(type==='payment'){
       const open=(state.invoices||[]).filter(i=>openAmount(i)>0.005 && !invoiceIsVoid?.(i));
-      const opts=open.map(i=>`<option value="${escapeHTML(i.id)}" data-open="${openAmount(i)}">${escapeHTML(i.id)} Â· ${escapeHTML(getCustomer(i.customerId).name)} Â· open ${money(openAmount(i))}</option>`).join('') || '<option value="">No open invoices</option>';
+      const opts=open.map(i=>`<option value="${escapeHTML(i.id)}" data-open="${openAmount(i)}">${escapeHTML(i.id)} · ${escapeHTML(getCustomer(i.customerId).name)} · open ${money(openAmount(i))}</option>`).join('') || '<option value="">No open invoices</option>';
       return `<div class="form-grid"><div class="field full"><label>Open invoice</label><select name="invoiceId" id="paymentInvoiceSelect">${opts}</select></div><div class="field"><label>Date</label><input type="date" name="date" value="${todayISO()}"></div><div class="field"><label>Deposit to</label><select name="accountId">${v17BankAndUndepositedOptions('1400')}</select></div><div class="field"><label>Amount</label><input id="paymentAmount" type="number" step="0.01" min="0" name="amount" value="0"></div><div class="field full"><label>Memo</label><input name="memo" value="Customer payment"></div></div><div class="v17-payment-choice"><strong>Recommended workflow</strong><div class="muted small">Use Undeposited Funds when payments need to be grouped and deposited later. Use a bank account when the payment is already deposited.</div></div>`;
     }
     if(type==='deposit'){
       const undep=(state.payments||[]).filter(p=>String(p.accountId||'')==='1400' && !p.depositId);
-      const rows=undep.map(p=>`<label class="v17-undeposited-row"><input type="checkbox" name="paymentIds" value="${escapeHTML(p.id)}" data-payment-amount="${num(p.amount)}"><div><strong>${escapeHTML(p.id)} Â· ${escapeHTML(getCustomer(p.customerId).name)}</strong><span>${escapeHTML(p.date||'')} Â· ${escapeHTML(p.invoiceId||'No invoice')} Â· ${escapeHTML(p.memo||'')}</span></div><strong>${money(p.amount)}</strong></label>`).join('') || '<div class="muted">No undeposited payments are waiting for bank deposit.</div>';
+      const rows=undep.map(p=>`<label class="v17-undeposited-row"><input type="checkbox" name="paymentIds" value="${escapeHTML(p.id)}" data-payment-amount="${num(p.amount)}"><div><strong>${escapeHTML(p.id)} · ${escapeHTML(getCustomer(p.customerId).name)}</strong><span>${escapeHTML(p.date||'')} · ${escapeHTML(p.invoiceId||'No invoice')} · ${escapeHTML(p.memo||'')}</span></div><strong>${money(p.amount)}</strong></label>`).join('') || '<div class="muted">No undeposited payments are waiting for bank deposit.</div>';
       return `<div class="form-grid"><div class="field"><label>Date</label><input type="date" name="date" value="${todayISO()}"></div><div class="field"><label>Deposit to bank account</label><select name="accountId">${bankOptions()}</select></div><div class="field full"><label>Select received payments to deposit</label><div class="v17-undeposited-list">${rows}</div></div><div class="field"><label>Additional deposit account</label><select name="incomeAccountId">${accountOptions(['Income','Equity','Liability'])}</select></div><div class="field"><label>Additional amount</label><input type="number" step="0.01" min="0" name="amount" value="0"></div><div class="field full"><label>Memo</label><input name="memo" value="Bank deposit"></div></div><div class="v17-payment-choice"><strong>How this works</strong><div class="muted small">Selected payments move from Undeposited Funds into the selected bank account. Use Additional amount for other deposits not linked to customer payments.</div></div>`;
     }
     if(type==='estimate') return estimateFormHTML();
@@ -1626,13 +1626,13 @@
     injectEstimateToPaymentWorkflowStyles(); injectV17WorkflowStyles();
     const s=estimatePaymentWorkflowSummary();
     const steps=[
-      {icon:'â–¤',title:'Create estimate',desc:`${s.draftEst.length} draft estimate${s.draftEst.length===1?'':'s'}`,cls:s.draftEst.length?'attention':'done',button:'Create',modal:'estimate'},
-      {icon:'âœ‰',title:'Send estimate',desc:`${s.sentEst.length} sent estimate${s.sentEst.length===1?'':'s'}`,cls:s.draftEst.length?'attention':'done',button:'Open estimates',action:'estimates'},
-      {icon:'âœ“',title:'Customer accepts',desc:s.acceptedWaiting.length?`${s.acceptedWaiting.length} waiting for invoice`:'No accepted estimates waiting',cls:s.acceptedWaiting.length?'attention':'done',button:'Review',action:'estimates'},
-      {icon:'â‡¢',title:'Convert to invoice',desc:`${s.converted.length} converted estimate${s.converted.length===1?'':'s'}`,cls:s.acceptedWaiting.length?'attention':'done',button:'Convert',action:'estimates'},
-      {icon:'â–§',title:'Send invoice',desc:`${s.draftInv.length} draft invoice${s.draftInv.length===1?'':'s'}`,cls:s.draftInv.length?'attention':'done',button:'Invoices',action:'invoices'},
+      {icon:'▤',title:'Create estimate',desc:`${s.draftEst.length} draft estimate${s.draftEst.length===1?'':'s'}`,cls:s.draftEst.length?'attention':'done',button:'Create',modal:'estimate'},
+      {icon:'✉',title:'Send estimate',desc:`${s.sentEst.length} sent estimate${s.sentEst.length===1?'':'s'}`,cls:s.draftEst.length?'attention':'done',button:'Open estimates',action:'estimates'},
+      {icon:'✓',title:'Customer accepts',desc:s.acceptedWaiting.length?`${s.acceptedWaiting.length} waiting for invoice`:'No accepted estimates waiting',cls:s.acceptedWaiting.length?'attention':'done',button:'Review',action:'estimates'},
+      {icon:'⇢',title:'Convert to invoice',desc:`${s.converted.length} converted estimate${s.converted.length===1?'':'s'}`,cls:s.acceptedWaiting.length?'attention':'done',button:'Convert',action:'estimates'},
+      {icon:'▧',title:'Send invoice',desc:`${s.draftInv.length} draft invoice${s.draftInv.length===1?'':'s'}`,cls:s.draftInv.length?'attention':'done',button:'Invoices',action:'invoices'},
       {icon:'$',title:'Receive payment',desc:s.openInv.length?`${s.openInv.length} open invoice${s.openInv.length===1?'':'s'}`:'No open invoices',cls:s.openInv.length?'attention':'done',button:'Receive',modal:'payment'},
-      {icon:'â—‰',title:'Deposit to bank',desc:s.paymentsToDeposit.length?`${s.paymentsToDeposit.length} payment${s.paymentsToDeposit.length===1?'':'s'} to deposit`:'No payments waiting',cls:s.paymentsToDeposit.length?'attention':'done',button:'Deposit',modal:'deposit'}
+      {icon:'◉',title:'Deposit to bank',desc:s.paymentsToDeposit.length?`${s.paymentsToDeposit.length} payment${s.paymentsToDeposit.length===1?'':'s'} to deposit`:'No payments waiting',cls:s.paymentsToDeposit.length?'attention':'done',button:'Deposit',modal:'deposit'}
     ];
     const stat=(label,value)=>`<div class="estimate-payment-stat"><span>${escapeHTML(label)}</span><strong>${escapeHTML(String(value))}</strong></div>`;
     const stepBtn=step=>step.modal?`data-modal="${step.modal}"`:`data-action="open-sales-tab" data-id="${step.action}"`;
@@ -1640,16 +1640,16 @@
       <div class="estimate-payment-head"><div><h3>Estimate to payment workflow</h3><p>Follow the full money-in path from quote creation to invoice, payment, deposit, and cash-flow update.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-modal="estimate">Create estimate</button><button class="btn primary" data-action="open-sales-tab" data-id="estimates">View estimates</button></div></div>
       <div class="estimate-payment-summary">${stat('Draft estimates',s.draftEst.length)}${stat('Sent estimates',s.sentEst.length)}${stat('Accepted to invoice',s.acceptedWaiting.length)}${stat('Draft invoices',s.draftInv.length)}${stat('Open invoice amount',money(s.unpaidOpenTotal))}${stat('Payments to deposit',s.paymentsToDeposit.length)}</div>
       <div class="estimate-payment-flow">${steps.map(step=>`<div class="estimate-payment-step ${step.cls}"><span class="estimate-payment-icon">${step.icon}</span><strong>${escapeHTML(step.title)}</strong><small>${escapeHTML(step.desc)}</small><button class="btn ${step.modal==='payment'||step.modal==='deposit'?'primary':''}" ${stepBtn(step)}>${escapeHTML(step.button)}</button></div>`).join('')}</div>
-      <div class="estimate-payment-followups"><div class="estimate-payment-followup"><strong>Where estimates go</strong><span>Saved estimates appear in Sales â†’ Estimates and in customer activity.</span></div><div class="estimate-payment-followup"><strong>Next action after acceptance</strong><span>Accepted estimates should be converted into draft invoices before billing.</span></div><div class="estimate-payment-followup"><strong>Cash-flow impact</strong><span>Cash flow updates after payment is received and deposited to a bank account.</span></div></div>
+      <div class="estimate-payment-followups"><div class="estimate-payment-followup"><strong>Where estimates go</strong><span>Saved estimates appear in Sales → Estimates and in customer activity.</span></div><div class="estimate-payment-followup"><strong>Next action after acceptance</strong><span>Accepted estimates should be converted into draft invoices before billing.</span></div><div class="estimate-payment-followup"><strong>Cash-flow impact</strong><span>Cash flow updates after payment is received and deposited to a bank account.</span></div></div>
     </div>`;
   };
   const v17RenderGetThingsDoneTasksBase = renderGetThingsDoneTasks;
   renderGetThingsDoneTasks = function(){
     const base=v17RenderGetThingsDoneTasksBase(); const s=estimatePaymentWorkflowSummary();
     const extra=[];
-    if(s.acceptedWaiting.length) extra.push({icon:'â‡¢',title:'Convert accepted estimates',desc:`${s.acceptedWaiting.length} accepted estimate${s.acceptedWaiting.length===1?'':'s'} should be converted to invoice.`,label:'Open estimates',action:'estimates'});
-    if(s.draftInv.length) extra.push({icon:'â–§',title:'Send draft invoices',desc:`${s.draftInv.length} draft invoice${s.draftInv.length===1?'':'s'} need to be sent to customers.`,label:'Open invoices',action:'invoices'});
-    if(s.paymentsToDeposit.length) extra.push({icon:'â—‰',title:'Deposit received payments',desc:`${s.paymentsToDeposit.length} payment${s.paymentsToDeposit.length===1?'':'s'} should be deposited to a bank account.`,label:'Deposit',modal:'deposit'});
+    if(s.acceptedWaiting.length) extra.push({icon:'⇢',title:'Convert accepted estimates',desc:`${s.acceptedWaiting.length} accepted estimate${s.acceptedWaiting.length===1?'':'s'} should be converted to invoice.`,label:'Open estimates',action:'estimates'});
+    if(s.draftInv.length) extra.push({icon:'▧',title:'Send draft invoices',desc:`${s.draftInv.length} draft invoice${s.draftInv.length===1?'':'s'} need to be sent to customers.`,label:'Open invoices',action:'invoices'});
+    if(s.paymentsToDeposit.length) extra.push({icon:'◉',title:'Deposit received payments',desc:`${s.paymentsToDeposit.length} payment${s.paymentsToDeposit.length===1?'':'s'} should be deposited to a bank account.`,label:'Deposit',modal:'deposit'});
     if(!extra.length) return base;
     return base + `<div class="card" style="margin-top:16px"><h3>Estimate-to-payment actions</h3><div class="gtd-task-list">${extra.map(r=>`<div class="gtd-task priority"><span class="gtd-task-icon">${r.icon}</span><div><strong>${escapeHTML(r.title)}</strong><span>${escapeHTML(r.desc)}</span></div><button class="btn ${r.modal?'primary':''}" ${r.modal?`data-modal="${r.modal}"`:`data-action="open-sales-tab" data-id="${r.action}"`}>${escapeHTML(r.label)}</button></div>`).join('')}</div></div>`;
   };
@@ -1748,7 +1748,7 @@
     const e=record||{}, cust=getCustomer(e.customerId)||{};
     const rows=(e.items||[]).map(x=>[escapeHTML(x.desc||'Item'),num(x.qty),money(num(x.rate)),`${num(x.taxRate)}%`,money(num(x.qty)*num(x.rate))]);
     return `<div class="v18-readonly-note">This estimate has been converted to an invoice, so financial fields are locked. Open the linked invoice to continue billing and payment.</div>
-      <div class="grid two"><div class="card"><h3>${escapeHTML(e.estimateNumber||e.id||'Estimate')}</h3><div class="report-line"><span>Customer</span><strong>${escapeHTML(cust.name||'')}</strong></div><div class="report-line"><span>Date</span><strong>${escapeHTML(e.date||'')}</strong></div><div class="report-line"><span>Expiry</span><strong>${escapeHTML(e.expiryDate||'')}</strong></div><div class="report-line"><span>Status</span><strong>${escapeHTML(v18EstimateDisplayStatus(e))}</strong></div><div class="report-line"><span>Linked invoice</span><strong>${escapeHTML(e.convertedInvoiceId||'â€”')}</strong></div></div><div class="card"><h3>Amounts</h3><div class="report-line"><span>Subtotal</span><strong>${money(e.subtotal)}</strong></div><div class="report-line"><span>Tax</span><strong>${money(e.tax)}</strong></div><div class="report-line"><span>Discount</span><strong>${money(e.discount)}</strong></div><div class="report-line total"><span>Total</span><span>${money(estimateAmount(e))}</span></div><div class="report-line"><span>Deposit required</span><strong>${money(e.deposit)}</strong></div></div></div>
+      <div class="grid two"><div class="card"><h3>${escapeHTML(e.estimateNumber||e.id||'Estimate')}</h3><div class="report-line"><span>Customer</span><strong>${escapeHTML(cust.name||'')}</strong></div><div class="report-line"><span>Date</span><strong>${escapeHTML(e.date||'')}</strong></div><div class="report-line"><span>Expiry</span><strong>${escapeHTML(e.expiryDate||'')}</strong></div><div class="report-line"><span>Status</span><strong>${escapeHTML(v18EstimateDisplayStatus(e))}</strong></div><div class="report-line"><span>Linked invoice</span><strong>${escapeHTML(e.convertedInvoiceId||'—')}</strong></div></div><div class="card"><h3>Amounts</h3><div class="report-line"><span>Subtotal</span><strong>${money(e.subtotal)}</strong></div><div class="report-line"><span>Tax</span><strong>${money(e.tax)}</strong></div><div class="report-line"><span>Discount</span><strong>${money(e.discount)}</strong></div><div class="report-line total"><span>Total</span><span>${money(estimateAmount(e))}</span></div><div class="report-line"><span>Deposit required</span><strong>${money(e.deposit)}</strong></div></div></div>
       <div class="card table-card" style="margin-top:14px">${table(['Description','Qty','Rate','Tax','Amount'], rows)}</div>
       <div class="grid two" style="margin-top:14px"><div class="card"><h3>Scope</h3><p class="muted">${escapeHTML(e.scope||'No scope entered.')}</p></div><div class="card"><h3>Terms</h3><p class="muted">${escapeHTML(e.terms||'No terms entered.')}</p></div></div>`;
   }
@@ -1761,7 +1761,7 @@
     }
     if(type==='deposit'){
       const undep=(state.payments||[]).filter(p=>v18IsUndepositedPayment(p) && !p.depositId);
-      const rows=undep.map(p=>`<label class="v17-undeposited-row"><input type="checkbox" name="paymentIds" value="${escapeHTML(p.id)}" data-payment-amount="${num(p.amount)}"><div><strong>${escapeHTML(p.id)} Â· ${escapeHTML(getCustomer(p.customerId).name)}</strong><span>${escapeHTML(p.date||'')} Â· ${escapeHTML(p.invoiceId||'No invoice')} Â· ${escapeHTML(p.memo||'')}</span></div><strong>${money(p.amount)}</strong></label>`).join('') || '<div class="muted">No undeposited payments are waiting for bank deposit.</div>';
+      const rows=undep.map(p=>`<label class="v17-undeposited-row"><input type="checkbox" name="paymentIds" value="${escapeHTML(p.id)}" data-payment-amount="${num(p.amount)}"><div><strong>${escapeHTML(p.id)} · ${escapeHTML(getCustomer(p.customerId).name)}</strong><span>${escapeHTML(p.date||'')} · ${escapeHTML(p.invoiceId||'No invoice')} · ${escapeHTML(p.memo||'')}</span></div><strong>${money(p.amount)}</strong></label>`).join('') || '<div class="muted">No undeposited payments are waiting for bank deposit.</div>';
       return `<div class="form-grid"><div class="field"><label>Date</label><input type="date" name="date" value="${todayISO()}"></div><div class="field"><label>Deposit to bank account</label><select name="accountId">${bankOptions()}</select></div><div class="field full"><label>Select received payments to deposit</label><div class="v17-undeposited-list">${rows}</div></div><div class="field"><label>Additional deposit account</label><select name="incomeAccountId">${accountOptions(['Income','Equity','Liability'])}</select></div><div class="field"><label>Additional amount</label><input id="v18DepositExtraAmount" type="number" step="0.01" min="0" name="amount" value="0"></div><div class="field full"><label>Memo</label><input name="memo" value="Bank deposit"></div></div><div class="v18-deposit-preview"><strong>Deposit total preview</strong><div class="report-line"><span>Selected payments</span><strong id="v18DepositSelectedTotal">${money(0)}</strong></div><div class="report-line"><span>Additional amount</span><strong id="v18DepositExtraPreview">${money(0)}</strong></div><div class="report-line total"><span>Total deposit</span><span id="v18DepositTotalPreview">${money(0)}</span></div></div><div class="v17-payment-choice"><strong>How this works</strong><div class="muted small">Selected payments move from Undeposited Funds into the selected bank account. Cash flow counts the bank deposit once.</div></div>`;
     }
     return v18ModalBodyContentBase(type);
@@ -1830,7 +1830,7 @@
         }
       }else{
         const est={id:uid('EST'),...data,estimateNumber:data.estimateNumber||estimateNextNumber(),createdAt:new Date().toISOString()};
-        state.estimates.unshift(est); audit(`Estimate ${est.estimateNumber||est.id} created for ${getCustomer(est.customerId).name}`); showToast('Estimate saved in Sales â†’ Estimates.');
+        state.estimates.unshift(est); audit(`Estimate ${est.estimateNumber||est.id} created for ${getCustomer(est.customerId).name}`); showToast('Estimate saved in Sales → Estimates.');
       }
       state.settings.salesTab='estimates'; saveState(); closeModal(); navigate('sales'); renderAll(); return;
     }
@@ -1864,12 +1864,12 @@
     const markSent=(st==='Draft' || !inv.sentDate) ? `<button class="btn square" data-action="send-invoice" data-id="${inv.id}">Mark sent</button>` : '';
     const receive=open>0 && st!=='Draft' ? `<button class="btn square primary" data-action="mark-paid" data-id="${inv.id}">Receive</button>` : (open>0 ? `<button class="btn square" disabled title="Mark sent before receiving payment">Receive</button>` : '');
     const moreActions = `<button class="btn square" data-action="edit-invoice" data-id="${inv.id}">Edit</button>${markSent}<button class="btn square" data-action="print-invoice" data-id="${inv.id}">Print/PDF</button>${st!=='Void'?`<button class="btn square danger" data-action="void-invoice" data-id="${inv.id}">Void</button>`:''}`;
-    return `<div class="invoice-actions"><button class="btn square" data-action="view-invoice" data-id="${inv.id}">View</button>${receive}<details class="invoice-more"><summary class="btn square">More â–¾</summary><div class="invoice-more-menu">${moreActions}</div></details></div>`;
+    return `<div class="invoice-actions"><button class="btn square" data-action="view-invoice" data-id="${inv.id}">View</button>${receive}<details class="invoice-more"><summary class="btn square">More ▾</summary><div class="invoice-more-menu">${moreActions}</div></details></div>`;
   };
   renderInvoiceCenter = function(){
     const rows=getInvoiceCenterInvoices(), s=invoiceSettings(), activeId=state.settings.activeInvoiceId;
     const focus=activeId?`<div class="v18-focus-note"><span>Active invoice: <strong>${escapeHTML(activeId)}</strong></span><button class="btn" data-action="clear-active-invoice">Clear focus</button></div>`:'';
-    return `<div class="card"><div class="toolbar"><div><h3 style="margin:0">Invoice Center</h3><div class="muted small">View sent invoices, apply templates, track delivery, print/PDF, receive payments, and export invoice reports.</div></div><div class="right"><button class="btn" data-action="clear-invoice-filters">Clear filters</button><button class="btn" data-action="export-invoices-csv">Export CSV</button><button class="btn" data-modal="invoiceCustomize">Customize invoice</button><button class="btn primary" data-modal="invoice">Create invoice</button></div></div>${focus}<div class="invoice-center-controls"><span class="template-chip">Current template: ${templateName(s.template)}</span><select data-invoice-template>${invoiceTemplateOptions(s.template)}</select><button class="btn soft" data-action="preview-template">Preview template</button></div>${renderInvoiceMoneybar()}${renderInvoiceFilters()}<div class="table-card">${table(['Invoice','Customer','Invoice date','Due date','Template','Status','Sent tracking','Total','Open balance','Deposit status','Actions'], rows.map(i=>{ const customer=getCustomer(i.customerId); const isActive=activeId===i.id; const invCell=`<strong class="${isActive?'v18-active-invoice':''}">${escapeHTML(i.id)}</strong>${i.sourceEstimateId?`<div class="muted small">From estimate ${escapeHTML(i.estimateNumber||i.sourceEstimateId)}</div>`:''}${num(i.depositRequired)>0?`<div class="v18-info-pill">Deposit required: ${money(i.depositRequired)} not paid</div>`:''}`; const paid=v18InvoicePaidAmount(i), dep=invoiceDepositedAmount(i); const depStatus=paid>0?`${money(dep)} deposited of ${money(paid)} paid`:'No payment'; const track=`<div><span class="tracking-chip">${escapeHTML(i.emailStatus||'Draft')}</span><div class="muted small" style="margin-top:4px">Sent: ${escapeHTML(i.sentDate||'â€”')} Â· Viewed: ${escapeHTML(i.lastViewed||'â€”')} Â· Reminders: ${num(i.reminderCount)}</div></div>`; return [invCell,escapeHTML(customer.name),i.date,i.dueDate,templateName(i.template||s.template),tagForStatus(invoiceDisplayStatus(i)),track,`<span class="amount">${money(invoiceTotal(i))}</span>`,`<span class="amount">${money(openAmount(i))}</span>`,escapeHTML(depStatus),renderInvoiceActions(i)]; }))}</div>${invoiceReportsHTML(rows)}</div>`;
+    return `<div class="card"><div class="toolbar"><div><h3 style="margin:0">Invoice Center</h3><div class="muted small">View sent invoices, apply templates, track delivery, print/PDF, receive payments, and export invoice reports.</div></div><div class="right"><button class="btn" data-action="clear-invoice-filters">Clear filters</button><button class="btn" data-action="export-invoices-csv">Export CSV</button><button class="btn" data-modal="invoiceCustomize">Customize invoice</button><button class="btn primary" data-modal="invoice">Create invoice</button></div></div>${focus}<div class="invoice-center-controls"><span class="template-chip">Current template: ${templateName(s.template)}</span><select data-invoice-template>${invoiceTemplateOptions(s.template)}</select><button class="btn soft" data-action="preview-template">Preview template</button></div>${renderInvoiceMoneybar()}${renderInvoiceFilters()}<div class="table-card">${table(['Invoice','Customer','Invoice date','Due date','Template','Status','Sent tracking','Total','Open balance','Deposit status','Actions'], rows.map(i=>{ const customer=getCustomer(i.customerId); const isActive=activeId===i.id; const invCell=`<strong class="${isActive?'v18-active-invoice':''}">${escapeHTML(i.id)}</strong>${i.sourceEstimateId?`<div class="muted small">From estimate ${escapeHTML(i.estimateNumber||i.sourceEstimateId)}</div>`:''}${num(i.depositRequired)>0?`<div class="v18-info-pill">Deposit required: ${money(i.depositRequired)} not paid</div>`:''}`; const paid=v18InvoicePaidAmount(i), dep=invoiceDepositedAmount(i); const depStatus=paid>0?`${money(dep)} deposited of ${money(paid)} paid`:'No payment'; const track=`<div><span class="tracking-chip">${escapeHTML(i.emailStatus||'Draft')}</span><div class="muted small" style="margin-top:4px">Sent: ${escapeHTML(i.sentDate||'—')} · Viewed: ${escapeHTML(i.lastViewed||'—')} · Reminders: ${num(i.reminderCount)}</div></div>`; return [invCell,escapeHTML(customer.name),i.date,i.dueDate,templateName(i.template||s.template),tagForStatus(invoiceDisplayStatus(i)),track,`<span class="amount">${money(invoiceTotal(i))}</span>`,`<span class="amount">${money(openAmount(i))}</span>`,escapeHTML(depStatus),renderInvoiceActions(i)]; }))}</div>${invoiceReportsHTML(rows)}</div>`;
   };
   const v18HandleActionBase = handleAction;
   handleAction = function(action,id){
@@ -2193,7 +2193,7 @@
     const el=document.getElementById('plCard');
     if(!el) return;
     el.innerHTML = `<h3>Profit & Loss</h3>
-      <div class="muted">Accrual-basis net income Â· ${escapeHTML(label)}</div>
+      <div class="muted">Accrual-basis net income · ${escapeHTML(label)}</div>
       <div class="metric">${money(pl.profit)}</div>
       <div class="report-line"><span>Income</span><strong>${money(pl.income)}</strong></div>
       <div class="report-line"><span>Expenses</span><strong>${money(pl.expenses)}</strong></div>
@@ -2208,7 +2208,7 @@
       const {start,end}=v20ReportRange();
       const pl=v20ProfitLossForRange(start,end);
       const label=v20FormatDateRange(start,end);
-      return list.map(r => r.id==='profit-loss' ? {...r, desc:`Net income ${money(pl.profit)} Â· ${label}`} : r);
+      return list.map(r => r.id==='profit-loss' ? {...r, desc:`Net income ${money(pl.profit)} · ${label}`} : r);
     };
   }
 
