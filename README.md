@@ -1,99 +1,291 @@
 # SmartBooks Accounting App
 
-SmartBooks has been converted from a single HTML file into a basic app development structure.
+SmartBooks is a browser-based accounting app prototype for small-business workflows. It started as a single HTML file and has been refactored into a maintainable app structure with separate frontend, backend, shared constants, unit tests, functional Playwright tests, GitHub Actions CI, GitHub Pages deployment, and live-site smoke testing.
 
-## Live App
+The current app is still a demo/prototype. It uses browser `localStorage` for app data, so it is useful for testing workflows and UI behavior, but it is not yet a production accounting system.
 
-The public test deployment is hosted on GitHub Pages:
+## Live Demo
+
+Public GitHub Pages test deployment:
 
 ```text
 https://quakfoolee-dotcom.github.io/smartbooks_accounting_app/
 ```
 
-The deployed app uses browser localStorage for demo data. Do not enter private customer records, credentials, or production accounting data into the public test site.
+Important: the public demo stores data in your browser only. Do not enter real customer records, private company data, credentials, tax records, or production accounting information.
 
-## Run Locally
+## Current Capabilities
+
+- Dashboard with business feed, cash flow, invoice, expense, setup, and accounting summary widgets.
+- Left rail and sidebar navigation with customizable menu order, visibility, and bookmarks.
+- Dashboard layout customization with save, cancel, reset, and widget ordering controls.
+- Global search for records, workflows, reports, and fallback suggestions.
+- Core accounting demo workflows:
+  - create invoice
+  - receive payment
+  - record expense
+  - create bill
+  - pay bill
+  - review bank transaction
+  - open reports
+- Local data utilities:
+  - export JSON
+  - reset demo company data
+- Icon normalization layer that replaces legacy mojibake/emoji glyphs with stable inline SVG icons.
+- Browser-level functional tests for high-risk workflows.
+- Live GitHub Pages smoke test after deployment.
+
+## Technology Stack
+
+- Frontend: plain HTML, CSS, and classic browser JavaScript.
+- Backend: small Node.js HTTP server for local static serving and future API-backed persistence.
+- Persistence today: browser `localStorage`.
+- Tests: Node.js unit tests and Playwright Chromium functional tests.
+- CI/CD: GitHub Actions.
+- Deployment: GitHub Pages from the `frontend/` folder.
+
+No frontend build step is required today. The app is served directly from `frontend/index.html` and ordered classic scripts.
+
+## Repository Layout
+
+```text
+.github/
+  dependabot.yml
+  workflows/
+    ci.yml
+    deploy-pages.yml
+    pages-smoke.yml
+backend/
+  src/
+    server.js
+  data/
+docs/
+  migration-notes.md
+  testing-checklist.md
+frontend/
+  index.html
+  src/
+    features/
+      dashboard-widgets.js
+      menu-customization.js
+      navigation-search.js
+      record-workflows.js
+      sales-tax-inventory-ui.js
+      sidebar-navigation.js
+      workflows-and-reporting.js
+    runtime/
+      stability-and-api.js
+    services/
+      icon-service.js
+      navigation-model.js
+      storage-service.js
+    main.js
+    styles.css
+shared/
+  constants.js
+tests/
+  functional/
+    pages-smoke.spec.js
+    smartbooks.spec.js
+  unit/
+    services.test.js
+playwright.config.js
+playwright.pages.config.js
+package.json
+```
+
+## Local Setup
+
+Install dependencies:
+
+```powershell
+npm install
+```
+
+Start the local app server:
 
 ```powershell
 npm start
 ```
 
-Then open:
+Open:
 
 ```text
 http://localhost:3000
 ```
 
+The server also exposes a basic health endpoint:
+
+```text
+http://localhost:3000/api/health
+```
+
 ## Test Commands
+
+Run syntax checks:
 
 ```powershell
 npm run check
+```
+
+Run unit tests:
+
+```powershell
 npm test
+```
+
+Run local browser functional tests:
+
+```powershell
 npm run test:functional
+```
+
+Run the deployed GitHub Pages smoke test:
+
+```powershell
 npm run test:pages-smoke
+```
+
+Run the normal local release gate:
+
+```powershell
 npm run test:all
 ```
 
-- `npm run check` verifies JavaScript syntax across app, test, and Playwright config files.
-- `npm test` runs unit tests for shared services.
-- `npm run test:functional` runs local Chromium workflow tests against the Node server.
-- `npm run test:pages-smoke` verifies the deployed GitHub Pages site loads cleanly.
-- `npm run test:all` runs the normal local release gate: syntax, unit, and local functional tests.
+What each command covers:
 
-## GitHub Workflows
+- `npm run check` verifies JavaScript syntax across app files, Playwright configs, unit tests, and functional tests.
+- `npm test` validates service-level behavior such as navigation normalization, bookmark mapping, storage handling, and icon inference.
+- `npm run test:functional` starts the local Node server and runs Chromium workflow tests against the app.
+- `npm run test:pages-smoke` opens the live GitHub Pages URL and checks for load failures, browser errors, visible mojibake, sidebar chevrons, and the Manage menu.
+- `npm run test:all` runs `check`, unit tests, and local functional tests.
 
-- `SmartBooks CI` runs on pushes and pull requests to `main`. It installs dependencies, installs Chromium, runs syntax checks, unit tests, and local Playwright functional tests.
-- `Deploy SmartBooks Pages` runs after `SmartBooks CI` succeeds on `main` and publishes the `frontend/` folder to GitHub Pages.
-- `Live Pages Smoke` runs after the Pages deploy, can be started manually, and also runs weekly. It checks the public Pages site for load failures, console/page errors, visible mojibake, sidebar chevrons, and the Manage menu.
-- `Dependabot Updates` checks npm dependencies weekly.
+## GitHub Actions
 
-The `main` branch is protected by repository rules. Changes should go through a pull request and pass `Check, Unit, and Functional Tests` before merging.
+This repository uses four GitHub automation layers:
 
-## Project Layout
+- `SmartBooks CI`
+  - Runs on pushes and pull requests to `main`.
+  - Installs dependencies.
+  - Installs Playwright Chromium.
+  - Runs syntax checks, unit tests, and local Playwright functional tests.
+  - Uploads Playwright failure artifacts when browser tests fail.
+
+- `Deploy SmartBooks Pages`
+  - Runs after `SmartBooks CI` succeeds on `main`.
+  - Publishes the `frontend/` folder to GitHub Pages.
+
+- `Live Pages Smoke`
+  - Runs after Pages deployment succeeds.
+  - Can be triggered manually.
+  - Also runs weekly.
+  - Verifies the public deployed app loads cleanly.
+
+- `Dependabot Updates`
+  - Checks npm dependencies weekly.
+  - Groups development dependency updates.
+
+## Branch And PR Workflow
+
+The `main` branch is protected by repository rules.
+
+Expected workflow:
+
+1. Create a feature branch.
+2. Commit changes to that branch.
+3. Open a pull request into `main`.
+4. Wait for `Check, Unit, and Functional Tests` to pass.
+5. Merge the pull request.
+6. Confirm Pages deploy and Live Pages Smoke succeed on `main`.
+
+Direct pushes to `main` are blocked by design.
+
+## Deployment
+
+GitHub Pages deploys from the `frontend/` directory. The app uses relative script and stylesheet paths, so it works under the repository Pages path:
 
 ```text
-.github/
-  workflows/
-    ci.yml
-    deploy-pages.yml
-    pages-smoke.yml
-frontend/
-  index.html
-  src/
-    services/
-      icon-service.js
-      storage-service.js
-    main.js
-    features/
-      sales-tax-inventory-ui.js
-      workflows-and-reporting.js
-      dashboard-widgets.js
-      navigation-search.js
-      record-workflows.js
-    runtime/
-      stability-and-api.js
-    styles.css
-backend/
-  src/
-    server.js
-  data/
-shared/
-  constants.js
-docs/
-  migration-notes.md
-  testing-checklist.md
-tests/
-  functional/
-    smartbooks.spec.js
-    pages-smoke.spec.js
-  unit/
-    services.test.js
+/smartbooks_accounting_app/
 ```
 
-The frontend currently preserves the original localStorage behavior. The backend is ready for the next step: replacing browser-only storage with API-backed persistence.
+After a successful merge to `main`, the normal deployment chain is:
 
-The JavaScript has been split into ordered classic scripts. `frontend/src/services/icon-service.js` normalizes legacy icon glyphs into inline SVG, `frontend/src/services/storage-service.js` owns browser persistence, `frontend/src/main.js` initializes the legacy app core, feature modules extend the UI and workflows, and `frontend/src/runtime/stability-and-api.js` installs the backend-ready API layer.
+```text
+SmartBooks CI -> Deploy SmartBooks Pages -> Live Pages Smoke
+```
 
-## Release Checklist
+If Pages deployment fails, check:
 
-Use `docs/testing-checklist.md` before larger releases or after changes to navigation, dashboard customization, icons, workflows, or deployment.
+- repository visibility and Pages availability
+- Settings -> Pages -> Source is `GitHub Actions`
+- Settings -> Actions -> Workflow permissions allow Pages deployment
+- `Deploy SmartBooks Pages` logs
+
+## Manual Testing
+
+Use the manual checklist before larger releases:
+
+```text
+docs/testing-checklist.md
+```
+
+Focus areas:
+
+- sidebar and rail navigation
+- bookmarks
+- Manage menu customization
+- dashboard layout customization
+- global search
+- invoice/payment/expense/bill workflows
+- bank transaction review
+- report rendering
+- export/reset utilities
+- deployed-site icon and mojibake checks
+
+## Data And Security Notes
+
+- `backend/data/*.json` is ignored and should not be committed.
+- `test-results/` and `playwright-report/` are ignored.
+- Do not commit API keys, credentials, customer data, payroll data, tax records, or real accounting files.
+- The public GitHub Pages app is for testing only.
+- Browser data can be cleared with the app's reset utility or through browser storage tools.
+
+## Architecture Notes
+
+The frontend preserves the original localStorage behavior while separating responsibilities:
+
+- `frontend/src/main.js` initializes the app core and legacy workflows.
+- `frontend/src/services/icon-service.js` repairs mojibake text and normalizes icons into inline SVG.
+- `frontend/src/services/navigation-model.js` owns menu ordering, visibility, and bookmark mapping.
+- `frontend/src/services/storage-service.js` owns browser persistence.
+- `frontend/src/features/*` modules extend app areas such as dashboard widgets, menu customization, search, sidebar navigation, and accounting workflows.
+- `frontend/src/runtime/stability-and-api.js` centralizes final runtime reconciliation and backend-ready API behavior.
+- `backend/src/server.js` serves the frontend locally and provides starter API endpoints for future state persistence.
+
+## Known Limitations
+
+- Data is stored in browser `localStorage`, not a real database.
+- No authentication or user accounts yet.
+- No multi-company backend persistence yet.
+- GitHub Pages serves only the static frontend; the Node backend is for local development and future hosting.
+- Accounting logic is demo-grade and should be reviewed before any production use.
+
+## Suggested Roadmap
+
+Near-term:
+
+- Continue live manual QA using `docs/testing-checklist.md`.
+- Improve any remaining UI/workflow defects discovered on the Pages site.
+- Add more focused tests when bugs are found.
+
+Next architecture step:
+
+- Move persistence from browser-only `localStorage` toward backend API-backed state.
+- Add authentication and company/user boundaries before storing real data.
+- Add database-backed persistence once data contracts stabilize.
+
+Production-readiness step:
+
+- Add a real hosting target for the Node backend.
+- Add environment-based configuration.
+- Add security review, audit logging, backups, and data export/import hardening.
