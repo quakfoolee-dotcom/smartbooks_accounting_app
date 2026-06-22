@@ -2,8 +2,10 @@ const { defineConfig, devices } = require("@playwright/test");
 
 module.exports = defineConfig({
   testDir: "tests/functional",
-  testMatch: "smartbooks.spec.js",
+  testMatch: "*.spec.js",
+  testIgnore: "pages-smoke.spec.js",
   fullyParallel: false,
+  workers: 1,
   timeout: 60000,
   expect: { timeout: 10000 },
   reporter: [["list"]],

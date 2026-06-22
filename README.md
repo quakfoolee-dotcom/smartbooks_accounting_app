@@ -252,6 +252,16 @@ docs/style-conventions.md
 
 It covers module ownership, JavaScript patterns, state handling, rendering/event conventions, icon rules, CSS/UI patterns, testing expectations, pull request workflow, and documentation rules.
 
+## Codebase Health
+
+The current maintainability audit is documented here:
+
+```text
+docs/codebase-health-audit.md
+```
+
+It lists the highest-risk modules, completed test-suite organization work, and the recommended refactor sequence.
+
 ## Data And Security Notes
 
 - `backend/data/*.json` is ignored and should not be committed.
