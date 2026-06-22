@@ -6,5 +6,7 @@ smartbooks_accounting_app.html
 node_modules/
 npm-debug.log*
 *.log
+test-results/
+playwright-report/
 backend/data/*.json
 !backend/data/.gitkeep

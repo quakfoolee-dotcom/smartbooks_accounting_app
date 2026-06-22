@@ -109,6 +109,7 @@
     if(t.includes('notification')) return 'bell';
     if(t.includes('privacy')) return 'privacy';
     if(t.includes('refresh')) return 'refresh';
+    if(t.includes('close')) return 'close';
     if(t.includes('bank')) return 'banking';
     if(t.includes('transaction') || t.includes('matching')) return 'transactions';
     if(t.includes('accounting') || t.includes('ledger')) return 'accounting';
@@ -130,12 +131,13 @@
   function infer(el){
     const explicit = el.getAttribute('data-icon');
     if(explicit) return explicit;
-    const nav = el.closest('[data-nav]')?.getAttribute('data-nav');
-    if(nav && navIcons[nav]) return navIcons[nav];
     const action = el.closest('[data-action]')?.getAttribute('data-action') || '';
+    if(el.classList?.contains('nav-chevron')) return 'arrowRight';
     if(el.classList?.contains('shortcut-arrow')){
       return el.closest('[data-dir="-1"]') || el.getAttribute('data-dir') === '-1' ? 'arrowLeft' : 'arrowRight';
     }
+    const nav = el.closest('[data-nav]')?.getAttribute('data-nav');
+    if(nav && navIcons[nav]) return navIcons[nav];
     if(action.includes('refresh')) return 'refresh';
     if(action.includes('privacy')) return 'privacy';
     if(action.includes('remove') || action.includes('hide')) return 'close';
@@ -212,7 +214,8 @@
     if(!button || button.querySelector('.sb-icon')) return;
     const parsed = stripLegacyPrefix(button.textContent);
     if(!parsed.icon) return;
-    const fallbackLabel = button.classList?.contains('square') ? '' : (button.getAttribute('aria-label') || button.getAttribute('title') || '');
+    const iconOnly = button.classList?.contains('square') || button.classList?.contains('icon-btn') || button.classList?.contains('top-panel-close');
+    const fallbackLabel = iconOnly ? '' : (button.getAttribute('aria-label') || button.getAttribute('title') || '');
     const label = parsed.label || fallbackLabel;
     button.dataset.icon = parsed.icon;
     button.innerHTML = `${html(parsed.icon)}${label ? `<span>${escapeText(label)}</span>` : ''}`;
@@ -264,7 +267,7 @@
   function fix(root){
     const scope = root && root.querySelectorAll ? root : document;
     fixTextNodes(scope);
-    scope.querySelectorAll('.rail-icon,.dot,.module-icon,.tile-icon,.feed-badge,.mode-icon,.bank-icon,.icon-btn,.hamburger,.theme-toggle-knob,.menu,.shortcut-arrow,.shortcut-customize,.remove-bookmark,.hide-feed-btn,.check-dot,.estimate-payment-icon,.v33-search-icon,.v47-search-icon,.gtd-step-icon,.gtd-task-icon').forEach(el => replace(el));
+    scope.querySelectorAll('.rail-icon,.dot,.module-icon,.tile-icon,.feed-badge,.mode-icon,.bank-icon,.icon-btn,.hamburger,.theme-toggle-knob,.top-panel-close,.menu,.nav-chevron,.shortcut-arrow,.shortcut-customize,.remove-bookmark,.hide-feed-btn,.check-dot,.estimate-payment-icon,.v33-search-icon,.v47-search-icon,.gtd-step-icon,.gtd-task-icon').forEach(el => replace(el));
     scope.querySelectorAll('button,.btn').forEach(fixButtonLabel);
     scope.querySelectorAll('h1,h2,h3,h4,.feed-header h3').forEach(fixDecorativeHeading);
     scope.querySelectorAll('.mini-flow b,.gtd-flow-arrow,.gtd-lane-arrow,.workflow-arrow').forEach(fixStandaloneSymbol);
@@ -272,14 +275,17 @@
 
   function observe(){
     fix(document);
+    setTimeout(() => fix(document), 0);
+    setTimeout(() => fix(document), 150);
     const observer = new MutationObserver(mutations => {
       for(const mutation of mutations){
+        if(mutation.type === 'characterData') fixTextNode(mutation.target);
         mutation.addedNodes.forEach(node => {
           if(node.nodeType === 1 || node.nodeType === 3) fix(node);
         });
       }
     });
-    observer.observe(document.body, { childList:true, subtree:true });
+    observer.observe(document.body, { childList:true, subtree:true, characterData:true });
   }
 
   const api = { html, fix, infer, navIcons, repairMojibake };

@@ -104,13 +104,13 @@ test('navigation model normalizes menu order and appends unknown modules', () =>
     plain(
     nav.defaultMenuOrder(modules),
     ),
-    ['getthingsdone','dashboard','apps','banking','transactions','settings','custom']
+    ['getthingsdone','dashboard','apps','settings','banking','transactions','custom']
   );
   assert.deepEqual(
     plain(
     nav.normalizeOrder(['custom','banking','missing','banking'], modules),
     ),
-    ['custom','banking','getthingsdone','dashboard','apps','transactions','settings']
+    ['custom','banking','getthingsdone','dashboard','apps','settings','transactions']
   );
 });
 
@@ -193,6 +193,12 @@ test('icon service infers icons from navigation and button text', () => {
     closest(selector){ return selector === '[data-nav]' ? { getAttribute(){ return 'reports'; } } : null; }
   };
   assert.equal(icons.infer(navEl), 'reports');
+  const chevronEl = {
+    getAttribute(){ return null; },
+    classList:{ contains(name){ return name === 'nav-chevron'; } },
+    closest(selector){ return selector === '[data-nav]' ? { getAttribute(){ return 'reports'; } } : null; }
+  };
+  assert.equal(icons.infer(chevronEl), 'arrowRight');
 
   const buttonEl = {
     getAttribute(){ return null; },

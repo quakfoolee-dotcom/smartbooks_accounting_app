@@ -68,6 +68,10 @@
     return `<section class="${v25WidgetClasses(id)}" data-v25-widget="${id}"${draggable}>${v25WidgetControls(id)}${def.html()}</section>`;
   }
   function v25MoveWidget(id,direction){
+    if(currentModal==='customizeDashboard'){
+      v25MoveModalLayoutRow(id,direction);
+      return false;
+    }
     v25EnsureDashboardState();
     const order=v25SanitizeList(state.settings.dashboardLayout, v25DefaultOrder());
     const i=order.indexOf(id);
@@ -82,6 +86,27 @@
       [order[i],order[i+1]]=[order[i+1],order[i]];
     }else return false;
     state.settings.dashboardLayout=order;
+    return true;
+  }
+  function v25MoveModalLayoutRow(id,direction){
+    if(currentModal!=='customizeDashboard') return false;
+    const rows=Array.from(document.querySelectorAll('#modalBody .v25-layout-row'));
+    const row=rows.find(el=>el.getAttribute('data-v25-layout-row')===id);
+    const list=row?.parentElement;
+    if(!row || !list) return false;
+    const current=Array.from(list.children).filter(el=>el.classList?.contains('v25-layout-row'));
+    const index=current.indexOf(row);
+    if(direction==='top' && index>0){
+      list.insertBefore(row,current[0]);
+    }else if(direction==='bottom' && index<current.length-1){
+      list.appendChild(row);
+    }else if(direction==='up' && index>0){
+      list.insertBefore(row,current[index-1]);
+    }else if(direction==='down' && index<current.length-1){
+      list.insertBefore(current[index+1],row);
+    }else{
+      return false;
+    }
     return true;
   }
   function v25CycleWidth(id){
@@ -211,6 +236,7 @@
     }
     if(action==='dashboard-widget-move'){
       const [wid,dir]=String(id||'').split(':');
+      if(v25MoveModalLayoutRow(wid,dir||'down')){ showToast('Dashboard card moved. Save layout to apply.'); return; }
       if(v25MoveWidget(wid,dir||'down')){ saveState(); if(currentModal==='customizeDashboard' && document.getElementById('modalBody')) document.getElementById('modalBody').innerHTML=v25CustomizeDashboardBody(); renderDashboard(); showToast('Dashboard card moved.'); }
       return;
     }
@@ -224,6 +250,28 @@
       const next=v25CycleWidth(id); saveState(); renderDashboard(); showToast(`Card width changed to ${next.replace('-', ' ')}.`); return;
     }
     if(action==='dashboard-layout-reset'){
+      if(currentModal==='customizeDashboard'){
+        const snapshot={
+          layout:state.settings?.dashboardLayout,
+          widgets:state.settings?.dashboardWidgets,
+          widths:state.settings?.dashboardWidgetWidths,
+          heights:state.settings?.dashboardWidgetHeights,
+          privacyMode:state.settings?.privacyMode
+        };
+        state.settings.dashboardLayout=v25DefaultOrder();
+        state.settings.dashboardWidgets=v25DefaultVisible();
+        state.settings.dashboardWidgetWidths=v25DefaultWidths();
+        if(typeof v26DefaultHeights==='function') state.settings.dashboardWidgetHeights=v26DefaultHeights();
+        state.settings.privacyMode=false;
+        document.getElementById('modalBody').innerHTML=v25CustomizeDashboardBody();
+        state.settings.dashboardLayout=snapshot.layout;
+        state.settings.dashboardWidgets=snapshot.widgets;
+        state.settings.dashboardWidgetWidths=snapshot.widths;
+        state.settings.dashboardWidgetHeights=snapshot.heights;
+        state.settings.privacyMode=snapshot.privacyMode;
+        showToast('Default dashboard layout restored in the manager. Save to apply.');
+        return;
+      }
       state.settings ||= {}; state.settings.dashboardLayout=v25DefaultOrder(); state.settings.dashboardWidgets=v25DefaultVisible(); state.settings.dashboardWidgetWidths=v25DefaultWidths(); saveState();
       if(currentModal==='customizeDashboard' && document.getElementById('modalBody')) document.getElementById('modalBody').innerHTML=v25CustomizeDashboardBody();
       renderDashboard(); showToast('Default dashboard layout restored.'); return;

@@ -1819,7 +1819,7 @@
       const suggested=index.filter(x=>preferred.some(p=>v47Lower(x.title).includes(v47Lower(p)) || (x.keywords||'').includes(v47Lower(p)))).slice(0,9);
       results=[...recent, ...recentSearches, ...suggested];
     }else{
-      results=index.map(item=>({...item,score:v47Score(item,q)})).filter(item=>item.score>36).sort((a,b)=>b.score-a.score || String(a.title).localeCompare(String(b.title))).slice(0,42);
+      results=index.map(item=>({...item,score:v47Score(item,q)})).filter(item=>item.score>36 && item.score>(item.priority||0)).sort((a,b)=>b.score-a.score || String(a.title).localeCompare(String(b.title))).slice(0,42);
     }
     return results;
   }

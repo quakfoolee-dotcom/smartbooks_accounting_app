@@ -44,7 +44,7 @@ function v29DefaultMenuOrder(){
   if(window.SmartBooksNavigation) return window.SmartBooksNavigation.defaultMenuOrder(v29MenuModules());
   const modules=v29MenuModules();
   const moduleIds=modules.map(m=>m.id);
-  const preferred=['getthingsdone','dashboard','apps','banking','transactions','accounting','sales','customers','expenses','vendors','reports','inventory','projects','time','payroll','taxes','settings','setup'];
+  const preferred=['getthingsdone','dashboard','reports','apps','settings','setup','banking','transactions','accounting','sales','customers','expenses','vendors','inventory','projects','time','payroll','taxes'];
   return [...preferred.filter(id=>id==='getthingsdone' || moduleIds.includes(id)), ...moduleIds.filter(id=>!preferred.includes(id) && id!=='getthingsdone')];
 }
 

@@ -7,9 +7,14 @@
     "start": "node backend/src/server.js",
     "dev": "node backend/src/server.js",
     "check": "node --check backend/src/server.js && node --check frontend/src/services/navigation-model.js && node --check frontend/src/services/icon-service.js && node --check frontend/src/services/storage-service.js && node --check frontend/src/main.js && node --check frontend/src/features/sales-tax-inventory-ui.js && node --check frontend/src/features/workflows-and-reporting.js && node --check frontend/src/features/dashboard-widgets.js && node --check frontend/src/features/menu-customization.js && node --check frontend/src/features/sidebar-navigation.js && node --check frontend/src/features/navigation-search.js && node --check frontend/src/features/record-workflows.js && node --check frontend/src/runtime/stability-and-api.js",
-    "test": "node tests/unit/services.test.js"
+    "test": "node tests/unit/services.test.js",
+    "test:functional": "playwright test",
+    "test:all": "npm run check && npm test && npm run test:functional"
   },
   "engines": {
     "node": ">=18"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.0"
   }
 }

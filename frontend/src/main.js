@@ -297,6 +297,10 @@
     document.getElementById('modalForm').addEventListener('submit', submitModal);
     document.getElementById('resetDemo').addEventListener('click', resetState);
     document.getElementById('exportData').addEventListener('click', exportData);
+    document.addEventListener('click', e=>{
+      const resetButton = e.target.closest?.('#resetDemo,#resetDemo2');
+      if(resetButton){ e.preventDefault(); resetState(); }
+    });
     document.getElementById('railCustomize').addEventListener('click', ()=>openModal('customize'));
     const legacySettingsBtn = document.getElementById('settingsBtn'); /* Settings icon is handled by the V8.5 top-bar panel. */
     document.getElementById('dashboardRefresh').addEventListener('click', ()=>{ renderDashboard(); showToast('Dashboard refreshed.'); });

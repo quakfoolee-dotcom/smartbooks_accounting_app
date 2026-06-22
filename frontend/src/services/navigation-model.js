@@ -5,7 +5,10 @@
   const DEFAULT_ORDER = [
     "getthingsdone",
     "dashboard",
+    "reports",
     "apps",
+    "settings",
+    "setup",
     "banking",
     "transactions",
     "accounting",
@@ -18,9 +21,7 @@
     "projects",
     "time",
     "payroll",
-    "taxes",
-    "settings",
-    "setup"
+    "taxes"
   ];
 
   const ALWAYS_VISIBLE = new Set(["dashboard", "settings"]);
@@ -29,7 +30,8 @@
     dashboard: "Dashboards",
     apps: "My Apps",
     inventory: "Products & Services",
-    expenses: "Expenses & Pay Bills"
+    expenses: "Expenses & Pay Bills",
+    setup: "Setup Checklist"
   };
 
   const DESCRIPTIONS = {
