@@ -171,12 +171,15 @@
       }
     });
 
-    const byNav = new Map(fullCatalog.map(b => [b.nav, b.id]));
+    const byNav = new Map();
+    fullCatalog.forEach(b => {
+      if(b && b.nav && !byNav.has(b.nav)) byNav.set(b.nav, b.id);
+    });
     const byId = new Set(fullCatalog.map(b => b.id));
     const next = Array.isArray(existing) ? existing.slice() : [];
     const before = next.length;
     (Array.isArray(ids) ? ids : []).forEach(id => {
-      const bookmarkId = byId.has(id) ? id : byNav.get(id);
+      const bookmarkId = byNav.get(id) || (byId.has(id) ? id : null);
       if(bookmarkId && !next.includes(bookmarkId)) next.push(bookmarkId);
     });
     return { ids: next, added: next.length - before };
