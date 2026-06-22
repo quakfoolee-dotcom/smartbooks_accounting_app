@@ -242,6 +242,16 @@ Focus areas:
 - export/reset utilities
 - deployed-site icon and mojibake checks
 
+## Code Style Conventions
+
+Use the project style guide before adding or refactoring app code:
+
+```text
+docs/style-conventions.md
+```
+
+It covers module ownership, JavaScript patterns, state handling, rendering/event conventions, icon rules, CSS/UI patterns, testing expectations, pull request workflow, and documentation rules.
+
 ## Data And Security Notes
 
 - `backend/data/*.json` is ignored and should not be committed.
