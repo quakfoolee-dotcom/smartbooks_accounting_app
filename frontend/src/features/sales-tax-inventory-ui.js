@@ -393,15 +393,15 @@ var v816DefaultCategories = v816FeedCategories.map(c=>c.id);
     v5BindModalBase(type);
     const updateTaxRateInput=(prefix)=>{ const sel=document.getElementById(prefix+'TaxCode'); const tax=document.getElementById(prefix==='invoice'?'invoiceTax':prefix+'Tax'); const code=getTaxCode(sel?.value); if(tax) tax.value = num(code.rate).toFixed(2); };
     if(type==='invoice' || type==='salesReceipt'){
-      const recalc=()=>{ updateTaxRateInput('invoice'); const q=num(document.getElementById('invoiceQty')?.value), r=num(document.getElementById('invoiceRate')?.value), code=document.getElementById('invoiceTaxCode')?.value; document.getElementById('invoiceTotalPreview').textContent=money(q*r+calcTax(q*r,code)); };
+      const recalc=()=>{ updateTaxRateInput('invoice'); const q=num(document.getElementById('invoiceQty')?.value), r=num(document.getElementById('invoiceRate')?.value), code=document.getElementById('invoiceTaxCode')?.value, preview=document.getElementById('invoiceTotalPreview'); if(preview) preview.textContent=money(q*r+calcTax(q*r,code)); };
       ['invoiceQty','invoiceRate','invoiceTaxCode'].forEach(id=>document.getElementById(id)?.addEventListener('input',recalc)); document.getElementById('invoiceTaxCode')?.addEventListener('change',recalc); recalc();
     }
     if(type==='expense'){
-      const recalc=()=>{ const base=num(document.getElementById('expenseAmount')?.value), code=document.getElementById('expenseTaxCode')?.value, tax=calcTax(base,code); const c=getTaxCode(code); document.getElementById('expenseTax').value=tax.toFixed(2); document.getElementById('expenseTotalPreview').textContent=money(base+tax); };
+      const recalc=()=>{ const base=num(document.getElementById('expenseAmount')?.value), code=document.getElementById('expenseTaxCode')?.value, tax=calcTax(base,code); const c=getTaxCode(code), taxInput=document.getElementById('expenseTax'), preview=document.getElementById('expenseTotalPreview'); if(taxInput) taxInput.value=tax.toFixed(2); if(preview) preview.textContent=money(base+tax); };
       ['expenseAmount','expenseTaxCode'].forEach(id=>document.getElementById(id)?.addEventListener('input',recalc)); document.getElementById('expenseTaxCode')?.addEventListener('change',recalc); recalc();
     }
     if(type==='bill'){
-      const recalc=()=>{ const base=num(document.getElementById('billAmount')?.value), code=document.getElementById('billTaxCode')?.value, tax=calcTax(base,code); document.getElementById('billTax').value=tax.toFixed(2); document.getElementById('billTotalPreview').textContent=money(base+tax); };
+      const recalc=()=>{ const base=num(document.getElementById('billAmount')?.value), code=document.getElementById('billTaxCode')?.value, tax=calcTax(base,code), taxInput=document.getElementById('billTax'), preview=document.getElementById('billTotalPreview'); if(taxInput) taxInput.value=tax.toFixed(2); if(preview) preview.textContent=money(base+tax); };
       ['billAmount','billTaxCode'].forEach(id=>document.getElementById(id)?.addEventListener('input',recalc)); document.getElementById('billTaxCode')?.addEventListener('change',recalc); recalc();
     }
   };

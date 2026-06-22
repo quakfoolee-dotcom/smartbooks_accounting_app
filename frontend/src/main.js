@@ -565,14 +565,14 @@
   function nextAccountCode(){ const max=Math.max(...state.chartOfAccounts.map(a=>num(a.code)),7000); return String(max+10); }
   function bindModalLiveCalculations(type){
     if(type==='invoice'){
-      const recalc=()=>{ const q=num(document.getElementById('invoiceQty')?.value), r=num(document.getElementById('invoiceRate')?.value), tx=num(document.getElementById('invoiceTax')?.value); document.getElementById('invoiceTotalPreview').textContent=money(q*r*(1+tx/100)); };
+      const recalc=()=>{ const q=num(document.getElementById('invoiceQty')?.value), r=num(document.getElementById('invoiceRate')?.value), tx=num(document.getElementById('invoiceTax')?.value), preview=document.getElementById('invoiceTotalPreview'); if(preview) preview.textContent=money(q*r*(1+tx/100)); };
       ['invoiceQty','invoiceRate','invoiceTax'].forEach(id=>document.getElementById(id)?.addEventListener('input',recalc));
       document.getElementById('invoiceProduct')?.addEventListener('change',e=>{ const opt=e.target.selectedOptions[0]; document.getElementById('invoiceRate').value = opt.dataset.price || 0; document.getElementById('invoiceIncome').value = opt.dataset.account || '4000'; document.getElementById('invoiceDesc').value = opt.textContent.split(' · ')[0]; recalc(); }); recalc();
     }
-    if(type==='expense'){ const recalc=()=>{ document.getElementById('expenseTotalPreview').textContent=money(num(document.getElementById('expenseAmount')?.value)+num(document.getElementById('expenseTax')?.value)); }; ['expenseAmount','expenseTax'].forEach(id=>document.getElementById(id)?.addEventListener('input',recalc)); recalc(); }
+    if(type==='expense'){ const recalc=()=>{ const preview=document.getElementById('expenseTotalPreview'); if(preview) preview.textContent=money(num(document.getElementById('expenseAmount')?.value)+num(document.getElementById('expenseTax')?.value)); }; ['expenseAmount','expenseTax'].forEach(id=>document.getElementById(id)?.addEventListener('input',recalc)); recalc(); }
     if(type==='payment'){ const sel=document.getElementById('paymentInvoiceSelect'), amt=document.getElementById('paymentAmount'); const sync=()=>{ const opt=sel?.selectedOptions[0]; if(opt&&amt) amt.value = Number(opt.dataset.open||0).toFixed(2); }; sel?.addEventListener('change',sync); sync(); }
     if(type==='payBill'){ const sel=document.getElementById('payBillSelect'), amt=document.getElementById('payBillAmount'); const sync=()=>{ const opt=sel?.selectedOptions[0]; if(opt&&amt) amt.value = Number(opt.dataset.open||0).toFixed(2); }; sel?.addEventListener('change',sync); sync(); }
-    if(type==='journal'){ const recalc=()=>{ const diff=num(document.getElementById('journalDebit')?.value)-num(document.getElementById('journalCredit')?.value); document.getElementById('journalDiff').textContent=money(diff); }; ['journalDebit','journalCredit'].forEach(id=>document.getElementById(id)?.addEventListener('input',recalc)); recalc(); }
+    if(type==='journal'){ const recalc=()=>{ const diff=num(document.getElementById('journalDebit')?.value)-num(document.getElementById('journalCredit')?.value), preview=document.getElementById('journalDiff'); if(preview) preview.textContent=money(diff); }; ['journalDebit','journalCredit'].forEach(id=>document.getElementById(id)?.addEventListener('input',recalc)); recalc(); }
   }
   function closeModal(){ document.getElementById('modalBackdrop').classList.remove('open'); currentModal=null; }
   function submitModal(e){
