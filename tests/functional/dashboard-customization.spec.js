@@ -1,5 +1,6 @@
 const {
   expect,
+  expectDashboardCustomizeControls,
   installSmartBooksChecks,
   openFreshApp,
   openModal,
@@ -15,6 +16,7 @@ test("dashboard customization supports cancel, save, and restore defaults", asyn
 
   const initial = (await state(page)).settings.dashboardLayout;
   await openModal(page, "customizeDashboard");
+  await expectDashboardCustomizeControls(page);
   await page.locator('.v25-layout-row[data-v25-layout-row="cashflow"] [data-id="cashflow:down"]').click();
   await page.locator("#cancelModal").click();
   expect((await state(page)).settings.dashboardLayout).toEqual(initial);

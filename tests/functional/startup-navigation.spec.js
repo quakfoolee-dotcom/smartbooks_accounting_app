@@ -1,6 +1,7 @@
 const {
   expect,
   expectCenteredIconControls,
+  expectSidebarArrows,
   installSmartBooksChecks,
   openFreshApp,
   sidebarLabels,
@@ -18,9 +19,7 @@ test("startup renders the dashboard shell without corrupted icons", async ({ pag
   await expect(page.locator("#businessFeed, #businessFeedBlock").first()).toBeVisible();
   await expect(page.locator("#dashboardWidgetGrid")).toBeVisible();
   await expectCenteredIconControls(page);
-  const sidebarChevronIcons = await page.locator("#menuList .nav-chevron").evaluateAll(items => items.map(item => item.dataset.icon));
-  expect(sidebarChevronIcons.length, "sidebar chevrons should render").toBeGreaterThan(0);
-  expect(new Set(sidebarChevronIcons), "sidebar chevrons should stay right arrows").toEqual(new Set(["arrowRight"]));
+  await expectSidebarArrows(page);
 
   await page.locator("#settingsBtn").click();
   await expect(page.locator("#topbarPopover")).toHaveClass(/open/);

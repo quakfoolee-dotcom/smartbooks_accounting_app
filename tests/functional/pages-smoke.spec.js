@@ -45,6 +45,8 @@ test("deployed GitHub Pages app loads cleanly", async ({ page }) => {
   await page.locator("#railCustomize").click();
   await expect(page.locator("#modalTitle")).toHaveText("Manage menu");
   await page.locator("#cancelModal").click();
+  await page.locator('[data-nav="reports"]').first().click();
+  await expect(page.locator("#page-reports.active")).toContainText(/Reports|Profit|Loss/);
 
   expect(failedAssets, "deployed page should not have failed document/script/style assets").toEqual([]);
   expect(problems, "deployed page should not emit browser errors").toEqual([]);

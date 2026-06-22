@@ -64,8 +64,13 @@ backend/
     server.js
   data/
 docs/
+  assets/
+    smartbooks-logo.svg
+  codebase-health-audit.md
+  style-conventions.md
   migration-notes.md
   testing-checklist.md
+  testing-strategy.md
 frontend/
   index.html
   src/
@@ -80,6 +85,7 @@ frontend/
     runtime/
       stability-and-api.js
     services/
+      accounting-service.js
       icon-service.js
       navigation-model.js
       storage-service.js
@@ -89,9 +95,18 @@ shared/
   constants.js
 tests/
   functional/
+    accessibility-and-visual.spec.js
+    accounting-workflows.spec.js
+    customize-menu.spec.js
+    dashboard-customization.spec.js
+    global-search.spec.js
     pages-smoke.spec.js
-    smartbooks.spec.js
+    startup-navigation.spec.js
+    support/
+      smartbooks-app.js
+    utilities.spec.js
   unit/
+    accounting-service.test.js
     services.test.js
 playwright.config.js
 playwright.pages.config.js
@@ -159,10 +174,16 @@ npm run test:all
 What each command covers:
 
 - `npm run check` verifies JavaScript syntax across app files, Playwright configs, unit tests, and functional tests.
-- `npm test` validates service-level behavior such as navigation normalization, bookmark mapping, storage handling, and icon inference.
-- `npm run test:functional` starts the local Node server and runs Chromium workflow tests against the app.
-- `npm run test:pages-smoke` opens the live GitHub Pages URL and checks for load failures, browser errors, visible mojibake, sidebar chevrons, and the Manage menu.
+- `npm test` validates service-level behavior such as navigation normalization, bookmark mapping, storage handling, icon inference, accounting totals, ledger balance, payment clamping, and bank-feed posting lines.
+- `npm run test:functional` starts the local Node server and runs Chromium workflow tests against startup, navigation, Customize, dashboard layout, search, accounting workflows, accessibility, visual regressions, and utilities.
+- `npm run test:pages-smoke` opens the live GitHub Pages URL and checks for load failures, browser errors, visible mojibake, sidebar chevrons, Manage menu, and Reports navigation.
 - `npm run test:all` runs `check`, unit tests, and local functional tests.
+
+For the full testing strategy, coverage map, and rules for adding new tests, see:
+
+```text
+docs/testing-strategy.md
+```
 
 ## GitHub Actions
 

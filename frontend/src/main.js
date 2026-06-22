@@ -143,6 +143,7 @@
   let state = loadState();
   let currentPage = 'dashboard';
   let currentModal = null;
+  let lastModalFocus = null;
 
   function loadState(){
     if(window.SmartBooksPersistence){
@@ -195,86 +196,27 @@
   function getAccount(id){ return state.chartOfAccounts.find(a=>a.id===id) || {id, code:id, name:'Unknown account', type:'Other', normal:'Debit'}; }
   function getBank(id){ return state.bankAccounts.find(b=>b.id===id) || state.bankAccounts[0]; }
   function accountLabel(id){ const a=getAccount(id); return `${a.code} · ${a.name}`; }
-  function bankAccountIdToLedger(id){ return getBank(id)?.accountId || '1000'; }
-  function invoiceTotal(inv){ return num(inv.subtotal) + num(inv.tax); }
-  function expenseTotal(exp){ return num(exp.amount) + num(exp.tax); }
-  function billTotal(bill){ return num(bill.amount) + num(bill.tax); }
-  function openAmount(inv){ return Math.max(0, invoiceTotal(inv) - num(inv.paid)); }
-  function billOpenAmount(bill){ return Math.max(0, billTotal(bill) - num(bill.paid)); }
-  function expenseAccountFromName(name){ const n=String(name||'').toLowerCase(); if(n.includes('utility')) return '6100'; if(n.includes('market')) return '6200'; if(n.includes('software')) return '6300'; if(n.includes('professional')) return '6400'; return '6000'; }
+  const accounting = window.SmartBooksAccounting;
+  function bankAccountIdToLedger(id){ return accounting.bankAccountIdToLedger(state, id); }
+  function invoiceTotal(inv){ return accounting.invoiceTotal(inv); }
+  function expenseTotal(exp){ return accounting.expenseTotal(exp); }
+  function billTotal(bill){ return accounting.billTotal(bill); }
+  function openAmount(inv){ return accounting.openAmount(inv); }
+  function billOpenAmount(bill){ return accounting.billOpenAmount(bill); }
+  function expenseAccountFromName(name){ return accounting.expenseAccountFromName(name); }
 
   function line(source, sourceId, date, memo, accountId, debit, credit){ return {source, sourceId, date, memo, accountId, debit:num(debit), credit:num(credit)}; }
   function ledger(){
-    const rows=[];
-    state.journalEntries.filter(j=>j.status!=='Draft').forEach(j=>j.lines.forEach(l=>rows.push(line('Journal', j.id, j.date, j.memo, l.accountId, l.debit, l.credit))));
-    state.invoices.forEach(i=>{
-      const total=invoiceTotal(i); rows.push(line('Invoice', i.id, i.date, `Invoice to ${getCustomer(i.customerId).name}`, '1200', total, 0));
-      rows.push(line('Invoice', i.id, i.date, `Revenue: ${i.items?.[0]?.desc || i.id}`, i.incomeAccountId || '4000', 0, i.subtotal));
-      if(num(i.tax)>0) rows.push(line('Invoice', i.id, i.date, `Sales tax collected on ${i.id}`, '2200', 0, i.tax));
+    return accounting.ledger(state, {
+      customerName: id => getCustomer(id).name,
+      vendorName: id => getVendor(id).name
     });
-    state.payments.forEach(p=>{
-      rows.push(line('Payment', p.id, p.date, p.memo || `Payment for ${p.invoiceId}`, bankAccountIdToLedger(p.accountId), p.amount, 0));
-      rows.push(line('Payment', p.id, p.date, p.memo || `Payment for ${p.invoiceId}`, '1200', 0, p.amount));
-    });
-    state.expenses.forEach(e=>{
-      const total=expenseTotal(e), bank=e.bankAccountId || (e.paymentMethod==='Credit card'?'BA-2':'BA-1');
-      rows.push(line('Expense', e.id, e.date, e.memo, e.expenseAccountId || expenseAccountFromName(e.account), e.amount, 0));
-      if(num(e.tax)>0) rows.push(line('Expense', e.id, e.date, `Input tax credit: ${e.memo}`, '2210', e.tax, 0));
-      rows.push(line('Expense', e.id, e.date, e.memo, bankAccountIdToLedger(bank), 0, total));
-    });
-    state.bills.forEach(b=>{
-      rows.push(line('Bill', b.id, b.date, `Bill from ${getVendor(b.vendorId).name}`, b.expenseAccountId || '6000', b.amount, 0));
-      if(num(b.tax)>0) rows.push(line('Bill', b.id, b.date, `Input tax credit on ${b.id}`, '2210', b.tax, 0));
-      rows.push(line('Bill', b.id, b.date, `Accounts payable: ${b.id}`, '2000', 0, billTotal(b)));
-    });
-    state.billPayments.forEach(p=>{
-      rows.push(line('Bill payment', p.id, p.date, p.memo || `Payment for ${p.billId}`, '2000', p.amount, 0));
-      rows.push(line('Bill payment', p.id, p.date, p.memo || `Payment for ${p.billId}`, bankAccountIdToLedger(p.accountId), 0, p.amount));
-    });
-    state.deposits.forEach(d=>{
-      rows.push(line('Deposit', d.id, d.date, d.memo, bankAccountIdToLedger(d.accountId), d.amount, 0));
-      rows.push(line('Deposit', d.id, d.date, d.memo, d.incomeAccountId || '4100', 0, d.amount));
-    });
-    state.transfers.forEach(t=>{
-      rows.push(line('Transfer', t.id, t.date, t.memo || 'Bank transfer', bankAccountIdToLedger(t.toAccountId), t.amount, 0));
-      rows.push(line('Transfer', t.id, t.date, t.memo || 'Bank transfer', bankAccountIdToLedger(t.fromAccountId), 0, t.amount));
-    });
-    state.bankTransactions.filter(tx=>tx.posted && !tx.linkedId).forEach(tx=>{
-      const bankAcct = bankAccountIdToLedger(tx.bankAccountId), amt = Math.abs(num(tx.amount)), cat = tx.suggestedAccountId || (num(tx.amount)>=0?'4100':'6000');
-      if(num(tx.amount) >= 0){
-        rows.push(line('Bank feed', tx.id, tx.date, tx.description, bankAcct, amt, 0));
-        rows.push(line('Bank feed', tx.id, tx.date, tx.description, cat, 0, amt));
-      }else{
-        rows.push(line('Bank feed', tx.id, tx.date, tx.description, cat, amt, 0));
-        rows.push(line('Bank feed', tx.id, tx.date, tx.description, bankAcct, 0, amt));
-      }
-    });
-    return rows.sort((a,b)=> b.date.localeCompare(a.date) || a.source.localeCompare(b.source));
   }
-  function accountBalances(){
-    const bal={}; state.chartOfAccounts.forEach(a=>bal[a.id]={debit:0, credit:0, net:0});
-    ledger().forEach(l=>{ if(!bal[l.accountId]) bal[l.accountId]={debit:0,credit:0,net:0}; bal[l.accountId].debit+=l.debit; bal[l.accountId].credit+=l.credit; bal[l.accountId].net=bal[l.accountId].debit-bal[l.accountId].credit; });
-    return bal;
-  }
-  function normalBalance(accountId){ const a=getAccount(accountId), b=accountBalances()[accountId] || {net:0}; return a.normal==='Credit' ? -b.net : b.net; }
-  function sumTypes(types){ return state.chartOfAccounts.filter(a=>types.includes(a.type)).reduce((s,a)=>s+normalBalance(a.id),0); }
-  function salesTaxSummary(){
-    const collected = state.invoices.reduce((s,i)=>s+num(i.tax),0);
-    const itc = state.expenses.reduce((s,e)=>s+num(e.tax),0) + state.bills.reduce((s,b)=>s+num(b.tax),0);
-    return {collected, itc, net: collected - itc};
-  }
-  function totals(){
-    const invoiceRevenue = state.invoices.reduce((s,i)=>s+num(i.subtotal),0);
-    const paidRevenue = state.payments.reduce((s,p)=>s+num(p.amount),0);
-    const ar = normalBalance('1200');
-    const overdue = state.invoices.filter(i=>i.status==='Overdue').reduce((s,i)=>s+openAmount(i),0);
-    const expenses = sumTypes(['Expense','COGS']);
-    const ap = normalBalance('2000');
-    const bank = normalBalance('1000') + normalBalance('1010') - normalBalance('2100');
-    const profit = sumTypes(['Income']) - expenses;
-    const tax = salesTaxSummary();
-    return {invoiceRevenue, paidRevenue, ar, overdue, expenses, ap, bank, profit, tax};
-  }
+  function accountBalances(){ return accounting.accountBalances(state); }
+  function normalBalance(accountId){ return accounting.normalBalance(state, accountId); }
+  function sumTypes(types){ return accounting.sumTypes(state, types); }
+  function salesTaxSummary(){ return accounting.salesTaxSummary(state); }
+  function totals(){ return accounting.totals(state); }
 
   function showToast(message){ const t = document.getElementById('toast'); t.textContent = message; t.classList.add('show'); clearTimeout(showToast.timer); showToast.timer = setTimeout(()=>t.classList.remove('show'), 2600); }
 
@@ -392,7 +334,7 @@
       `<div class="card table-card" style="margin-top:16px"><div class="toolbar"><div><h3 style="margin:0">General Ledger</h3><div class="muted small">All source transactions translated into debit/credit lines</div></div><input class="table-search" data-filter-table placeholder="Search ledger"></div>${table(['Date','Source','Account','Memo','Debit','Credit'], recentLedger.map(l=>[l.date,`${l.source}<div class="muted small">${l.sourceId}</div>`,escapeHTML(accountLabel(l.accountId)),escapeHTML(l.memo),l.debit?money(l.debit):'—',l.credit?money(l.credit):'—']))}</div>`+
       `<div class="card table-card" style="margin-top:16px"><div class="toolbar"><h3 style="margin:0">Audit Trail</h3></div>${table(['Date','User','Action'], state.auditTrail.slice(0,20).map(a=>[a.date,escapeHTML(a.user),escapeHTML(a.action)]))}</div>`;
   }
-  function trialBalanceStatus(){ const rows=ledger(); const debits=rows.reduce((s,l)=>s+l.debit,0), credits=rows.reduce((s,l)=>s+l.credit,0), diff=debits-credits; return {debits, credits, diff, ok:Math.abs(diff)<0.01}; }
+  function trialBalanceStatus(){ return accounting.trialBalanceStatus(state); }
 
   function renderCustomers(){
     const el=document.getElementById('page-customers'); const ar = totals().ar;
@@ -526,6 +468,8 @@
   }
 
   function openModal(type){
+    const active = document.activeElement;
+    if(active && !document.getElementById('modalBackdrop')?.contains(active)) lastModalFocus = active;
     currentModal = type;
     const isDetail = type.startsWith('bankTxDetail:');
     const titles = {invoice:['Create invoice','Post debit Accounts Receivable and credit revenue / sales tax.'], expense:['Record expense','Post debit expense / input tax credit and credit bank or credit card.'], customer:['Add customer','Create a customer record.'], vendor:['Add vendor','Create a supplier record.'], bill:['Create bill','Post debit expense / input tax credit and credit Accounts Payable.'], payBill:['Pay bill','Post debit Accounts Payable and credit bank.'], deposit:['Bank deposit','Post debit bank and credit selected income account.'], bankTx:['Add bank transaction','Create an imported bank-feed style transaction for review and categorization.'], reconcile:['Bank reconciliation','Record statement balance and compare with book balance / cleared activity.'], transfer:['Transfer','Move funds between bank accounts using balanced ledger lines.'], product:['Add product/service','Create an item with a linked income account.'], payment:['Receive payment','Post debit bank and credit Accounts Receivable.'], estimate:['Create estimate','Create a non-posting quote.'], time:['Add time entry','Capture billable/non-billable hours.'], project:['New project','Create a project record.'], company:['Company settings','Update company profile and default tax rate.'], customize:['Customize app menus','Choose visible navigation modules.'], journal:['Journal entry','Create a balanced two-line manual journal entry.'], account:['Add account','Add a new account to the chart of accounts.'] };
@@ -578,7 +522,12 @@
     if(type==='payBill'){ const sel=document.getElementById('payBillSelect'), amt=document.getElementById('payBillAmount'); const sync=()=>{ const opt=sel?.selectedOptions[0]; if(opt&&amt) amt.value = Number(opt.dataset.open||0).toFixed(2); }; sel?.addEventListener('change',sync); sync(); }
     if(type==='journal'){ const recalc=()=>{ const diff=num(document.getElementById('journalDebit')?.value)-num(document.getElementById('journalCredit')?.value), preview=document.getElementById('journalDiff'); if(preview) preview.textContent=money(diff); }; ['journalDebit','journalCredit'].forEach(id=>document.getElementById(id)?.addEventListener('input',recalc)); recalc(); }
   }
-  function closeModal(){ document.getElementById('modalBackdrop').classList.remove('open'); currentModal=null; }
+  function closeModal(){
+    document.getElementById('modalBackdrop').classList.remove('open');
+    currentModal=null;
+    if(lastModalFocus && document.contains(lastModalFocus)) lastModalFocus.focus();
+    lastModalFocus=null;
+  }
   function submitModal(e){
     e.preventDefault(); const f = new FormData(e.target); const data = Object.fromEntries(f.entries());
     switch(currentModal){
@@ -587,13 +536,13 @@
       case 'customer': state.customers.unshift({id:uid('C'), name:data.name, company:data.company||data.name, email:data.email, phone:data.phone, type:data.type}); audit(`Customer added: ${data.name}`); showToast('Customer added.'); break;
       case 'vendor': state.vendors.unshift({id:uid('V'), name:data.name, email:data.email, phone:data.phone, category:data.category}); audit(`Vendor added: ${data.name}`); showToast('Vendor added.'); break;
       case 'bill': { const bill={id:uid('BILL'), vendorId:data.vendorId, date:data.date, dueDate:data.dueDate, status:data.status, expenseAccountId:data.expenseAccountId, amount:num(data.amount), tax:num(data.tax), paid:0}; state.bills.unshift(bill); if(data.status==='Paid'){ bill.paid=billTotal(bill); state.billPayments.unshift({id:uid('BP'), billId:bill.id, vendorId:bill.vendorId, date:data.date, accountId:'BA-1', amount:bill.paid, memo:'Payment for '+bill.id}); } audit(`Bill ${bill.id} created`); showToast('Bill created and posted.'); break; }
-      case 'payBill': { const bill=state.bills.find(b=>b.id===data.billId); const amt=num(data.amount); if(bill&&amt>0){ bill.paid=Math.min(billTotal(bill), num(bill.paid)+amt); if(billOpenAmount(bill)<=0.01) bill.status='Paid'; state.billPayments.unshift({id:uid('BP'), billId:bill.id, vendorId:bill.vendorId, date:data.date, accountId:data.accountId, amount:amt, memo:data.memo||('Payment for '+bill.id)}); audit(`Bill ${bill.id} paid: ${money(amt)}`); showToast('Bill payment posted.'); } break; }
+      case 'payBill': { const bill=state.bills.find(b=>b.id===data.billId); const requested=num(data.amount); const applied=bill?accounting.billPaymentApplication(bill)(requested):null; if(bill&&applied.appliedAmount>0){ bill.paid=applied.paid; if(applied.fullyPaid) bill.status='Paid'; state.billPayments.unshift({id:uid('BP'), billId:bill.id, vendorId:bill.vendorId, date:data.date, accountId:data.accountId, amount:applied.appliedAmount, memo:data.memo||('Payment for '+bill.id)}); audit(`Bill ${bill.id} paid: ${money(applied.appliedAmount)}`); showToast(requested>applied.appliedAmount?'Bill payment applied to remaining open balance.':'Bill payment posted.'); } break; }
       case 'deposit': { const dep={id:uid('DEP'), date:data.date, accountId:data.accountId, incomeAccountId:data.incomeAccountId, amount:num(data.amount), memo:data.memo}; state.deposits.unshift(dep); audit(`Deposit ${dep.id} posted: ${money(dep.amount)}`); showToast('Deposit added and posted.'); break; }
       case 'bankTx': { const tx={id:uid('BFT'), date:data.date, description:data.description, amount:num(data.amount), bankAccountId:data.bankAccountId, status:data.status, suggestedAccountId:data.suggestedAccountId, matchType:'Expense category', linkedId:null, posted:data.status==='Reviewed', cleared:false, note:data.note}; state.bankTransactions.unshift(tx); audit(`Bank transaction ${tx.id} added: ${money(tx.amount)}`); showToast('Bank transaction added to review center.'); break; }
       case 'reconcile': { const bank=state.bankAccounts.find(b=>b.id===data.accountId) || state.bankAccounts[0]; const book=normalBalance(bank.accountId); const cleared=state.bankTransactions.filter(tx=>tx.bankAccountId===bank.id && tx.cleared).reduce((s,tx)=>s+num(tx.amount),0); const rec={id:uid('REC'), accountId:bank.id, statementDate:data.statementDate, endingBalance:num(data.endingBalance), clearedTotal:cleared, difference:num(data.endingBalance)-book, status:data.status, notes:data.notes}; state.reconciliations.unshift(rec); audit(`Reconciliation ${rec.id} saved for ${bank.name}; difference ${money(rec.difference)}`); showToast('Reconciliation saved.'); break; }
       case 'transfer': { if(data.fromAccountId===data.toAccountId){ showToast('Transfer requires two different accounts.'); return; } const tr={id:uid('TRF'), date:data.date, fromAccountId:data.fromAccountId, toAccountId:data.toAccountId, amount:num(data.amount), memo:data.memo}; state.transfers.unshift(tr); audit(`Transfer ${tr.id} posted: ${money(tr.amount)}`); showToast('Transfer posted.'); break; }
       case 'product': state.products.unshift({id:uid('P'), name:data.name, type:data.type, price:num(data.price), incomeAccountId:data.incomeAccountId, qty:num(data.qty)}); audit(`Product/service added: ${data.name}`); showToast('Product/service added.'); break;
-      case 'payment': { const inv=state.invoices.find(i=>i.id===data.invoiceId); const amt=data.amount && num(data.amount)>0?num(data.amount):(inv?openAmount(inv):0); if(inv && amt>0){ inv.paid=Math.min(invoiceTotal(inv), num(inv.paid)+amt); if(openAmount(inv)<=0.01) inv.status='Paid'; state.payments.unshift({id:uid('PMT'), invoiceId:inv.id, customerId:inv.customerId, date:data.date, accountId:data.accountId, amount:amt, memo:'Payment for '+inv.id}); audit(`Payment received for ${inv.id}: ${money(amt)}`); showToast('Payment received and posted.'); } break; }
+      case 'payment': { const inv=state.invoices.find(i=>i.id===data.invoiceId); const requested=data.amount && num(data.amount)>0?num(data.amount):(inv?openAmount(inv):0); const applied=inv?accounting.invoicePaymentApplication(inv)(requested):null; if(inv && applied.appliedAmount>0){ inv.paid=applied.paid; if(applied.fullyPaid) inv.status='Paid'; state.payments.unshift({id:uid('PMT'), invoiceId:inv.id, customerId:inv.customerId, date:data.date, accountId:data.accountId, amount:applied.appliedAmount, memo:'Payment for '+inv.id}); audit(`Payment received for ${inv.id}: ${money(applied.appliedAmount)}`); showToast(requested>applied.appliedAmount?'Payment applied to remaining invoice balance.':'Payment received and posted.'); } break; }
       case 'estimate': state.estimates.unshift({id:uid('EST'), customerId:data.customerId, date:data.date, status:data.status, total:num(data.total)}); audit('Estimate created'); showToast('Estimate created.'); break;
       case 'time': state.timeEntries.unshift({id:uid('T'), employee:data.employee, customerId:data.customerId, date:data.date, hours:num(data.hours), billable:f.has('billable')}); audit('Time entry added'); showToast('Time entry added.'); break;
       case 'project': state.projects.unshift({id:uid('PRJ'), name:data.name, customerId:data.customerId, budget:num(data.budget), actualCost:0, revenue:0, status:data.status}); audit(`Project created: ${data.name}`); showToast('Project created.'); break;

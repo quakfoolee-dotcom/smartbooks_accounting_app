@@ -43,3 +43,46 @@ test("core accounting workflows create and post records", async ({ page }) => {
   await page.locator('[data-nav="reports"]').first().click();
   await expect(page.locator("#page-reports.active")).toContainText(/Profit|Loss|Report|Reports/);
 });
+
+test("accounting modals reject invalid saves and clamp overpayments", async ({ page }) => {
+  await openFreshApp(page);
+
+  const startingCustomerCount = (await state(page)).customers.length;
+  await openModal(page, "customer");
+  await page.locator('#modalForm button[type="submit"]').click();
+  await expect(page.locator("#modalBackdrop")).toHaveClass(/open/);
+  expect((await state(page)).customers).toHaveLength(startingCustomerCount);
+  await page.locator("#cancelModal").click();
+
+  const beforePayment = await state(page);
+  const invoice = beforePayment.invoices.find(item => item.id === "INV-1001");
+  const openBalance = invoice.subtotal + invoice.tax - invoice.paid;
+
+  await openModal(page, "payment");
+  await page.locator('[name="invoiceId"]').selectOption("INV-1001");
+  await page.locator('[name="amount"]').fill("999999");
+  await submitModal(page);
+
+  const afterPayment = await state(page);
+  const savedPayment = afterPayment.payments[0];
+  const paidInvoice = afterPayment.invoices.find(item => item.id === "INV-1001");
+  expect(savedPayment.invoiceId).toBe("INV-1001");
+  expect(savedPayment.amount).toBe(openBalance);
+  expect(paidInvoice.paid).toBe(invoice.subtotal + invoice.tax);
+  expect(paidInvoice.status).toBe("Paid");
+
+  const billBefore = afterPayment.bills.find(item => item.id === "BILL-9001");
+  const billOpen = billBefore.amount + billBefore.tax - billBefore.paid;
+  await openModal(page, "payBill");
+  await page.locator('[name="billId"]').selectOption("BILL-9001");
+  await page.locator('[name="amount"]').fill("999999");
+  await submitModal(page);
+
+  const afterBillPayment = await state(page);
+  const savedBillPayment = afterBillPayment.billPayments[0];
+  const paidBill = afterBillPayment.bills.find(item => item.id === "BILL-9001");
+  expect(savedBillPayment.billId).toBe("BILL-9001");
+  expect(savedBillPayment.amount).toBe(billOpen);
+  expect(paidBill.paid).toBe(billBefore.amount + billBefore.tax);
+  expect(paidBill.status).toBe("Paid");
+});
