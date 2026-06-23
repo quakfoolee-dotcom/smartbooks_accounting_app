@@ -1955,7 +1955,7 @@
       }
     });
 
-    document.querySelectorAll('.tx-actions,.row-actions,.table-actions,.estimate-actions,.v49-estimate-row-actions').forEach(group => {
+    document.querySelectorAll('.tx-actions,.row-actions,.table-actions,.estimate-actions,.v49-estimate-row-actions,.v49-actions').forEach(group => {
       group.classList.add('sb-action-grid');
     });
     document.querySelectorAll('.invoice-actions').forEach(group => {
