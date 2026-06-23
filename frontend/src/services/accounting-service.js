@@ -50,6 +50,13 @@
   }
 
   function bankAccountIdToLedger(state, id){
+    const requestedId = String(id || "");
+    const bank = (state?.bankAccounts || []).find(account => String(account.id) === requestedId);
+    if(bank?.accountId) return bank.accountId;
+    const chartAccount = (state?.chartOfAccounts || []).find(account =>
+      String(account.id) === requestedId || String(account.code) === requestedId
+    );
+    if(chartAccount) return chartAccount.id;
     return getBank(state, id)?.accountId || "1000";
   }
 
@@ -115,8 +122,19 @@
     });
 
     (state?.deposits || []).forEach(deposit => {
-      rows.push(line("Deposit", deposit.id, deposit.date, deposit.memo, bankAccountIdToLedger(state, deposit.accountId), deposit.amount, 0));
-      rows.push(line("Deposit", deposit.id, deposit.date, deposit.memo, deposit.incomeAccountId || "4100", 0, deposit.amount));
+      const total = num(deposit.amount);
+      const hasDepositBreakdown = deposit.linkedPaymentTotal !== undefined || deposit.additionalAmount !== undefined || (deposit.paymentIds || []).length;
+      const linkedPaymentTotal = hasDepositBreakdown
+        ? (deposit.linkedPaymentTotal !== undefined ? num(deposit.linkedPaymentTotal) : num((state?.payments || [])
+          .filter(payment => (deposit.paymentIds || []).includes(payment.id))
+          .reduce((sum, payment) => sum + num(payment.amount), 0)))
+        : 0;
+      const additionalAmount = hasDepositBreakdown
+        ? (deposit.additionalAmount !== undefined ? Math.max(0, num(deposit.additionalAmount)) : Math.max(0, total - linkedPaymentTotal))
+        : total;
+      rows.push(line("Deposit", deposit.id, deposit.date, deposit.memo, bankAccountIdToLedger(state, deposit.accountId), total, 0));
+      if(linkedPaymentTotal > 0) rows.push(line("Deposit", deposit.id, deposit.date, deposit.memo, deposit.clearingAccountId || "1400", 0, linkedPaymentTotal));
+      if(additionalAmount > 0 || linkedPaymentTotal <= 0) rows.push(line("Deposit", deposit.id, deposit.date, deposit.memo, deposit.incomeAccountId || "4100", 0, additionalAmount || total));
     });
 
     (state?.transfers || []).forEach(transfer => {
@@ -203,13 +221,70 @@
     };
   }
 
+  function depositApplication(payments, paymentIds, additionalAmount, fallbackIncomeAccountId = "4100"){
+    const ids = new Set((paymentIds || []).map(id => String(id)).filter(Boolean));
+    const selectedPayments = (payments || []).filter(payment =>
+      ids.has(String(payment.id)) && !payment.depositId && String(payment.accountId || "1400") === "1400"
+    );
+    const linkedPaymentTotal = selectedPayments.reduce((sum, payment) => sum + num(payment.amount), 0);
+    const additional = Math.max(0, num(additionalAmount));
+    const total = linkedPaymentTotal + additional;
+    return {
+      canDeposit:total > 0,
+      selectedPayments,
+      paymentIds:selectedPayments.map(payment => payment.id),
+      linkedPaymentTotal,
+      additionalAmount:additional,
+      total,
+      incomeAccountId:fallbackIncomeAccountId || "4100",
+      clearingAccountId:"1400"
+    };
+  }
+
+  function bankInvoiceMatchApplication(invoice, transaction){
+    if(!invoice || num(transaction?.amount) <= 0) {
+      return { canMatch:false, appliedAmount:0, paid:num(invoice?.paid), openAmount:openAmount(invoice), status:invoice?.status || "Sent" };
+    }
+    const open = openAmount(invoice);
+    const appliedAmount = Math.min(open, Math.abs(num(transaction.amount)));
+    const paid = Math.min(invoiceTotal(invoice), num(invoice.paid) + appliedAmount);
+    const remaining = Math.max(0, invoiceTotal(invoice) - paid);
+    return {
+      canMatch:appliedAmount > 0,
+      appliedAmount,
+      paid,
+      openAmount:remaining,
+      status:remaining <= 0.01 ? "Paid" : "Partially Paid"
+    };
+  }
+
+  function bankBillMatchApplication(bill, transaction){
+    if(!bill || num(transaction?.amount) >= 0) {
+      return { canMatch:false, appliedAmount:0, paid:num(bill?.paid), openAmount:billOpenAmount(bill), status:bill?.status || "Open" };
+    }
+    const open = billOpenAmount(bill);
+    const appliedAmount = Math.min(open, Math.abs(num(transaction.amount)));
+    const paid = Math.min(billTotal(bill), num(bill.paid) + appliedAmount);
+    const remaining = Math.max(0, billTotal(bill) - paid);
+    return {
+      canMatch:appliedAmount > 0,
+      appliedAmount,
+      paid,
+      openAmount:remaining,
+      status:remaining <= 0.01 ? "Paid" : (bill.status || "Open")
+    };
+  }
+
   global.SmartBooksAccounting = {
     accountBalances,
+    bankBillMatchApplication,
     bankAccountIdToLedger,
+    bankInvoiceMatchApplication,
     bankTransactionPostingLines,
     billOpenAmount,
     billPaymentApplication: bill => amount => paymentApplication(bill, amount, billTotal),
     billTotal,
+    depositApplication,
     expenseAccountFromName,
     expenseTotal,
     invoicePaymentApplication: invoice => amount => paymentApplication(invoice, amount, invoiceTotal),

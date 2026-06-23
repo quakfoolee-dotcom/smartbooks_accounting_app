@@ -537,7 +537,7 @@
       case 'vendor': state.vendors.unshift({id:uid('V'), name:data.name, email:data.email, phone:data.phone, category:data.category}); audit(`Vendor added: ${data.name}`); showToast('Vendor added.'); break;
       case 'bill': { const bill={id:uid('BILL'), vendorId:data.vendorId, date:data.date, dueDate:data.dueDate, status:data.status, expenseAccountId:data.expenseAccountId, amount:num(data.amount), tax:num(data.tax), paid:0}; state.bills.unshift(bill); if(data.status==='Paid'){ bill.paid=billTotal(bill); state.billPayments.unshift({id:uid('BP'), billId:bill.id, vendorId:bill.vendorId, date:data.date, accountId:'BA-1', amount:bill.paid, memo:'Payment for '+bill.id}); } audit(`Bill ${bill.id} created`); showToast('Bill created and posted.'); break; }
       case 'payBill': { const bill=state.bills.find(b=>b.id===data.billId); const requested=num(data.amount); const applied=bill?accounting.billPaymentApplication(bill)(requested):null; if(bill&&applied.appliedAmount>0){ bill.paid=applied.paid; if(applied.fullyPaid) bill.status='Paid'; state.billPayments.unshift({id:uid('BP'), billId:bill.id, vendorId:bill.vendorId, date:data.date, accountId:data.accountId, amount:applied.appliedAmount, memo:data.memo||('Payment for '+bill.id)}); audit(`Bill ${bill.id} paid: ${money(applied.appliedAmount)}`); showToast(requested>applied.appliedAmount?'Bill payment applied to remaining open balance.':'Bill payment posted.'); } break; }
-      case 'deposit': { const dep={id:uid('DEP'), date:data.date, accountId:data.accountId, incomeAccountId:data.incomeAccountId, amount:num(data.amount), memo:data.memo}; state.deposits.unshift(dep); audit(`Deposit ${dep.id} posted: ${money(dep.amount)}`); showToast('Deposit added and posted.'); break; }
+      case 'deposit': { const deposit=accounting.depositApplication(state.payments, [], data.amount, data.incomeAccountId); if(!deposit.canDeposit){ showToast('Select payments to deposit or enter an additional deposit amount.'); return; } const dep={id:uid('DEP'), date:data.date, accountId:data.accountId, incomeAccountId:deposit.incomeAccountId, clearingAccountId:deposit.clearingAccountId, amount:deposit.total, memo:data.memo, paymentIds:deposit.paymentIds, linkedPaymentTotal:deposit.linkedPaymentTotal, additionalAmount:deposit.additionalAmount}; state.deposits.unshift(dep); audit(`Deposit ${dep.id} posted: ${money(dep.amount)}`); showToast('Deposit added and posted.'); break; }
       case 'bankTx': { const tx={id:uid('BFT'), date:data.date, description:data.description, amount:num(data.amount), bankAccountId:data.bankAccountId, status:data.status, suggestedAccountId:data.suggestedAccountId, matchType:'Expense category', linkedId:null, posted:data.status==='Reviewed', cleared:false, note:data.note}; state.bankTransactions.unshift(tx); audit(`Bank transaction ${tx.id} added: ${money(tx.amount)}`); showToast('Bank transaction added to review center.'); break; }
       case 'reconcile': { const bank=state.bankAccounts.find(b=>b.id===data.accountId) || state.bankAccounts[0]; const book=normalBalance(bank.accountId); const cleared=state.bankTransactions.filter(tx=>tx.bankAccountId===bank.id && tx.cleared).reduce((s,tx)=>s+num(tx.amount),0); const rec={id:uid('REC'), accountId:bank.id, statementDate:data.statementDate, endingBalance:num(data.endingBalance), clearedTotal:cleared, difference:num(data.endingBalance)-book, status:data.status, notes:data.notes}; state.reconciliations.unshift(rec); audit(`Reconciliation ${rec.id} saved for ${bank.name}; difference ${money(rec.difference)}`); showToast('Reconciliation saved.'); break; }
       case 'transfer': { if(data.fromAccountId===data.toAccountId){ showToast('Transfer requires two different accounts.'); return; } const tr={id:uid('TRF'), date:data.date, fromAccountId:data.fromAccountId, toAccountId:data.toAccountId, amount:num(data.amount), memo:data.memo}; state.transfers.unshift(tr); audit(`Transfer ${tr.id} posted: ${money(tr.amount)}`); showToast('Transfer posted.'); break; }
@@ -564,10 +564,10 @@
     const tx=state.bankTransactions.find(x=>x.id===id); if(!tx) return;
     const inv=state.invoices.find(i=>i.id===tx.matchedInvoiceId) || state.invoices.find(i=>openAmount(i)>0 && Math.abs(openAmount(i)-Math.abs(num(tx.amount)))<0.01);
     if(!inv){ showToast('No matching open invoice found.'); return; }
-    const amt=Math.min(openAmount(inv), Math.abs(num(tx.amount)));
-    if(amt<=0){ showToast('Invoice is already closed.'); return; }
-    inv.paid=Math.min(invoiceTotal(inv), num(inv.paid)+amt); if(openAmount(inv)<=0.01) inv.status='Paid'; else inv.status='Partially Paid';
-    const pmt={id:uid('PMT'), invoiceId:inv.id, customerId:inv.customerId, date:tx.date, accountId:tx.bankAccountId, amount:amt, memo:'Matched bank transaction '+tx.id};
+    const match=accounting.bankInvoiceMatchApplication(inv, tx);
+    if(!match.canMatch){ showToast('Invoice is already closed.'); return; }
+    inv.paid=match.paid; inv.status=match.status;
+    const pmt={id:uid('PMT'), invoiceId:inv.id, customerId:inv.customerId, date:tx.date, accountId:tx.bankAccountId, amount:match.appliedAmount, memo:'Matched bank transaction '+tx.id};
     state.payments.unshift(pmt); tx.status='Matched'; tx.linkedId=pmt.id; tx.posted=false; tx.matchType='Invoice payment';
     audit(`Bank transaction ${tx.id} matched to invoice ${inv.id}`);
     saveState(); renderAll(); showToast(`${tx.id} matched to ${inv.id}.`);
@@ -576,10 +576,10 @@
     const tx=state.bankTransactions.find(x=>x.id===id); if(!tx) return;
     const bill=state.bills.find(b=>b.id===tx.matchedBillId) || state.bills.find(b=>billOpenAmount(b)>0 && Math.abs(billOpenAmount(b)-Math.abs(num(tx.amount)))<0.01);
     if(!bill){ showToast('No matching open bill found.'); return; }
-    const amt=Math.min(billOpenAmount(bill), Math.abs(num(tx.amount)));
-    if(amt<=0){ showToast('Bill is already closed.'); return; }
-    bill.paid=Math.min(billTotal(bill), num(bill.paid)+amt); if(billOpenAmount(bill)<=0.01) bill.status='Paid';
-    const bp={id:uid('BP'), billId:bill.id, vendorId:bill.vendorId, date:tx.date, accountId:tx.bankAccountId, amount:amt, memo:'Matched bank transaction '+tx.id};
+    const match=accounting.bankBillMatchApplication(bill, tx);
+    if(!match.canMatch){ showToast('Bill is already closed.'); return; }
+    bill.paid=match.paid; bill.status=match.status;
+    const bp={id:uid('BP'), billId:bill.id, vendorId:bill.vendorId, date:tx.date, accountId:tx.bankAccountId, amount:match.appliedAmount, memo:'Matched bank transaction '+tx.id};
     state.billPayments.unshift(bp); tx.status='Matched'; tx.linkedId=bp.id; tx.posted=false; tx.matchType='Bill payment';
     audit(`Bank transaction ${tx.id} matched to bill ${bill.id}`);
     saveState(); renderAll(); showToast(`${tx.id} matched to ${bill.id}.`);
