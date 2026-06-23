@@ -48,7 +48,7 @@ test("keyboard can reach search, sidebar, and modal actions", async ({ page }) =
 test("button sizing stays consistent across sections, tabs, and action columns", async ({ page }) => {
   await openFreshApp(page);
 
-  const pages = ["dashboard", "banking", "sales", "expenses", "vendors", "settings", "setup"];
+  const pages = ["dashboard", "banking", "transactions", "sales", "expenses", "vendors", "settings", "setup"];
   const totals = { actionGroups: 0, tabGroups: 0, iconButtons: 0 };
 
   for(const nav of pages) {
