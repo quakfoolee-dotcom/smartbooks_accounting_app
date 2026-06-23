@@ -48,7 +48,7 @@ test("keyboard can reach search, sidebar, and modal actions", async ({ page }) =
 test("button sizing stays consistent across sections, tabs, and action columns", async ({ page }) => {
   await openFreshApp(page);
 
-  const pages = ["dashboard", "banking", "transactions", "sales", "expenses", "vendors", "settings", "setup"];
+  const pages = ["dashboard", "banking", "transactions", "customers", "sales", "expenses", "vendors", "settings", "setup"];
   const totals = { actionGroups: 0, tabGroups: 0, iconButtons: 0 };
 
   for(const nav of pages) {
@@ -88,7 +88,7 @@ test("button sizing stays consistent across sections, tabs, and action columns",
       };
 
       let actionGroups = 0;
-      document.querySelectorAll(".table-card td:last-child .sb-action-grid").forEach((group, index) => {
+      document.querySelectorAll(".table-card td:last-child .sb-action-grid,.table-card td:last-child .v49-actions").forEach((group, index) => {
         const buttons = Array.from(group.querySelectorAll(".btn:not(.sb-icon-only)")).filter(visible);
         if(buttons.length > 1) {
           actionGroups += 1;
