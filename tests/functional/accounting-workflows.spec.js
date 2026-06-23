@@ -232,6 +232,94 @@ test("business workflow totals update for invoices, payments, bills, and bank re
   await expect(page.locator("#page-reports.active")).toContainText(/Profit|Loss|Trial|Balance|Reports/);
 });
 
+test("documented money-out manual flows preserve expense, A/P, and cash impact", async ({ page }) => {
+  await openFreshApp(page);
+
+  const initial = await accountingTotals(page);
+  const initialOperatingChecking = await normalBalance(page, "1000");
+
+  await openModal(page, "expense");
+  await page.locator('[name="vendorId"]').selectOption("V-2001");
+  await page.locator('[name="expenseAccountId"]').selectOption("6000");
+  await page.locator('[name="paymentMethod"]').selectOption({ label:"Bank transfer" });
+  await page.locator('[name="bankAccountId"]').selectOption("BA-1");
+  await page.locator('[name="amount"]').fill("240");
+  await page.locator('[name="memo"]').fill("User manual office supplies");
+  await submitModal(page);
+
+  const afterExpenseState = await state(page);
+  const expense = afterExpenseState.expenses[0];
+  expect(expense.amount).toBe(240);
+  expect(expense.tax).toBe(12);
+  expect(expense.paymentMethod).toBe("Bank transfer");
+  expect(expense.bankAccountId).toBe("BA-1");
+
+  const afterExpenseTotals = await accountingTotals(page);
+  expect(afterExpenseTotals.expenses).toBeCloseTo(initial.expenses + 240, 2);
+  expect(afterExpenseTotals.tax.itc).toBeCloseTo(initial.tax.itc + 12, 2);
+  expect(await normalBalance(page, "1000")).toBeCloseTo(initialOperatingChecking - 252, 2);
+
+  await page.locator('[data-nav="expenses"]').first().click();
+  await page.locator('[data-action="set-expense-tab"][data-id="expenses"]').click();
+  const expensesPage = page.locator("#page-expenses.active");
+  await expect(expensesPage).toContainText(expense.id);
+  await expect(expensesPage).toContainText(money(252));
+
+  const beforeBillTotals = await accountingTotals(page);
+  const beforeBillOperatingChecking = await normalBalance(page, "1000");
+
+  await openModal(page, "bill");
+  await page.locator('[name="vendorId"]').selectOption("V-2002");
+  await page.locator('[name="expenseAccountId"]').selectOption("6100");
+  await page.locator('[name="status"]').selectOption({ label:"Open" });
+  await page.locator('[name="amount"]').fill("360");
+  await submitModal(page);
+
+  const afterBillState = await state(page);
+  const bill = afterBillState.bills[0];
+  expect(bill.amount).toBe(360);
+  expect(bill.tax).toBe(18);
+  expect(bill.paid).toBe(0);
+  expect(bill.status).toBe("Open");
+
+  const afterBillTotals = await accountingTotals(page);
+  expect(afterBillTotals.ap).toBeCloseTo(beforeBillTotals.ap + 378, 2);
+  expect(afterBillTotals.expenses).toBeCloseTo(beforeBillTotals.expenses + 360, 2);
+  expect(afterBillTotals.tax.itc).toBeCloseTo(beforeBillTotals.tax.itc + 18, 2);
+  expect(await normalBalance(page, "1000")).toBeCloseTo(beforeBillOperatingChecking, 2);
+
+  await page.locator('[data-nav="expenses"]').first().click();
+  await page.locator('[data-action="set-expense-tab"][data-id="bills"]').click();
+  await expect(expensesPage).toContainText(bill.id);
+  await expect(expensesPage).toContainText(money(378));
+
+  await openModal(page, "payBill");
+  await page.locator('[name="billId"]').selectOption(bill.id);
+  await page.locator('[name="accountId"]').selectOption("BA-1");
+  await page.locator('[name="amount"]').fill("378");
+  await page.locator('[name="memo"]').fill(`User manual payment for ${bill.id}`);
+  await submitModal(page);
+
+  const afterPaymentState = await state(page);
+  const paidBill = afterPaymentState.bills.find(item => item.id === bill.id);
+  const billPayment = afterPaymentState.billPayments[0];
+  expect(paidBill.status).toBe("Paid");
+  expect(paidBill.paid).toBe(378);
+  expect(billPayment.billId).toBe(bill.id);
+  expect(billPayment.amount).toBe(378);
+  expect(billPayment.accountId).toBe("BA-1");
+
+  const afterPaymentTotals = await accountingTotals(page);
+  expect(afterPaymentTotals.ap).toBeCloseTo(beforeBillTotals.ap, 2);
+  expect(await normalBalance(page, "1000")).toBeCloseTo(beforeBillOperatingChecking - 378, 2);
+
+  await page.locator('[data-nav="reports"]').first().click();
+  const detail = await openReportDetail(page, "ap-aging");
+  await expect(detail).toContainText("Accounts Payable Aging Summary");
+  await expect(detail).not.toContainText(bill.id);
+  await expect(detail).toContainText(money(beforeBillTotals.ap));
+});
+
 test("deposit workflow clears undeposited payments and separates extra deposit income", async ({ page }) => {
   await openFreshApp(page);
 

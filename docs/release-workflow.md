@@ -27,6 +27,7 @@ Every pull request to `main` runs `SmartBooks CI`.
 The CI workflow has separate jobs for:
 
 - `Syntax Check`
+- `Documentation Checks`
 - `Unit Tests`
 - `Coverage Report`
 - `Functional Browser Tests`
@@ -35,6 +36,8 @@ The CI workflow has separate jobs for:
 Use `CI Result` as the required branch-protection check. It fails if any upstream CI job fails, and it stays stable if more jobs are added later.
 
 `Coverage Report` runs the service coverage threshold check and is included in the required `CI Result` gate. It also uploads the `coverage-report` artifact so failures can be reviewed before changing tests or thresholds.
+
+`Documentation Checks` runs `npm run docs:check` and fails when README or `docs/**/*.md` references a missing local file or screenshot asset.
 
 ## Local Pre-Push Gate
 

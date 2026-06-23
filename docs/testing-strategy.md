@@ -22,10 +22,24 @@ npm run check
 Purpose:
 
 - catches invalid JavaScript before runtime
-- checks backend, frontend services, feature modules, Playwright configs, unit tests, and functional tests
+- checks documentation links/assets, backend, frontend services, feature modules, Playwright configs, unit tests, and functional tests
 - gives quick feedback before opening a pull request
 
 This is not a substitute for unit or browser tests. It only proves files parse.
+
+### Documentation Checks
+
+Command:
+
+```powershell
+npm run docs:check
+```
+
+Purpose:
+
+- verifies local Markdown links in `README.md` and `docs/**/*.md`
+- fails when user-manual screenshots or other local documentation assets are missing
+- runs as a named `Documentation Checks` job in GitHub Actions and feeds into `CI Result`
 
 ### Unit Tests
 

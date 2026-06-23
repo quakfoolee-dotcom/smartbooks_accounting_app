@@ -247,6 +247,132 @@ Expected result:
 - Total bank/cash impact is -252.
 - The bank/cash movement includes both the expense amount and the recoverable tax amount because that is the actual cash paid.
 
+## Flow 3: Create Bill, Pay Bill, Verify A/P Aging
+
+### Business Logic Summary
+
+| Step | User action | Expected accounting result |
+| --- | --- | --- |
+| Create bill | Save an open vendor bill | Debit the selected expense account, debit recoverable GST/HST input tax credit, credit Accounts Payable |
+| Verify A/P | Open Bills & A/P and A/P Aging | Open A/P increases by the full bill total until the bill is paid |
+| Pay bill | Apply payment to the open bill | Debit Accounts Payable, credit the selected bank account |
+| Verify A/P Aging | Open Accounts Payable Aging Summary | Paid bill should no longer appear as an open payable |
+
+For the example below, the bill uses:
+
+| Field | Value |
+| --- | --- |
+| Vendor | North Shore Utilities |
+| Expense account | 6100 - Utilities Expense |
+| Status | Open |
+| Amount before tax | 360 |
+| Bill tax code | GST 5% |
+| Calculated ITC / tax | 18 |
+| Bill total | 378 |
+| Pay from | Operating Checking (1234) |
+
+Expected accounting effect:
+
+| Account area | Expected change |
+| --- | --- |
+| Utilities Expense | Increases by 360 when the bill is created |
+| GST/HST input tax credit | Increases by 18 when the bill is created |
+| Accounts Payable | Increases by 378 when the bill is created, then decreases by 378 when paid |
+| Operating Checking | No change when the bill is created; decreases by 378 when paid |
+
+### Step 1: Create The Bill
+
+Open the create bill workflow and enter the vendor, bill dates, status, expense account, amount, and tax code.
+
+![Create bill modal](assets/user-manual/bill-flow-01-create-bill.png)
+
+Use these example values:
+
+| Field | Value |
+| --- | --- |
+| Vendor | North Shore Utilities |
+| Bill date | 2026-06-23 |
+| Due date | 2026-07-07 |
+| Status | Open |
+| Expense account | 6100 - Utilities Expense |
+| Amount before tax | 360 |
+| Bill tax code | GST 5% |
+
+Click **Save**.
+
+Expected result:
+
+- SmartBooks creates an open vendor bill.
+- Calculated ITC / tax is 18.
+- Bill total is 378.
+- Accounts Payable increases by 378.
+- No cash or bank movement occurs yet.
+
+### Step 2: Confirm The Bill Posted To A/P
+
+Open **Expenses & Pay Bills**, then select the **Bills & A/P** tab.
+
+![Open bill in Bills and A/P](assets/user-manual/bill-flow-02-bill-posted-ap.png)
+
+Expected result:
+
+- The new bill appears at the top of the Bill & Expense Center.
+- Total shows 378.
+- Open shows 378.
+- Status is Open.
+- Open A/P increases from 472.50 to 850.50 in this example.
+
+### Step 3: Pay The Bill
+
+Open the pay bill workflow, select the bill, choose the bank account, and confirm the payment amount.
+
+![Pay bill modal](assets/user-manual/bill-flow-03-pay-bill.png)
+
+Use these example values:
+
+| Field | Value |
+| --- | --- |
+| Open bill | The bill created in Step 1 |
+| Date | 2026-06-23 |
+| Pay from | Operating Checking (1234) |
+| Amount | 378 |
+| Memo | User manual payment for the selected bill |
+
+Click **Save**.
+
+Expected result:
+
+- SmartBooks creates a bill payment.
+- The bill status changes to Paid.
+- Accounts Payable decreases by 378.
+- Operating Checking decreases by 378.
+
+### Step 4: Confirm The Payment Posted
+
+Open **Expenses & Pay Bills**, then select the **Bill payments** tab.
+
+![Bill payment posted](assets/user-manual/bill-flow-04-bill-paid.png)
+
+Expected result:
+
+- A bill payment appears for the selected bill.
+- Amount shows 378.
+- Account shows Operating Checking (1234).
+- The paid bill no longer has an open balance.
+
+### Step 5: Verify A/P Aging
+
+Open Reports, then run **Accounts Payable Aging Summary**.
+
+![Accounts Payable Aging Summary](assets/user-manual/bill-flow-05-ap-aging-report.png)
+
+Expected result:
+
+- The report runs without errors.
+- Open A/P returns to the previous open payable balance.
+- In this example, open A/P returns to 472.50 because the new bill was paid in full.
+- The paid bill does not appear as an open payable.
+
 ## Troubleshooting
 
 | Symptom | What to check |
@@ -257,12 +383,14 @@ Expected result:
 | Expense does not appear after save | Confirm **Save** was clicked, then open **Expenses & Pay Bills** and switch to the **Expenses** tab. |
 | Profit and Loss does not increase by the full paid amount | Confirm whether the purchase tax is recoverable. Recoverable GST/HST increases input tax credit instead of P&L expenses. |
 | Bank balance does not match the paid amount | Confirm the selected **Paid from** account and remember that bank/cash decreases by amount plus tax. |
+| Bill does not appear in A/P | Confirm the bill status is **Open**, then open **Expenses & Pay Bills** and switch to the **Bills & A/P** tab. |
+| Paid bill still appears as open | Confirm the payment amount equals the full open bill balance and the bill status changed to **Paid**. |
+| Bank balance changes when creating the bill | A bill should not move cash until paid. Check whether an expense was recorded instead of a bill. |
 | Values differ from this manual | Demo data may have changed. Reset company data before retesting the exact example values. |
 
 ## Next Manual Candidates
 
 Use this same format for the next business flows:
 
-- Create bill -> Pay bill -> Verify A/P Aging Summary.
 - Review bank transaction -> Categorize -> Verify banking and ledger impact.
 - Customize menu -> Add bookmark -> Save -> Confirm sidebar persistence.
