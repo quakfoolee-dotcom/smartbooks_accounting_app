@@ -1,6 +1,7 @@
 const {
   expect,
   installSmartBooksChecks,
+  navigateTo,
   openFreshApp,
   openModal,
   state,
@@ -50,6 +51,12 @@ async function openReportDetail(page, reportId) {
   await page.locator("#reportEndDate").fill("2026-12-31");
   await page.locator(`[data-action="run-report"][data-id="${reportId}"]`).click();
   return detail;
+}
+
+async function expectAgingBucketColumns(detail) {
+  for(const heading of ["Current", "1-30", "31-60", "61+"]) {
+    await expect(detail).toContainText(heading);
+  }
 }
 
 test("core accounting workflows create and post records", async ({ page }) => {
@@ -313,9 +320,10 @@ test("documented money-out manual flows preserve expense, A/P, and cash impact",
   expect(afterPaymentTotals.ap).toBeCloseTo(beforeBillTotals.ap, 2);
   expect(await normalBalance(page, "1000")).toBeCloseTo(beforeBillOperatingChecking - 378, 2);
 
-  await page.locator('[data-nav="reports"]').first().click();
+  await navigateTo(page, "reports");
   const detail = await openReportDetail(page, "ap-aging");
   await expect(detail).toContainText("Accounts Payable Aging Summary");
+  await expectAgingBucketColumns(detail);
   await expect(detail).not.toContainText(bill.id);
   await expect(detail).toContainText(money(beforeBillTotals.ap));
 });
@@ -414,7 +422,7 @@ test("reports display ledger-backed profit, receivable, and payable values", asy
   const openInvoiceAmount = openInvoice.subtotal + openInvoice.tax - openInvoice.paid;
   const openBillAmount = openBill.amount + openBill.tax - openBill.paid;
 
-  await page.locator('[data-nav="reports"]').first().click();
+  await navigateTo(page, "reports");
   const reports = page.locator("#page-reports.active");
   await expect(reports).toContainText("Profit and Loss");
   await expect(reports).toContainText(`Open A/R ${money(totals.ar)}`);
@@ -429,12 +437,14 @@ test("reports display ledger-backed profit, receivable, and payable values", asy
 
   detail = await openReportDetail(page, "ar-aging");
   await expect(detail).toContainText("Accounts Receivable Aging Summary");
+  await expectAgingBucketColumns(detail);
   await expect(reports).toContainText("INV-1001");
   await expect(reports).toContainText(money(openInvoiceAmount));
   await page.locator('[data-action="back-reports"]').click();
 
   detail = await openReportDetail(page, "ap-aging");
   await expect(detail).toContainText("Accounts Payable Aging Summary");
+  await expectAgingBucketColumns(detail);
   await expect(reports).toContainText("BILL-9001");
   await expect(reports).toContainText(money(openBillAmount));
 });

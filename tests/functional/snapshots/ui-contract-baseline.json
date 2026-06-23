@@ -1,0 +1,56 @@
+{
+  "dashboard": {
+    "activePage": "page-dashboard",
+    "defaultSidebarLabels": [
+      "Get Things Done",
+      "Dashboards",
+      "Reports",
+      "Banking",
+      "Transactions",
+      "Accounting",
+      "Sales & Get Paid",
+      "Customers & Leads",
+      "Expenses & Pay Bills",
+      "Vendors",
+      "Products & Services",
+      "Projects",
+      "Time",
+      "Payroll & HR",
+      "Taxes"
+    ],
+    "hiddenDefaultMenuItems": {
+      "apps": false,
+      "settings": false,
+      "setup": false
+    },
+    "quickActions": [
+      "Get paid online",
+      "Create invoice",
+      "Record expense",
+      "Add bank deposit",
+      "Create check",
+      "Show all"
+    ]
+  },
+  "manageMenu": {
+    "title": "Manage menu",
+    "optionalShortcuts": {
+      "apps": {
+        "checked": false,
+        "disabled": false
+      },
+      "settings": {
+        "checked": false,
+        "disabled": false
+      },
+      "setup": {
+        "checked": false,
+        "disabled": false
+      }
+    },
+    "dashboard": {
+      "checked": true,
+      "disabled": true
+    }
+  }
+}

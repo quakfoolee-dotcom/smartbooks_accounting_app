@@ -1,6 +1,7 @@
 const {
   expect,
   installSmartBooksChecks,
+  navigateTo,
   openFreshApp,
   submitModal,
   test
@@ -58,8 +59,7 @@ test("button sizing stays consistent across sections, tabs, and action columns",
   const totals = { actionGroups: 0, tabGroups: 0, iconButtons: 0 };
 
   for(const nav of pages) {
-    await page.locator(`[data-nav="${nav}"]:visible`).first().click();
-    await expect(page.locator(`#page-${nav}.active`)).toBeVisible();
+    await navigateTo(page, nav);
     await page.evaluate(() => window.SmartBooksIcons?.fix(document));
     await page.waitForTimeout(75);
 
@@ -167,21 +167,18 @@ test("workflow table sections avoid side-by-side table-card grids", async ({ pag
   };
 
   for(const nav of ["accounting", "sales", "expenses", "time", "payroll", "reports"]) {
-    await page.locator(`[data-nav="${nav}"]`).first().click();
-    await expect(page.locator(`#page-${nav}.active`)).toBeVisible();
+    await navigateTo(page, nav);
     await assertNoTablePairs(nav);
   }
 
-  await page.locator('[data-nav="inventory"]').first().click();
-  await expect(page.locator("#page-inventory.active")).toBeVisible();
+  await navigateTo(page, "inventory");
   const receivingTab = page.locator('[data-action="set-inventory-tab"][data-id="receiving"]');
   if(await receivingTab.count()) {
     await receivingTab.click();
     await assertNoTablePairs("inventory receiving");
   }
 
-  await page.locator('[data-nav="taxes"]').first().click();
-  await expect(page.locator("#page-taxes.active")).toBeVisible();
+  await navigateTo(page, "taxes");
   await page.locator('[data-action="set-tax-tab"][data-id="settings"]').click();
   await assertNoTablePairs("tax settings");
 });
