@@ -66,6 +66,7 @@ backend/
 docs/
   assets/
     smartbooks-logo.svg
+  business-logic-test-cases.md
   codebase-health-audit.md
   style-conventions.md
   migration-notes.md
@@ -266,6 +267,16 @@ Focus areas:
 - report rendering
 - export/reset utilities
 - deployed-site icon and mojibake checks
+
+## Business Logic Test Cases
+
+The business-rule matrix for accounting workflows is documented here:
+
+```text
+docs/business-logic-test-cases.md
+```
+
+It defines expected saved records, ledger effects, and UI/report outcomes for invoices, payments, expenses, bills, bank feed, sales tax, reports, and utilities.
 
 ## Code Style Conventions
 

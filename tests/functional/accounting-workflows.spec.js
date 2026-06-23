@@ -10,6 +10,11 @@ const {
 
 installSmartBooksChecks();
 
+async function accountingTotals(page) {
+  const appState = await state(page);
+  return page.evaluate(savedState => window.SmartBooksAccounting.totals(savedState), appState);
+}
+
 test("core accounting workflows create and post records", async ({ page }) => {
   await openFreshApp(page);
 
@@ -85,4 +90,107 @@ test("accounting modals reject invalid saves and clamp overpayments", async ({ p
   expect(savedBillPayment.amount).toBe(billOpen);
   expect(paidBill.paid).toBe(billBefore.amount + billBefore.tax);
   expect(paidBill.status).toBe("Paid");
+});
+
+test("business workflow totals update for invoices, payments, bills, and bank review", async ({ page }) => {
+  await openFreshApp(page);
+
+  const initial = await accountingTotals(page);
+
+  await openModal(page, "invoice");
+  await page.locator('[name="desc"]').fill("Business logic invoice");
+  await page.locator('[name="qty"]').fill("2");
+  await page.locator('[name="rate"]').fill("100");
+  await submitModal(page);
+
+  const afterInvoiceState = await state(page);
+  const invoice = afterInvoiceState.invoices[0];
+  const invoiceTotal = invoice.subtotal + invoice.tax;
+  expect(invoice.subtotal).toBeGreaterThan(0);
+  expect(invoice.paid).toBe(0);
+
+  const afterInvoiceTotals = await accountingTotals(page);
+  expect(afterInvoiceTotals.ar).toBeCloseTo(initial.ar + invoiceTotal, 2);
+  expect(afterInvoiceTotals.invoiceRevenue).toBeCloseTo(initial.invoiceRevenue + invoice.subtotal, 2);
+  expect(afterInvoiceTotals.tax.collected).toBeCloseTo(initial.tax.collected + invoice.tax, 2);
+
+  await openModal(page, "payment");
+  await page.locator('[name="invoiceId"]').selectOption(invoice.id);
+  await page.locator('[name="amount"]').fill("50");
+  await submitModal(page);
+
+  const afterPartialState = await state(page);
+  const partiallyPaidInvoice = afterPartialState.invoices.find(item => item.id === invoice.id);
+  expect(partiallyPaidInvoice.paid).toBe(50);
+  expect(partiallyPaidInvoice.status).not.toBe("Paid");
+  expect(afterPartialState.payments[0].amount).toBe(50);
+
+  const afterPartialTotals = await accountingTotals(page);
+  expect(afterPartialTotals.ar).toBeCloseTo(initial.ar + invoiceTotal - 50, 2);
+
+  await openModal(page, "payment");
+  await page.locator('[name="invoiceId"]').selectOption(invoice.id);
+  await page.locator('[name="amount"]').fill("9999");
+  await submitModal(page);
+
+  const afterFinalPaymentState = await state(page);
+  const paidInvoice = afterFinalPaymentState.invoices.find(item => item.id === invoice.id);
+  expect(paidInvoice.paid).toBe(invoiceTotal);
+  expect(paidInvoice.status).toBe("Paid");
+  expect(afterFinalPaymentState.payments[0].amount).toBe(invoiceTotal - 50);
+
+  const afterFinalPaymentTotals = await accountingTotals(page);
+  expect(afterFinalPaymentTotals.ar).toBeCloseTo(initial.ar, 2);
+
+  await openModal(page, "bill");
+  await page.locator('[name="amount"]').fill("100");
+  await submitModal(page);
+
+  const afterBillState = await state(page);
+  const bill = afterBillState.bills[0];
+  const billTotal = bill.amount + bill.tax;
+  const afterBillTotals = await accountingTotals(page);
+  expect(bill.amount).toBeGreaterThan(0);
+  expect(afterBillTotals.ap).toBeCloseTo(initial.ap + billTotal, 2);
+  expect(afterBillTotals.tax.itc).toBeCloseTo(afterFinalPaymentTotals.tax.itc + bill.tax, 2);
+
+  await openModal(page, "payBill");
+  await page.locator('[name="billId"]').selectOption(bill.id);
+  await page.locator('[name="amount"]').fill("25");
+  await submitModal(page);
+
+  const afterPartialBillState = await state(page);
+  const partialBill = afterPartialBillState.bills.find(item => item.id === bill.id);
+  expect(partialBill.paid).toBe(25);
+  expect(partialBill.status).not.toBe("Paid");
+  expect(afterPartialBillState.billPayments[0].amount).toBe(25);
+
+  const afterPartialBillTotals = await accountingTotals(page);
+  expect(afterPartialBillTotals.ap).toBeCloseTo(initial.ap + billTotal - 25, 2);
+
+  await openModal(page, "payBill");
+  await page.locator('[name="billId"]').selectOption(bill.id);
+  await page.locator('[name="amount"]').fill("9999");
+  await submitModal(page);
+
+  const afterFinalBillState = await state(page);
+  const paidBill = afterFinalBillState.bills.find(item => item.id === bill.id);
+  expect(paidBill.paid).toBe(billTotal);
+  expect(paidBill.status).toBe("Paid");
+  expect(afterFinalBillState.billPayments[0].amount).toBe(billTotal - 25);
+
+  const afterFinalBillTotals = await accountingTotals(page);
+  expect(afterFinalBillTotals.ap).toBeCloseTo(initial.ap, 2);
+
+  const reviewTx = afterFinalBillState.bankTransactions.find(tx => tx.id === "BFT-1002");
+  await page.locator('[data-nav="banking"]').first().click();
+  await page.locator('[data-action="review-banktx"][data-id="BFT-1002"]').first().click();
+  const afterBankReviewState = await state(page);
+  expect(afterBankReviewState.bankTransactions.find(tx => tx.id === "BFT-1002").status).toBe("Reviewed");
+
+  const afterBankReviewTotals = await accountingTotals(page);
+  expect(afterBankReviewTotals.expenses).toBeCloseTo(afterFinalBillTotals.expenses + Math.abs(reviewTx.amount), 2);
+
+  await page.locator('[data-nav="reports"]').first().click();
+  await expect(page.locator("#page-reports.active")).toContainText(/Profit|Loss|Trial|Balance|Reports/);
 });

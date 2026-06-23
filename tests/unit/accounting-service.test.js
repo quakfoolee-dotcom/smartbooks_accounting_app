@@ -87,6 +87,28 @@ test("accounting service calculates totals and open balances", () => {
   assert.deepEqual(plain(accounting.salesTaxSummary(state)), { collected:10, itc:9, net:1 });
 });
 
+test("accounting service handles zero and invalid numeric inputs safely", () => {
+  const accounting = loadAccountingService();
+  assert.equal(accounting.invoiceTotal({ subtotal:0, tax:0, paid:0 }), 0);
+  assert.equal(accounting.openAmount({ subtotal:0, tax:0, paid:10 }), 0);
+  assert.equal(accounting.expenseTotal({ amount:"not-a-number", tax:undefined }), 0);
+  assert.equal(accounting.billTotal({ amount:null, tax:"5.25" }), 5.25);
+  assert.deepEqual(plain(accounting.salesTaxSummary({ invoices:[], expenses:[], bills:[] })), {
+    collected:0,
+    itc:0,
+    net:0
+  });
+});
+
+test("accounting service maps expense names to expected fallback accounts", () => {
+  const accounting = loadAccountingService();
+  assert.equal(accounting.expenseAccountFromName("Utility bill"), "6100");
+  assert.equal(accounting.expenseAccountFromName("Marketing campaign"), "6200");
+  assert.equal(accounting.expenseAccountFromName("Software subscription"), "6300");
+  assert.equal(accounting.expenseAccountFromName("Professional services"), "6400");
+  assert.equal(accounting.expenseAccountFromName("Office supplies"), "6000");
+});
+
 test("accounting service builds balanced ledger rows and report totals", () => {
   const accounting = loadAccountingService();
   const state = sampleState();
@@ -103,6 +125,56 @@ test("accounting service builds balanced ledger rows and report totals", () => {
   assert.equal(accounting.normalBalance(state, "2000"), 80);
 });
 
+test("payment application supports partial, exact, default, and invalid invoice payments", () => {
+  const accounting = loadAccountingService();
+  const invoice = { subtotal:300, tax:15, paid:100 };
+
+  const partial = accounting.invoicePaymentApplication(invoice)(50);
+  assert.equal(partial.appliedAmount, 50);
+  assert.equal(partial.paid, 150);
+  assert.equal(partial.openAmount, 165);
+  assert.equal(partial.fullyPaid, false);
+
+  const exact = accounting.invoicePaymentApplication(invoice)(215);
+  assert.equal(exact.appliedAmount, 215);
+  assert.equal(exact.paid, 315);
+  assert.equal(exact.openAmount, 0);
+  assert.equal(exact.fullyPaid, true);
+
+  const defaultRemaining = accounting.invoicePaymentApplication(invoice)(0);
+  assert.equal(defaultRemaining.appliedAmount, 215);
+  assert.equal(defaultRemaining.paid, 315);
+
+  const invalidNegative = accounting.invoicePaymentApplication(invoice)(-50);
+  assert.equal(invalidNegative.appliedAmount, 215);
+  assert.equal(invalidNegative.paid, 315);
+});
+
+test("bill payment application supports partial, exact, default, and invalid bill payments", () => {
+  const accounting = loadAccountingService();
+  const bill = { amount:100, tax:5, paid:25 };
+
+  const partial = accounting.billPaymentApplication(bill)(40);
+  assert.equal(partial.appliedAmount, 40);
+  assert.equal(partial.paid, 65);
+  assert.equal(partial.openAmount, 40);
+  assert.equal(partial.fullyPaid, false);
+
+  const exact = accounting.billPaymentApplication(bill)(80);
+  assert.equal(exact.appliedAmount, 80);
+  assert.equal(exact.paid, 105);
+  assert.equal(exact.openAmount, 0);
+  assert.equal(exact.fullyPaid, true);
+
+  const defaultRemaining = accounting.billPaymentApplication(bill)(0);
+  assert.equal(defaultRemaining.appliedAmount, 80);
+  assert.equal(defaultRemaining.paid, 105);
+
+  const invalidNegative = accounting.billPaymentApplication(bill)(-20);
+  assert.equal(invalidNegative.appliedAmount, 80);
+  assert.equal(invalidNegative.paid, 105);
+});
+
 test("payment application clamps overpayments to open invoice and bill balances", () => {
   const accounting = loadAccountingService();
   const invoice = { subtotal:100, tax:5, paid:40 };
@@ -117,6 +189,22 @@ test("payment application clamps overpayments to open invoice and bill balances"
   assert.equal(billApplied.appliedAmount, 42.5);
   assert.equal(billApplied.paid, 52.5);
   assert.equal(billApplied.fullyPaid, true);
+});
+
+test("mixed transactions keep trial balance balanced and calculate normal balances", () => {
+  const accounting = loadAccountingService();
+  const state = sampleState();
+  state.invoices.push({ id:"INV-2", customerId:"C-2", date:"2026-02-08", status:"Sent", subtotal:300, tax:15, paid:100, incomeAccountId:"4000", items:[{ desc:"Project", qty:1, rate:300 }] });
+  state.payments.push({ id:"PMT-2", invoiceId:"INV-2", customerId:"C-2", date:"2026-02-09", accountId:"BA-1", amount:100, memo:"Partial payment" });
+  state.bills.push({ id:"BILL-2", vendorId:"V-2", date:"2026-02-10", status:"Open", expenseAccountId:"6000", amount:50, tax:2.5, paid:20 });
+  state.billPayments.push({ id:"BP-2", billId:"BILL-2", vendorId:"V-2", date:"2026-02-11", accountId:"BA-1", amount:20, memo:"Partial bill payment" });
+
+  const trialBalance = accounting.trialBalanceStatus(state);
+  assert.equal(trialBalance.ok, true);
+  assert.equal(accounting.openAmount(state.invoices.find(invoice => invoice.id === "INV-2")), 215);
+  assert.equal(accounting.billOpenAmount(state.bills.find(bill => bill.id === "BILL-2")), 32.5);
+  assert.equal(accounting.normalBalance(state, "1200"), 375);
+  assert.equal(accounting.normalBalance(state, "2000"), 112.5);
 });
 
 test("bank feed posting lines debit and credit the expected accounts", () => {
