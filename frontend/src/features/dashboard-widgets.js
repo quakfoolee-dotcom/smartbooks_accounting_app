@@ -123,6 +123,56 @@
     const order=v25SanitizeList(state.settings.dashboardLayout, v25DefaultOrder());
     return order.filter(id=>visible.has(id)).map(v25WidgetHtml).join('') || `<div class="empty v25-empty-dashboard">No dashboard cards are visible. Open Customize dashboard and restore the default layout.</div>`;
   }
+  function v25DateWithin(date, days){
+    const value=String(date||'');
+    if(!value) return false;
+    return value <= addDaysISO(days);
+  }
+  function v25StatusLabel(level){
+    if(level==='warn') return 'Needs review';
+    if(level==='good') return 'On track';
+    return 'Monitor';
+  }
+  function v25OpsMetric(title,value,detail,actionLabel,actionAttr,level='neutral'){
+    return `<div class="v25-ops-item ${level}">
+      <div class="v25-ops-item-head"><span>${escapeHTML(title)}</span><strong>${escapeHTML(v25StatusLabel(level))}</strong></div>
+      <div class="v25-ops-value">${value}</div>
+      <p>${escapeHTML(detail)}</p>
+      ${actionLabel&&actionAttr?`<button type="button" class="btn" ${actionAttr}>${escapeHTML(actionLabel)}</button>`:''}
+    </div>`;
+  }
+  function v25RenderOperationsConsole(){
+    const t=totals();
+    const openInvoices=(state.invoices||[]).filter(i=>openAmount(i)>0.005);
+    const overdueInvoices=openInvoices.filter(i=>{
+      const status=typeof invoiceDisplayStatus==='function' ? invoiceDisplayStatus(i) : i.status;
+      return status==='Overdue' || (i.dueDate && i.dueDate < todayISO());
+    });
+    const openBills=(state.bills||[]).filter(b=>billOpenAmount(b)>0.005);
+    const dueBills=openBills.filter(b=>v25DateWithin(b.dueDate,7));
+    const bankReview=(state.bankTransactions||[]).filter(tx=>!['Reviewed','Matched'].includes(String(tx.status||''))).length;
+    const setupTasks=(state.setupTasks||[]).filter(task=>!task.hidden);
+    const openSetup=setupTasks.filter(task=>!task.done).length;
+    const cash=typeof calculateCashSummary==='function' ? calculateCashSummary() : null;
+    const cashBalance=num(cash?.operatingBalance ?? t.bank);
+    const taxNet=num(t.tax?.net);
+    const attentionCount=overdueInvoices.length+dueBills.length+bankReview+(taxNet>0?1:0);
+    const topAction=attentionCount ? `${attentionCount} item${attentionCount===1?'':'s'} need attention` : 'No urgent exceptions';
+    return `<section class="v25-ops-console" aria-label="Dashboard operations summary">
+      <div class="v25-ops-lead">
+        <span>Operations console</span>
+        <h3>${escapeHTML(topAction)}</h3>
+        <p>Receivables, payables, cash, banking, and setup health for today's review.</p>
+      </div>
+      <div class="v25-ops-grid">
+        ${v25OpsMetric('Attention needed',String(attentionCount),`${overdueInvoices.length} overdue invoices, ${dueBills.length} bills due soon, ${bankReview} bank items`, 'Open work queue', 'data-nav="getthingsdone"', attentionCount?'warn':'good')}
+        ${v25OpsMetric('Money in',money(openInvoices.reduce((s,i)=>s+openAmount(i),0)),`${overdueInvoices.length} overdue invoice${overdueInvoices.length===1?'':'s'}`, 'Receive payment', 'data-modal="payment"', overdueInvoices.length?'warn':'neutral')}
+        ${v25OpsMetric('Money out',money(openBills.reduce((s,b)=>s+billOpenAmount(b),0)),`${dueBills.length} bill${dueBills.length===1?'':'s'} due in the next 7 days`, 'Pay bill', 'data-modal="payBill"', dueBills.length?'warn':'neutral')}
+        ${v25OpsMetric('Cash position',money(cashBalance),`Net tax ${taxNet>=0?'payable':'credit'} ${money(Math.abs(taxNet))}`, 'Review cash', 'data-nav="banking"', cashBalance>=0?'good':'warn')}
+        ${v25OpsMetric('Open work',String(bankReview+openSetup),`${bankReview} bank review, ${openSetup} setup task${openSetup===1?'':'s'}`, 'Review setup', 'data-nav="setup"', bankReview||openSetup?'neutral':'good')}
+      </div>
+    </section>`;
+  }
   function v25RenderAllWidgetContent(){
     const t=totals();
     if(document.getElementById('cashFlowHero')) renderCashFlowHero();
@@ -147,6 +197,19 @@
       body.v8-ui .v25-dashboard-toolbar h2{font-size:28px;margin:0;letter-spacing:-.035em;line-height:1.12;color:#061b37}
       body.v8-ui .v25-dashboard-toolbar p{margin:6px 0 0;color:var(--muted,#667085);line-height:1.45;max-width:660px}
       body.v8-ui .v25-toolbar-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+      body.v8-ui .v25-ops-console{display:grid;grid-template-columns:minmax(220px,.72fr) minmax(0,2.4fr);gap:16px;align-items:stretch;margin:0 0 16px;padding:16px;background:var(--panel,#fff);border:1px solid #d8e2ea;border-radius:20px;box-shadow:0 2px 10px rgba(16,24,40,.04)}
+      body.v8-ui .v25-ops-lead{border-right:1px solid #e4ebf1;padding-right:16px;display:flex;flex-direction:column;justify-content:center}
+      body.v8-ui .v25-ops-lead span{font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#1d6f8f}
+      body.v8-ui .v25-ops-lead h3{margin:7px 0 6px;font-size:22px;line-height:1.15;color:#061b37}
+      body.v8-ui .v25-ops-lead p{margin:0;color:var(--muted,#667085);line-height:1.45}
+      body.v8-ui .v25-ops-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+      body.v8-ui .v25-ops-item{min-width:0;border:1px solid #e2e8ef;border-radius:14px;background:#fbfcfd;padding:12px;display:flex;flex-direction:column;gap:8px}
+      body.v8-ui .v25-ops-item.warn{border-color:#fed7aa;background:#fffaf2}.v25-ops-item.good{border-color:#bbf7d0;background:#f6fff8}
+      body.v8-ui .v25-ops-item-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+      body.v8-ui .v25-ops-item-head span{font-size:12px;font-weight:900;color:#475467}.v25-ops-item-head strong{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#667085;white-space:nowrap}
+      body.v8-ui .v25-ops-value{font-size:20px;font-weight:900;line-height:1.1;color:#061b37;font-variant-numeric:tabular-nums}
+      body.v8-ui .v25-ops-item p{margin:0;color:var(--muted,#667085);font-size:12px;line-height:1.35;min-height:32px}
+      body.v8-ui .v25-ops-item .btn{margin-top:auto;min-height:34px;padding:7px 10px;font-size:12px;width:100%}
       body.v8-ui .v25-dashboard-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px;align-items:start}
       body.v8-ui .v25-widget{grid-column:span 4;min-width:0;position:relative}
       body.v8-ui .v25-widget.v25-full{grid-column:1 / -1}.v25-widget.v25-two-thirds{grid-column:span 8}.v25-widget.v25-half{grid-column:span 6}.v25-widget.v25-third{grid-column:span 4}
@@ -155,9 +218,9 @@
       body.v8-ui .v25-widget-controls>div:first-child{display:flex;align-items:center;gap:8px;min-width:0}.v25-drag-handle{font-weight:900;color:#98a2b3;letter-spacing:-.15em}.v25-widget-buttons{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.v25-widget-buttons .btn{padding:6px 9px;font-size:12px}
       body.v8-ui .v25-edit-on{background:#fff7ed;border-color:#fed7aa;color:#9a3412}.v25-empty-dashboard{grid-column:1/-1}
       body.v8-ui .v25-layout-list{display:grid;gap:10px;margin-top:12px}.v25-layout-row{display:grid;grid-template-columns:minmax(220px,1fr) 150px auto;gap:10px;align-items:center;border:1px solid #e1e8ef;border-radius:16px;background:#fff;padding:12px}.v25-layout-row label{display:flex;align-items:center;gap:9px;font-weight:900}.v25-layout-row select{border:1px solid #cbd5df;border-radius:10px;padding:8px 9px;background:#fff}.v25-layout-actions{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}.v25-layout-actions .btn{padding:6px 9px;font-size:12px}.v25-layout-help{border:1px solid #cfe6f7;background:#f4faff;color:#18476b;border-radius:14px;padding:11px 12px;margin:0 0 12px;line-height:1.4}.v25-privacy-row{display:flex;align-items:center;gap:12px;margin-top:14px;padding:12px;border:1px solid #e1e8ef;border-radius:14px;background:#fbfcfd}
-      body.v8-ui.dark-mode .v25-dashboard-toolbar{background:#14202d;border-color:#2a3c4f;box-shadow:0 12px 32px rgba(0,0,0,.22)}body.v8-ui.dark-mode .v25-dashboard-toolbar h2{color:#f3f7fb}body.v8-ui.dark-mode .v25-widget-controls,body.v8-ui.dark-mode .v25-layout-row,body.v8-ui.dark-mode .v25-privacy-row{background:#101b27;border-color:#2a3c4f;color:#e8edf3}body.v8-ui.dark-mode .v25-layout-row select{background:#0f1924;border-color:#3a5065;color:#edf3f8}body.v8-ui.dark-mode .v25-layout-help{background:#0f2536;border-color:#264b67;color:#c8e6ff}
-      @media(max-width:1180px){body.v8-ui .v25-widget.v25-third,body.v8-ui .v25-widget.v25-half{grid-column:span 6}.v25-widget.v25-two-thirds{grid-column:1/-1}.v25-layout-row{grid-template-columns:1fr}}
-      @media(max-width:760px){body.v8-ui .v25-dashboard-toolbar{flex-direction:column;align-items:flex-start;padding:16px;margin:14px 0 16px}.v25-toolbar-actions{justify-content:flex-start}.v25-toolbar-actions .btn{padding:8px 11px}.v25-dashboard-grid{grid-template-columns:1fr}.v25-widget,.v25-widget.v25-third,.v25-widget.v25-half,.v25-widget.v25-two-thirds,.v25-widget.v25-full{grid-column:1/-1!important}.v25-widget-controls{align-items:flex-start;flex-direction:column}.v25-layout-actions{justify-content:flex-start}}
+      body.v8-ui.dark-mode .v25-dashboard-toolbar,body.v8-ui.dark-mode .v25-ops-console{background:#14202d;border-color:#2a3c4f;box-shadow:0 12px 32px rgba(0,0,0,.22)}body.v8-ui.dark-mode .v25-dashboard-toolbar h2,body.v8-ui.dark-mode .v25-ops-lead h3,body.v8-ui.dark-mode .v25-ops-value{color:#f3f7fb}body.v8-ui.dark-mode .v25-widget-controls,body.v8-ui.dark-mode .v25-layout-row,body.v8-ui.dark-mode .v25-privacy-row,body.v8-ui.dark-mode .v25-ops-item{background:#101b27;border-color:#2a3c4f;color:#e8edf3}body.v8-ui.dark-mode .v25-layout-row select{background:#0f1924;border-color:#3a5065;color:#edf3f8}body.v8-ui.dark-mode .v25-layout-help{background:#0f2536;border-color:#264b67;color:#c8e6ff}body.v8-ui.dark-mode .v25-ops-lead{border-color:#2a3c4f}body.v8-ui.dark-mode .v25-ops-lead span{color:#8ecae6}body.v8-ui.dark-mode .v25-ops-item.warn{background:#2b2116;border-color:#8a5a22}body.v8-ui.dark-mode .v25-ops-item.good{background:#10271b;border-color:#2f6845}
+      @media(max-width:1180px){body.v8-ui .v25-ops-console{grid-template-columns:1fr}.v25-ops-lead{border-right:0!important;border-bottom:1px solid #e4ebf1;padding-right:0;padding-bottom:12px}.v25-ops-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}body.v8-ui .v25-widget.v25-third,body.v8-ui .v25-widget.v25-half{grid-column:span 6}.v25-widget.v25-two-thirds{grid-column:1/-1}.v25-layout-row{grid-template-columns:1fr}}
+      @media(max-width:760px){body.v8-ui .v25-dashboard-toolbar{flex-direction:column;align-items:flex-start;padding:16px;margin:14px 0 16px}.v25-toolbar-actions{justify-content:flex-start}.v25-toolbar-actions .btn{padding:8px 11px}.v25-ops-console{padding:14px}.v25-ops-grid{grid-template-columns:1fr!important}.v25-dashboard-grid{grid-template-columns:1fr}.v25-widget,.v25-widget.v25-third,.v25-widget.v25-half,.v25-widget.v25-two-thirds,.v25-widget.v25-full{grid-column:1/-1!important}.v25-widget-controls{align-items:flex-start;flex-direction:column}.v25-layout-actions{justify-content:flex-start}}
     `;
     document.head.appendChild(style);
   }
@@ -175,6 +238,7 @@
       <div class="hero v8-hero"><h2 id="greeting">Good afternoon, Quak!</h2><div class="pill-row" id="modulePills"></div></div>
       ${quickActionsV814 ? quickActionsV814() : quickActionsV8()}
       <div class="v25-dashboard-toolbar"><div><h2>Dashboard</h2><p>Move cards into the order that matches your workflow. Layout is saved on this device.</p></div><div class="v25-toolbar-actions"><button class="btn ${edit?'v25-edit-on':''}" data-action="dashboard-edit-mode">${edit?'Done customizing':'Customize layout'}</button><button class="btn" data-modal="customizeDashboard">⚙ Customize dashboard</button><button class="btn" data-action="toggle-privacy">◉ Privacy</button><button class="btn square" data-action="refresh-dashboard">↻ Refresh</button></div></div>
+      ${v25RenderOperationsConsole()}
       <div class="v25-dashboard-grid" id="dashboardWidgetGrid">${v25RenderDashboardWidgets()}</div>`;
     renderModulePills();
     v25RenderAllWidgetContent();

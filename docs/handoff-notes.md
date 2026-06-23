@@ -1,6 +1,6 @@
 # SmartBooks Handoff Notes
 
-Last updated: 2026-06-22
+Last updated: 2026-06-23
 
 ## Current state
 
@@ -25,6 +25,13 @@ Current unit coverage:
 - Navigation order, visibility, settings sync, and bookmark mapping.
 - Storage fallback, save, backup, invalid JSON handling, and status counters.
 - Icon SVG rendering, fallback behavior, mojibake repair, and icon inference.
+- Accounting totals, aging buckets, ledger balance, payment application, deposits, and bank-feed posting helpers.
+
+Current functional coverage:
+
+- Startup navigation, sidebar defaults, Customize menu, dashboard customization, global search, and accounting workflows.
+- Accessibility and visual-contract checks for modal behavior, keyboard reachability, button sizing, and table layout.
+- Structured UI contract snapshots for default navigation and Manage menu behavior.
 
 ## Important fixes already made
 
@@ -34,7 +41,8 @@ Current unit coverage:
 
 ## Suggested next steps
 
-1. Continue shrinking `dashboard-widgets.js` by moving invoice/sales UI fixes into a dedicated sales feature module.
-2. Add unit tests around `SmartBooksNavigation.menuIdsToBookmarkIds` whenever bookmark behavior changes.
-3. Add E2E coverage for Customize menu, sidebar navigation, and global search as repeatable scripts.
-4. Consider replacing the ad hoc unit runner with Node's built-in test runner once test count grows.
+1. Keep dashboard stabilization focused on the operations-console model before adding pixel-level visual snapshots.
+2. Continue shrinking `dashboard-widgets.js` by moving invoice/sales UI fixes into a dedicated sales feature module when touching those flows.
+3. Add unit tests around `SmartBooksNavigation.menuIdsToBookmarkIds` whenever bookmark behavior changes.
+4. Design the backend persistence contract before switching the storage adapter away from localStorage.
+5. Consider replacing the ad hoc unit runner with Node's built-in test runner once test count grows.

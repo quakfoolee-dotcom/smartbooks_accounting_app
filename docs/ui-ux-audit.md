@@ -261,7 +261,7 @@ Do not make the visual snapshot job required immediately. Run it locally first, 
 2. Implement a page-header and action-bar pattern across Dashboard, Reports, Expenses, Banking, and Sales. **Started in Pass 1 through the shared runtime UI baseline.**
 3. Implement shared table classes for financial tables. **Started in Pass 1 through table scanability rules.**
 4. Normalize modal layout and footer behavior. **Started in Pass 1 through modal rhythm rules.**
-5. Rework Dashboard into an operations console.
+5. Rework Dashboard into an operations console. **Started in Pass 2 with a first-viewport operations summary.**
 6. Recheck desktop and mobile screenshots manually.
 7. Add `npm run test:visual` with a small baseline set.
 
@@ -286,6 +286,24 @@ Why this matters:
 - The app now has a clearer design target for future UI work.
 - Existing screens can improve without rewriting every feature module at once.
 - Formal screenshot assertions can be added later against a deliberate baseline instead of unstable one-off styling.
+
+## Implementation Pass 2
+
+Date: 2026-06-23
+
+This pass started the dashboard operations-console direction without disrupting the customizable widget grid.
+
+What changed:
+
+- Added a first-viewport operations summary above the dashboard widgets.
+- Summarized attention needed, money in, money out, cash position, and open work from existing accounting state.
+- Kept actions tied to existing workflows for payments, bills, banking, setup, and the work queue.
+- Added functional coverage so the operations summary remains present and structurally complete.
+
+Why this matters:
+
+- The dashboard now answers immediate accounting questions before asking users to scan individual cards.
+- The change improves the main product surface while preserving saved dashboard layout behavior.
 
 ## Audit Conclusion
 
