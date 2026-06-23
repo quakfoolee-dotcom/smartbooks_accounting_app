@@ -95,6 +95,8 @@ frontend/
     styles.css
 shared/
   constants.js
+scripts/
+  run-coverage.js
 tests/
   functional/
     accessibility-and-visual.spec.js
@@ -155,6 +157,12 @@ Run unit tests:
 npm test
 ```
 
+Generate a service coverage report:
+
+```powershell
+npm run coverage
+```
+
 Run local browser functional tests:
 
 ```powershell
@@ -177,6 +185,8 @@ What each command covers:
 
 - `npm run check` verifies JavaScript syntax across app files, Playwright configs, unit tests, and functional tests.
 - `npm test` validates service-level behavior such as navigation normalization, bookmark mapping, storage handling, icon inference, accounting totals, ledger balance, payment clamping, and bank-feed posting lines.
+- `npm run coverage` runs the unit suite through `c8` and writes service coverage reports to `coverage/`.
+- `npm run coverage:check` applies the current service coverage thresholds for local quality review.
 - `npm run test:functional` starts the local Node server and runs Chromium workflow tests against startup, navigation, Customize, dashboard layout, search, accounting workflows, accessibility, visual regressions, and utilities.
 - `npm run test:pages-smoke` opens the live GitHub Pages URL and checks for load failures, browser errors, visible mojibake, sidebar chevrons, Manage menu, and Reports navigation.
 - `npm run test:all` runs `check`, unit tests, and local functional tests.
@@ -189,12 +199,13 @@ docs/testing-strategy.md
 
 ## GitHub Actions
 
-This repository uses four GitHub automation layers:
+This repository uses five GitHub automation layers:
 
 - `SmartBooks CI`
   - Runs on pushes and pull requests to `main`.
-  - Splits checks into syntax, unit, and functional browser jobs.
+  - Splits checks into syntax, unit, service coverage, and functional browser jobs.
   - Publishes a final `CI Result` job for branch protection.
+  - Uploads a non-blocking `coverage-report` artifact from the service coverage job.
   - Uploads Playwright failure artifacts when browser tests fail.
 
 - `Deploy SmartBooks Pages`

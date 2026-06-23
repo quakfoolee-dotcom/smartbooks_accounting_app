@@ -1,0 +1,19 @@
+{
+  "all": true,
+  "include": [
+    "frontend/src/services/**/*.js"
+  ],
+  "exclude": [
+    "tests/**"
+  ],
+  "reporter": [
+    "text",
+    "html",
+    "lcov"
+  ],
+  "reports-dir": "coverage",
+  "lines": 70,
+  "functions": 70,
+  "branches": 60,
+  "statements": 70
+}

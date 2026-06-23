@@ -1,7 +1,5 @@
 const assert = require("node:assert/strict");
-const fs = require("node:fs");
 const path = require("node:path");
-const vm = require("node:vm");
 
 const root = path.resolve(__dirname, "../..");
 
@@ -10,11 +8,21 @@ function plain(value){
 }
 
 function loadAccountingService(){
+  const modulePath = path.join(root, "frontend/src/services/accounting-service.js");
+  const hadWindow = Object.prototype.hasOwnProperty.call(globalThis, "window");
+  const previousWindow = globalThis.window;
   const sandbox = { window:{} };
   sandbox.window = sandbox;
-  const code = fs.readFileSync(path.join(root, "frontend/src/services/accounting-service.js"), "utf8");
-  vm.runInNewContext(code, sandbox, { filename:"frontend/src/services/accounting-service.js" });
-  return sandbox.window.SmartBooksAccounting;
+  try{
+    globalThis.window = sandbox.window;
+    delete require.cache[require.resolve(modulePath)];
+    require(modulePath);
+    return sandbox.window.SmartBooksAccounting;
+  }finally{
+    delete require.cache[require.resolve(modulePath)];
+    if(hadWindow) globalThis.window = previousWindow;
+    else delete globalThis.window;
+  }
 }
 
 function test(name, fn){
@@ -98,6 +106,48 @@ test("accounting service handles zero and invalid numeric inputs safely", () => 
     collected:0,
     itc:0,
     net:0
+  });
+});
+
+test("accounting service buckets receivables and payables by due date aging", () => {
+  const accounting = loadAccountingService();
+
+  assert.equal(accounting.ageInDays("2026-06-15", "2026-06-20"), 5);
+  assert.equal(accounting.ageInDays("2026-06-25", "2026-06-20"), 0);
+  assert.equal(accounting.ageInDays("", "2026-06-20"), 0);
+  assert.equal(accounting.agingBucketFor("2026-06-25", "2026-06-20"), "current");
+  assert.equal(accounting.agingBucketFor("2026-06-01", "2026-06-20"), "d1_30");
+  assert.equal(accounting.agingBucketFor("2026-05-01", "2026-06-20"), "d31_60");
+  assert.equal(accounting.agingBucketFor("2026-03-01", "2026-06-20"), "d61_plus");
+
+  const invoices = [
+    { id:"INV-CURRENT", dueDate:"2026-06-25", subtotal:100, tax:5, paid:0 },
+    { id:"INV-30", dueDate:"2026-06-01", subtotal:200, tax:10, paid:50 },
+    { id:"INV-60", dueDate:"2026-05-01", subtotal:300, tax:15, paid:0 },
+    { id:"INV-61", dueDate:"2026-03-01", subtotal:400, tax:20, paid:0 },
+    { id:"INV-PAID", dueDate:"2026-03-01", subtotal:100, tax:5, paid:105 }
+  ];
+  assert.deepEqual(plain(accounting.receivablesAging(invoices, "2026-06-20")), {
+    current:105,
+    d1_30:160,
+    d31_60:315,
+    d61_plus:420,
+    total:1000
+  });
+
+  const bills = [
+    { id:"BILL-CURRENT", dueDate:"2026-06-25", amount:100, tax:5, paid:0 },
+    { id:"BILL-30", dueDate:"2026-06-01", amount:200, tax:10, paid:50 },
+    { id:"BILL-60", dueDate:"2026-05-01", amount:300, tax:15, paid:0 },
+    { id:"BILL-61", dueDate:"2026-03-01", amount:400, tax:20, paid:0 },
+    { id:"BILL-PAID", dueDate:"2026-03-01", amount:100, tax:5, paid:105 }
+  ];
+  assert.deepEqual(plain(accounting.payablesAging(bills, "2026-06-20")), {
+    current:105,
+    d1_30:160,
+    d31_60:315,
+    d61_plus:420,
+    total:1000
   });
 });
 

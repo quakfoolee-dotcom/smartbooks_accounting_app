@@ -182,6 +182,54 @@
     return { collected, itc, net:collected - itc };
   }
 
+  function isoDateValue(value){
+    const isoDate = String(value || "").slice(0, 10);
+    if(!isoDate) return null;
+    const time = Date.parse(`${isoDate}T00:00:00`);
+    return Number.isNaN(time) ? null : time;
+  }
+
+  function ageInDays(dueDate, asOfDate){
+    const due = isoDateValue(dueDate);
+    const asOf = isoDateValue(asOfDate);
+    if(due === null || asOf === null) return 0;
+    return Math.max(0, Math.floor((asOf - due) / 86400000));
+  }
+
+  function agingBucketFor(dueDate, asOfDate){
+    const days = ageInDays(dueDate, asOfDate);
+    if(days <= 0) return "current";
+    if(days <= 30) return "d1_30";
+    if(days <= 60) return "d31_60";
+    return "d61_plus";
+  }
+
+  function emptyAgingBuckets(){
+    return { current:0, d1_30:0, d31_60:0, d61_plus:0, total:0 };
+  }
+
+  function receivablesAging(invoices, asOfDate){
+    return (invoices || []).reduce((buckets, invoice) => {
+      const amount = openAmount(invoice);
+      if(amount <= 0.01) return buckets;
+      const bucket = agingBucketFor(invoice.dueDate, asOfDate);
+      buckets[bucket] += amount;
+      buckets.total += amount;
+      return buckets;
+    }, emptyAgingBuckets());
+  }
+
+  function payablesAging(bills, asOfDate){
+    return (bills || []).reduce((buckets, bill) => {
+      const amount = billOpenAmount(bill);
+      if(amount <= 0.01) return buckets;
+      const bucket = agingBucketFor(bill.dueDate, asOfDate);
+      buckets[bucket] += amount;
+      buckets.total += amount;
+      return buckets;
+    }, emptyAgingBuckets());
+  }
+
   function totals(state){
     const invoiceRevenue = (state?.invoices || []).reduce((sum, invoice) => sum + num(invoice.subtotal), 0);
     const paidRevenue = (state?.payments || []).reduce((sum, payment) => sum + num(payment.amount), 0);
@@ -277,6 +325,8 @@
 
   global.SmartBooksAccounting = {
     accountBalances,
+    ageInDays,
+    agingBucketFor,
     bankBillMatchApplication,
     bankAccountIdToLedger,
     bankInvoiceMatchApplication,
@@ -293,7 +343,9 @@
     normalBalance,
     num,
     openAmount,
+    payablesAging,
     paymentApplication,
+    receivablesAging,
     salesTaxSummary,
     sumTypes,
     totals,

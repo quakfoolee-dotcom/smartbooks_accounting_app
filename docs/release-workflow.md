@@ -28,10 +28,13 @@ The CI workflow has separate jobs for:
 
 - `Syntax Check`
 - `Unit Tests`
+- `Coverage Report`
 - `Functional Browser Tests`
 - `CI Result`
 
 Use `CI Result` as the required branch-protection check. It fails if any upstream CI job fails, and it stays stable if more jobs are added later.
+
+`Coverage Report` is currently informational. It uploads the service coverage artifact for review, but it is intentionally not included in the required `CI Result` gate until the project has a stable baseline.
 
 ## Local Pre-Push Gate
 
@@ -39,6 +42,12 @@ Before pushing normal app changes, run:
 
 ```powershell
 npm run test:all
+```
+
+When changing service or accounting logic, also run:
+
+```powershell
+npm run coverage
 ```
 
 Before or after deployment-related changes, also run:

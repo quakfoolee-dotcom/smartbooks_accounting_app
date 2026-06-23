@@ -85,7 +85,9 @@ The app is still a prototype, but these rules should stay stable as the codebase
 | --- | --- | --- | --- | --- | --- |
 | Trial balance | Mixed posted transactions | Calculate trial balance | N/A | Debits equal credits | Trial balance status is balanced |
 | A/R report | Invoice 315, payment 100 | Calculate totals | N/A | A/R normal balance 215 | Open receivables show 215 |
+| A/R aging | Open invoices due today, 1-30 days late, 31-60 days late, and 61+ days late | Calculate aging buckets | N/A | No ledger movement | Open receivables appear in the matching aging column |
 | A/P report | Bill 105, payment 25 | Calculate totals | N/A | A/P normal balance 80 | Open payables show 80 |
+| A/P aging | Open bills due today, 1-30 days late, 31-60 days late, and 61+ days late | Calculate aging buckets | N/A | No ledger movement | Open payables appear in the matching aging column |
 | Profit report | Income 300, expense 80 | Calculate totals | N/A | Income minus expenses is 220 | Profit & Loss shows 220 before tax-only effects |
 | Bank summary | Checking, savings, credit card balances | Calculate totals | N/A | Bank total equals debit bank balances minus credit card liability | Dashboard bank value matches ledger |
 
@@ -108,9 +110,11 @@ The app is still a prototype, but these rules should stay stable as the codebase
 | Bank feed posting lines | `tests/unit/accounting-service.test.js` | `tests/functional/accounting-workflows.spec.js` |
 | Bank feed invoice/bill matching | `tests/unit/accounting-service.test.js` | `tests/functional/accounting-workflows.spec.js` |
 | Trial balance and report totals | `tests/unit/accounting-service.test.js` | `tests/functional/accounting-workflows.spec.js` |
+| A/R and A/P aging buckets | `tests/unit/accounting-service.test.js` | Report rendering covered by `tests/functional/accounting-workflows.spec.js` |
 | A/R, A/P, and P&L report assertions | `tests/unit/accounting-service.test.js` | `tests/functional/accounting-workflows.spec.js` |
 | Reset/export utilities | Service tests indirectly; functional coverage primary | `tests/functional/utilities.spec.js` |
 
 ## Gaps To Close Next
 
-- Add date-aging cases for overdue invoices and bills once aging buckets are formalized.
+- Add report-detail assertions for visible aging bucket column values if report selectors become stable enough.
+- Add API-level accounting tests when persistence moves beyond browser localStorage.

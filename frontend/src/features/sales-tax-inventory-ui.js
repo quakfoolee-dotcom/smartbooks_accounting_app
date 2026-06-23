@@ -2178,8 +2178,10 @@ var v816DefaultCategories = v816FeedCategories.map(c=>c.id);
   }
   function monthKey(date){ return String(date||'').slice(0,7) || 'No date'; }
   function groupSum(rows, keyFn, amtFn){ const m=new Map(); rows.forEach(r=>{ const k=keyFn(r); m.set(k,(m.get(k)||0)+num(amtFn(r))); }); return [...m.entries()].sort((a,b)=>String(a[0]).localeCompare(String(b[0]))); }
-  function daysLate(due){ const d=new Date(due+'T00:00:00'); const n=new Date(todayISO()+'T00:00:00'); return Math.max(0, Math.floor((n-d)/86400000)); }
-  function agingBuckets(amount, days){ return [days===0?amount:0, days>0&&days<=30?amount:0, days>30&&days<=60?amount:0, days>60?amount:0]; }
+  function agingBucketAmounts(amount, dueDate, asOfDate=todayISO()){
+    const bucket = window.SmartBooksAccounting?.agingBucketFor?.(dueDate, asOfDate) || 'current';
+    return ['current','d1_30','d31_60','d61_plus'].map(key => key === bucket ? amount : 0);
+  }
   function safeInventoryProducts(){ return typeof inventoryProducts==='function' ? inventoryProducts() : (state.products||[]).filter(p=>p.trackInventory||p.type==='Product'); }
   function safeStockCommitted(id){ return typeof stockCommitted==='function' ? stockCommitted(id) : 0; }
   function safeStockAvailable(id){ return typeof stockAvailable==='function' ? stockAvailable(id) : num((state.products||[]).find(p=>p.id===id)?.qty); }
@@ -2206,12 +2208,12 @@ var v816DefaultCategories = v816FeedCategories.map(c=>c.id);
     if(id==='general-ledger') return {...common, summary:[['Ledger lines',ledger().length],['Debits',money(trialBalanceStatus().debits)],['Credits',money(trialBalanceStatus().credits)]], headings:['Date','Source','Account','Memo','Debit','Credit'], rows:ledger().map(l=>[l.date,`${l.source} ${l.sourceId}`,accountLabel(l.accountId),l.memo,l.debit?money(l.debit):'',l.credit?money(l.credit):''])};
     if(id==='ar-aging' || id==='open-invoices'){
       const inv=state.invoices.filter(i=>openAmount(i)>0.01);
-      const rows=inv.map(i=>{ const amt=openAmount(i), d=daysLate(i.dueDate), b=agingBuckets(amt,d); return [getCustomer(i.customerId).name,i.id,i.dueDate,i.status,money(amt),...b.map(money)]; });
+      const rows=inv.map(i=>{ const amt=openAmount(i), b=agingBucketAmounts(amt,i.dueDate); return [getCustomer(i.customerId).name,i.id,i.dueDate,i.status,money(amt),...b.map(money)]; });
       return {...common, summary:[['Open A/R',money(t.ar)],['Overdue',money(t.overdue)],['Open invoices',inv.length]], headings:['Customer','Invoice','Due date','Status','Open','Current','1-30','31-60','61+'], rows};
     }
     if(id==='ap-aging' || id==='unpaid-bills'){
       const bills=state.bills.filter(b=>billOpenAmount(b)>0.01);
-      const rows=bills.map(b=>{ const amt=billOpenAmount(b), d=daysLate(b.dueDate), buck=agingBuckets(amt,d); return [getVendor(b.vendorId).name,b.id,b.dueDate,b.status,money(amt),...buck.map(money)]; });
+      const rows=bills.map(b=>{ const amt=billOpenAmount(b), buck=agingBucketAmounts(amt,b.dueDate); return [getVendor(b.vendorId).name,b.id,b.dueDate,b.status,money(amt),...buck.map(money)]; });
       return {...common, summary:[['Open A/P',money(t.ap)],['Open bills',bills.length],['Due/overdue',bills.filter(b=>b.dueDate<=todayISO()).length]], headings:['Vendor','Bill','Due date','Status','Open','Current','1-30','31-60','61+'], rows};
     }
     if(id==='invoice-list' || id==='paid-invoices'){
