@@ -76,9 +76,9 @@ Purpose:
 
 - measures unit coverage for `frontend/src/services/**/*.js`
 - produces text, HTML, and lcov reports in `coverage/`
-- gives a baseline for service-level maintainability before broader refactors
+- enforces conservative service-level thresholds before broader refactors
 
-The GitHub Actions coverage job is informational for now. It uploads a `coverage-report` artifact but is not part of the required branch protection result yet. Keep it non-blocking until the baseline is stable enough that coverage changes are a useful quality signal instead of CI noise.
+The GitHub Actions coverage job runs `npm run coverage:check`, uploads a `coverage-report` artifact, and feeds into the required `SmartBooks CI / CI Result` gate. When coverage fails, inspect the coverage artifact before changing thresholds.
 
 ## Accounting Service Tests
 
