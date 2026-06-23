@@ -257,13 +257,35 @@ Do not make the visual snapshot job required immediately. Run it locally first, 
 
 ## Concrete Next Steps
 
-1. Create or update a design-conventions document for UI tokens, page layout, table layout, modal layout, and status colors.
-2. Implement a page-header and action-bar pattern across Dashboard, Reports, Expenses, Banking, and Sales.
-3. Implement shared table classes for financial tables.
-4. Normalize modal layout and footer behavior.
+1. Create or update a design-conventions document for UI tokens, page layout, table layout, modal layout, and status colors. **Completed in Pass 1.**
+2. Implement a page-header and action-bar pattern across Dashboard, Reports, Expenses, Banking, and Sales. **Started in Pass 1 through the shared runtime UI baseline.**
+3. Implement shared table classes for financial tables. **Started in Pass 1 through table scanability rules.**
+4. Normalize modal layout and footer behavior. **Started in Pass 1 through modal rhythm rules.**
 5. Rework Dashboard into an operations console.
 6. Recheck desktop and mobile screenshots manually.
 7. Add `npm run test:visual` with a small baseline set.
+
+## Implementation Pass 1
+
+Date: 2026-06-23
+
+This pass implemented the first design-stabilization layer before formal snapshot assertions.
+
+What changed:
+
+- Added a runtime UI baseline that guarantees `body.v8-ui` is present.
+- Standardized major page headers, dashboard headers, and action clusters.
+- Standardized financial table rhythm, money alignment, and table overflow behavior.
+- Normalized icon-only button dimensions so controls stay centered.
+- Normalized modal header, body, footer, and mobile sizing behavior.
+- Improved mobile wrapping for topbar, quick actions, page headers, and modal footers.
+- Updated `docs/style-conventions.md` with the new UI stabilization baseline.
+
+Why this matters:
+
+- The app now has a clearer design target for future UI work.
+- Existing screens can improve without rewriting every feature module at once.
+- Formal screenshot assertions can be added later against a deliberate baseline instead of unstable one-off styling.
 
 ## Audit Conclusion
 
