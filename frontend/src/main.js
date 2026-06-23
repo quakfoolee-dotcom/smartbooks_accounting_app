@@ -564,10 +564,10 @@
     const tx=state.bankTransactions.find(x=>x.id===id); if(!tx) return;
     const inv=state.invoices.find(i=>i.id===tx.matchedInvoiceId) || state.invoices.find(i=>openAmount(i)>0 && Math.abs(openAmount(i)-Math.abs(num(tx.amount)))<0.01);
     if(!inv){ showToast('No matching open invoice found.'); return; }
-    const amt=Math.min(openAmount(inv), Math.abs(num(tx.amount)));
-    if(amt<=0){ showToast('Invoice is already closed.'); return; }
-    inv.paid=Math.min(invoiceTotal(inv), num(inv.paid)+amt); if(openAmount(inv)<=0.01) inv.status='Paid'; else inv.status='Partially Paid';
-    const pmt={id:uid('PMT'), invoiceId:inv.id, customerId:inv.customerId, date:tx.date, accountId:tx.bankAccountId, amount:amt, memo:'Matched bank transaction '+tx.id};
+    const match=accounting.bankInvoiceMatchApplication(inv, tx);
+    if(!match.canMatch){ showToast('Invoice is already closed.'); return; }
+    inv.paid=match.paid; inv.status=match.status;
+    const pmt={id:uid('PMT'), invoiceId:inv.id, customerId:inv.customerId, date:tx.date, accountId:tx.bankAccountId, amount:match.appliedAmount, memo:'Matched bank transaction '+tx.id};
     state.payments.unshift(pmt); tx.status='Matched'; tx.linkedId=pmt.id; tx.posted=false; tx.matchType='Invoice payment';
     audit(`Bank transaction ${tx.id} matched to invoice ${inv.id}`);
     saveState(); renderAll(); showToast(`${tx.id} matched to ${inv.id}.`);
@@ -576,10 +576,10 @@
     const tx=state.bankTransactions.find(x=>x.id===id); if(!tx) return;
     const bill=state.bills.find(b=>b.id===tx.matchedBillId) || state.bills.find(b=>billOpenAmount(b)>0 && Math.abs(billOpenAmount(b)-Math.abs(num(tx.amount)))<0.01);
     if(!bill){ showToast('No matching open bill found.'); return; }
-    const amt=Math.min(billOpenAmount(bill), Math.abs(num(tx.amount)));
-    if(amt<=0){ showToast('Bill is already closed.'); return; }
-    bill.paid=Math.min(billTotal(bill), num(bill.paid)+amt); if(billOpenAmount(bill)<=0.01) bill.status='Paid';
-    const bp={id:uid('BP'), billId:bill.id, vendorId:bill.vendorId, date:tx.date, accountId:tx.bankAccountId, amount:amt, memo:'Matched bank transaction '+tx.id};
+    const match=accounting.bankBillMatchApplication(bill, tx);
+    if(!match.canMatch){ showToast('Bill is already closed.'); return; }
+    bill.paid=match.paid; bill.status=match.status;
+    const bp={id:uid('BP'), billId:bill.id, vendorId:bill.vendorId, date:tx.date, accountId:tx.bankAccountId, amount:match.appliedAmount, memo:'Matched bank transaction '+tx.id};
     state.billPayments.unshift(bp); tx.status='Matched'; tx.linkedId=bp.id; tx.posted=false; tx.matchType='Bill payment';
     audit(`Bank transaction ${tx.id} matched to bill ${bill.id}`);
     saveState(); renderAll(); showToast(`${tx.id} matched to ${bill.id}.`);

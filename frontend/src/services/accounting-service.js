@@ -241,9 +241,45 @@
     };
   }
 
+  function bankInvoiceMatchApplication(invoice, transaction){
+    if(!invoice || num(transaction?.amount) <= 0) {
+      return { canMatch:false, appliedAmount:0, paid:num(invoice?.paid), openAmount:openAmount(invoice), status:invoice?.status || "Sent" };
+    }
+    const open = openAmount(invoice);
+    const appliedAmount = Math.min(open, Math.abs(num(transaction.amount)));
+    const paid = Math.min(invoiceTotal(invoice), num(invoice.paid) + appliedAmount);
+    const remaining = Math.max(0, invoiceTotal(invoice) - paid);
+    return {
+      canMatch:appliedAmount > 0,
+      appliedAmount,
+      paid,
+      openAmount:remaining,
+      status:remaining <= 0.01 ? "Paid" : "Partially Paid"
+    };
+  }
+
+  function bankBillMatchApplication(bill, transaction){
+    if(!bill || num(transaction?.amount) >= 0) {
+      return { canMatch:false, appliedAmount:0, paid:num(bill?.paid), openAmount:billOpenAmount(bill), status:bill?.status || "Open" };
+    }
+    const open = billOpenAmount(bill);
+    const appliedAmount = Math.min(open, Math.abs(num(transaction.amount)));
+    const paid = Math.min(billTotal(bill), num(bill.paid) + appliedAmount);
+    const remaining = Math.max(0, billTotal(bill) - paid);
+    return {
+      canMatch:appliedAmount > 0,
+      appliedAmount,
+      paid,
+      openAmount:remaining,
+      status:remaining <= 0.01 ? "Paid" : (bill.status || "Open")
+    };
+  }
+
   global.SmartBooksAccounting = {
     accountBalances,
+    bankBillMatchApplication,
     bankAccountIdToLedger,
+    bankInvoiceMatchApplication,
     bankTransactionPostingLines,
     billOpenAmount,
     billPaymentApplication: bill => amount => paymentApplication(bill, amount, billTotal),

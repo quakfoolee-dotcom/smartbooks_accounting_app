@@ -258,6 +258,58 @@ test("deposit ledger clears undeposited funds and credits extra deposits separat
   assert.equal(accounting.trialBalanceStatus(state).ok, true);
 });
 
+test("bank invoice matching applies positive deposits without overpaying", () => {
+  const accounting = loadAccountingService();
+  const invoice = { subtotal:300, tax:15, paid:100, status:"Sent" };
+
+  const partial = accounting.bankInvoiceMatchApplication(invoice, { amount:50 });
+  assert.equal(partial.canMatch, true);
+  assert.equal(partial.appliedAmount, 50);
+  assert.equal(partial.paid, 150);
+  assert.equal(partial.openAmount, 165);
+  assert.equal(partial.status, "Partially Paid");
+
+  const full = accounting.bankInvoiceMatchApplication(invoice, { amount:999 });
+  assert.equal(full.canMatch, true);
+  assert.equal(full.appliedAmount, 215);
+  assert.equal(full.paid, 315);
+  assert.equal(full.openAmount, 0);
+  assert.equal(full.status, "Paid");
+
+  const invalidWithdrawal = accounting.bankInvoiceMatchApplication(invoice, { amount:-50 });
+  assert.equal(invalidWithdrawal.canMatch, false);
+
+  const closed = accounting.bankInvoiceMatchApplication({ subtotal:100, tax:5, paid:105, status:"Paid" }, { amount:105 });
+  assert.equal(closed.canMatch, false);
+  assert.equal(closed.appliedAmount, 0);
+});
+
+test("bank bill matching applies withdrawals without overpaying", () => {
+  const accounting = loadAccountingService();
+  const bill = { amount:100, tax:5, paid:25, status:"Open" };
+
+  const partial = accounting.bankBillMatchApplication(bill, { amount:-40 });
+  assert.equal(partial.canMatch, true);
+  assert.equal(partial.appliedAmount, 40);
+  assert.equal(partial.paid, 65);
+  assert.equal(partial.openAmount, 40);
+  assert.equal(partial.status, "Open");
+
+  const full = accounting.bankBillMatchApplication(bill, { amount:-999 });
+  assert.equal(full.canMatch, true);
+  assert.equal(full.appliedAmount, 80);
+  assert.equal(full.paid, 105);
+  assert.equal(full.openAmount, 0);
+  assert.equal(full.status, "Paid");
+
+  const invalidDeposit = accounting.bankBillMatchApplication(bill, { amount:40 });
+  assert.equal(invalidDeposit.canMatch, false);
+
+  const closed = accounting.bankBillMatchApplication({ amount:100, tax:5, paid:105, status:"Paid" }, { amount:-105 });
+  assert.equal(closed.canMatch, false);
+  assert.equal(closed.appliedAmount, 0);
+});
+
 test("mixed transactions keep trial balance balanced and calculate normal balances", () => {
   const accounting = loadAccountingService();
   const state = sampleState();
