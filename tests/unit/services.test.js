@@ -202,12 +202,14 @@ test('navigation model normalizes menu order and appends unknown modules', () =>
   );
 });
 
-test('navigation model keeps dashboard and settings visible', () => {
+test('navigation model keeps dashboard visible while optional shortcuts are user controlled', () => {
   const { window } = loadBrowserScript('frontend/src/services/navigation-model.js');
   const nav = window.SmartBooksNavigation;
-  assert.deepEqual(plain(nav.normalizeVisible(['banking','missing'], modules)), ['banking','dashboard','settings']);
+  assert.deepEqual(plain(nav.defaultVisibleMenuItems(modules)), ['getthingsdone','dashboard','banking','transactions','custom']);
+  assert.deepEqual(plain(nav.normalizeVisible(['banking','missing'], modules)), ['banking','dashboard']);
   assert.equal(nav.isVisible('dashboard', { visibleMenuItems:[] }, modules), true);
-  assert.equal(nav.isVisible('settings', { visibleMenuItems:[] }, modules), true);
+  assert.equal(nav.isVisible('settings', { visibleMenuItems:[] }, modules), false);
+  assert.equal(nav.isVisible('settings', { visibleMenuItems:['settings'] }, modules), true);
   assert.equal(nav.isVisible('banking', { visibleMenuItems:['dashboard','settings'] }, modules), false);
 });
 
@@ -217,8 +219,17 @@ test('navigation model syncs settings and derives visible modules', () => {
   const settings = { menuOrder:['settings','dashboard'], visibleMenuItems:['apps'] };
   nav.syncSettings(settings, modules, items => items.filter(id => id !== 'custom'));
   assert.deepEqual(plain(settings.menuOrder), ['settings','dashboard','getthingsdone','apps','banking','transactions','custom']);
-  assert.deepEqual(plain(settings.visibleMenuItems), ['apps','dashboard','settings']);
-  assert.deepEqual(plain(settings.visibleModules), ['apps','dashboard','settings']);
+  assert.deepEqual(plain(settings.visibleMenuItems), ['apps','dashboard']);
+  assert.deepEqual(plain(settings.visibleModules), ['apps','dashboard']);
+  assert.equal(settings.menuVisibilityDefaultsVersion, 2);
+});
+
+test('navigation model migrates legacy all-visible menu defaults to lean defaults', () => {
+  const { window } = loadBrowserScript('frontend/src/services/navigation-model.js');
+  const nav = window.SmartBooksNavigation;
+  const settings = { visibleMenuItems:nav.defaultMenuOrder(modules) };
+  nav.syncSettings(settings, modules);
+  assert.deepEqual(plain(settings.visibleMenuItems), ['getthingsdone','dashboard','banking','transactions','custom']);
 });
 
 test('navigation model maps menu ids into bookmark ids without duplicates', () => {

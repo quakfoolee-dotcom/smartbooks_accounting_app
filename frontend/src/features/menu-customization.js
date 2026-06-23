@@ -48,13 +48,18 @@ function v29DefaultMenuOrder(){
   return [...preferred.filter(id=>id==='getthingsdone' || moduleIds.includes(id)), ...moduleIds.filter(id=>!preferred.includes(id) && id!=='getthingsdone')];
 }
 
+function v29DefaultVisibleMenuItems(){
+  if(window.SmartBooksNavigation?.defaultVisibleMenuItems) return window.SmartBooksNavigation.defaultVisibleMenuItems(v29MenuModules());
+  return v29DefaultMenuOrder().filter(id=>!['apps','settings','setup'].includes(id));
+}
+
 function v29MenuRegistry(){
   if(window.SmartBooksNavigation) return window.SmartBooksNavigation.menuRegistry(v29MenuModules());
   return [{id:'getthingsdone', label:'Get Things Done', icon:'✓', locked:false, special:true, desc:'Guided workflow hub.'}, ...v29MenuModules().map(m=>({
     id:m.id,
     label:m.label,
     icon:m.icon,
-    locked:!!m.locked || m.id==='dashboard' || m.id==='settings',
+    locked:(!!m.locked && !['apps','settings','setup'].includes(m.id)) || m.id==='dashboard',
     module:true,
     desc:'Module workspace.'
   }))];
@@ -75,7 +80,7 @@ function v29NormalizeVisibleMenuItems(items){
   const allowed=new Set(v29DefaultMenuOrder());
   const seen=[];
   (Array.isArray(items)?items:[]).forEach(id=>{ if(allowed.has(id) && !seen.includes(id)) seen.push(id); });
-  ['dashboard','settings'].forEach(id=>{ if(allowed.has(id) && !seen.includes(id)) seen.push(id); });
+  ['dashboard'].forEach(id=>{ if(allowed.has(id) && !seen.includes(id)) seen.push(id); });
   return seen;
 }
 
@@ -87,12 +92,12 @@ function ensureV29MenuState(){
     window.SmartBooksNavigation.syncSettings(state.settings, v29MenuModules(), typeof normalizeVisibleModules==='function' ? normalizeVisibleModules : null);
   }else{
     state.settings.menuOrder=v29NormalizeMenuOrder(state.settings.menuOrder);
-    state.settings.visibleMenuItems=v29NormalizeVisibleMenuItems(state.settings.visibleMenuItems || v29DefaultMenuOrder());
+    state.settings.visibleMenuItems=v29NormalizeVisibleMenuItems(state.settings.visibleMenuItems || v29DefaultVisibleMenuItems());
     const moduleIds=v29MenuModules().map(m=>m.id);
     const visible=state.settings.visibleMenuItems.filter(id=>moduleIds.includes(id));
     state.settings.visibleModules = typeof normalizeVisibleModules==='function' ? normalizeVisibleModules(visible) : visible;
   }
-  ['dashboard','settings'].forEach(id=>{ if(!state.settings.visibleMenuItems.includes(id)) state.settings.visibleMenuItems.push(id); });
+  ['dashboard'].forEach(id=>{ if(!state.settings.visibleMenuItems.includes(id)) state.settings.visibleMenuItems.push(id); });
 }
 
 function v29MenuItemById(id){ return v29MenuRegistry().find(m=>m.id===id); }
@@ -100,7 +105,7 @@ function v29MenuItemById(id){ return v29MenuRegistry().find(m=>m.id===id); }
 function v29IsMenuItemVisible(id){
   ensureV29MenuState();
   if(window.SmartBooksNavigation) return window.SmartBooksNavigation.isVisible(id, state.settings, v29MenuModules());
-  if(id==='dashboard' || id==='settings') return true;
+  if(id==='dashboard') return true;
   return (state.settings.visibleMenuItems || []).includes(id);
 }
 
@@ -129,15 +134,15 @@ function v29MenuManagerBody(orderOverride=null, visibleOverride=null, bookmarkOv
   injectV29MenuManagementStyles(); ensureV29MenuState();
   try{ if(typeof injectV30IconStyles==='function') injectV30IconStyles(); }catch(e){}
   const order=v29NormalizeMenuOrder(orderOverride || state.settings.menuOrder);
-  const visibleSet=new Set(v29NormalizeVisibleMenuItems(visibleOverride || state.settings.visibleMenuItems || ['getthingsdone', ...(state.settings.visibleModules || []), 'dashboard','settings']));
+  const visibleSet=new Set(v29NormalizeVisibleMenuItems(visibleOverride || state.settings.visibleMenuItems || v29DefaultVisibleMenuItems()));
   const bookmarkSet=new Set(Array.isArray(bookmarkOverride) ? bookmarkOverride : (Array.isArray(state.settings.bookmarks) ? state.settings.bookmarks : []));
   const rows=order.map((id,idx)=>{
     const item=v29MenuItemById(id); if(!item) return '';
-    const locked=item.locked || id==='dashboard' || id==='settings';
+    const locked=item.locked || id==='dashboard';
     const checked=locked || visibleSet.has(id);
     const hiddenCls=checked?'':'is-hidden';
     const lockChip=locked?'<span class="v29-chip">Always on</span>':'';
-    const bookmarkable=id!=='settings';
+    const bookmarkable=true;
     const bookmarked=bookmarkSet.has(id);
     return `<div class="v29-menu-row ${hiddenCls} ${locked?'is-locked':''}" data-menu-id="${escapeHTML(id)}">
       <input type="checkbox" name="menuItem" value="${escapeHTML(id)}" ${checked?'checked':''} ${locked?'disabled':''} aria-label="Show ${escapeHTML(item.label)}">
@@ -154,7 +159,7 @@ function v29MenuManagerBody(orderOverride=null, visibleOverride=null, bookmarkOv
     </div>`;
   }).join('');
   return `<div class="v29-menu-note"><strong>Menu management:</strong> choose which modules appear in the left menu, reorder them, or add selected items to Bookmarks.</div>
-    <div class="v29-menu-toolbar"><div class="muted small">Dashboards and Settings stay available for safety.</div><div class="v29-add-bookmarks"><button class="btn" type="button" data-v29-action="add-checked-bookmarks">★ Add checked to Bookmarks</button></div></div>
+    <div class="v29-menu-toolbar"><div class="muted small">Dashboards stay available for safety. My Apps, Settings, and Setup Checklist are optional menu shortcuts.</div><div class="v29-add-bookmarks"><button class="btn" type="button" data-v29-action="add-checked-bookmarks">★ Add checked to Bookmarks</button></div></div>
     <div class="v29-menu-list">${rows}</div>`;
 }
 
@@ -164,7 +169,7 @@ function v29MenuOrderFromModal(){
 
 function v29VisibleFromModal(){
   const checked=Array.from(document.querySelectorAll('#modalBody .v29-menu-row input[name="menuItem"]:checked')).map(i=>i.value);
-  ['dashboard','settings'].forEach(id=>{ if(!checked.includes(id)) checked.push(id); });
+  ['dashboard'].forEach(id=>{ if(!checked.includes(id)) checked.push(id); });
   return v29NormalizeVisibleMenuItems(checked);
 }
 
@@ -221,7 +226,7 @@ function v29ApplyMenuModalState({save=false}={}){
 }
 
 function v29ResetMenuModal(){
-  v29RenderMenuManagerBody(v29DefaultMenuOrder(), v29DefaultMenuOrder(), v29BookmarkIdsFromModal());
+  v29RenderMenuManagerBody(v29DefaultMenuOrder(), v29DefaultVisibleMenuItems(), v29BookmarkIdsFromModal());
 }
 
 function v29InstallBookmarkCatalog(){
@@ -314,7 +319,7 @@ function v29InstallMenuClickHandlers(){
     }
     if(action==='add-checked-bookmarks'){
       e.preventDefault();
-      const ids=v29VisibleFromModal().filter(id=>id!=='settings');
+      const ids=v29VisibleFromModal();
       const next=v29MenuIdsToBookmarkIds(ids);
       v29RenderMenuManagerBody(v29MenuOrderFromModal(), v29VisibleFromModal(), next.ids);
       showToast(next.added ? `${next.added} checked item${next.added===1?'':'s'} will be added when you save.` : 'Checked items are already in Bookmarks.');
@@ -334,6 +339,7 @@ window.SmartBooksMenuCustomization = Object.assign(window.SmartBooksMenuCustomiz
   },
   state: {
     defaultOrder: v29DefaultMenuOrder,
+    defaultVisible: v29DefaultVisibleMenuItems,
     orderedItems: v29OrderedMenuItems,
     isVisible: v29IsMenuItemVisible
   }

@@ -5,6 +5,7 @@ const {
   installSmartBooksChecks,
   openFreshApp,
   sidebarLabels,
+  submitModal,
   test
 } = require("./support/smartbooks-app");
 
@@ -34,8 +35,40 @@ test("startup renders the dashboard shell without corrupted icons", async ({ pag
   await expect(page.locator("#createMenu")).not.toHaveClass(/open/);
 });
 
-test("sidebar order and rail navigation keep settings and setup near the top", async ({ page }) => {
+test("sidebar defaults hide optional admin shortcuts until managed", async ({ page }) => {
   await openFreshApp(page);
+
+  await expect.poll(() => sidebarLabels(page)).toEqual([
+    "Get Things Done",
+    "Dashboards",
+    "Reports",
+    "Banking",
+    "Transactions",
+    "Accounting",
+    "Sales & Get Paid",
+    "Customers & Leads",
+    "Expenses & Pay Bills",
+    "Vendors",
+    "Products & Services",
+    "Projects",
+    "Time",
+    "Payroll & HR",
+    "Taxes"
+  ]);
+
+  for(const nav of ["apps", "settings", "setup"]) {
+    await expect(page.locator(`#menuList [data-nav="${nav}"]`)).toHaveCount(0);
+  }
+
+  await page.locator("#railCustomize").click();
+  await expect(page.locator("#modalTitle")).toHaveText("Manage menu");
+  for(const nav of ["apps", "settings", "setup"]) {
+    const checkbox = page.locator(`.v29-menu-row[data-menu-id="${nav}"] input[name="menuItem"]`);
+    await expect(checkbox).not.toBeChecked();
+    await expect(checkbox).toBeEnabled();
+    await checkbox.check();
+  }
+  await submitModal(page);
 
   await expect.poll(() => sidebarLabels(page)).toEqual([
     "Get Things Done",
@@ -59,13 +92,11 @@ test("sidebar order and rail navigation keep settings and setup near the top", a
   ]);
 
   for(const [nav, heading] of [
-    ["dashboard", "Dashboard"],
-    ["reports", "Reports"],
     ["apps", "My Apps"],
     ["setup", "Setup Checklist"],
     ["settings", "Settings"]
   ]) {
-    await page.locator(`.rail [data-nav="${nav}"]`).click();
+    await page.locator(`#menuList [data-nav="${nav}"]`).click();
     await expect(page.locator(`#page-${nav}.active`)).toContainText(heading);
   }
 });

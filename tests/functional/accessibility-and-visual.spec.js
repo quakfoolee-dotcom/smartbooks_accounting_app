@@ -2,6 +2,7 @@ const {
   expect,
   installSmartBooksChecks,
   openFreshApp,
+  submitModal,
   test
 } = require("./support/smartbooks-app");
 
@@ -48,11 +49,16 @@ test("keyboard can reach search, sidebar, and modal actions", async ({ page }) =
 test("button sizing stays consistent across sections, tabs, and action columns", async ({ page }) => {
   await openFreshApp(page);
 
+  await page.locator("#railCustomize").click();
+  const setupShortcut = page.locator('.v29-menu-row[data-menu-id="setup"] input[name="menuItem"]');
+  if(!(await setupShortcut.isChecked())) await setupShortcut.check();
+  await submitModal(page);
+
   const pages = ["dashboard", "banking", "transactions", "customers", "sales", "expenses", "vendors", "settings", "setup"];
   const totals = { actionGroups: 0, tabGroups: 0, iconButtons: 0 };
 
   for(const nav of pages) {
-    await page.locator(`[data-nav="${nav}"]`).first().click();
+    await page.locator(`[data-nav="${nav}"]:visible`).first().click();
     await expect(page.locator(`#page-${nav}.active`)).toBeVisible();
     await page.evaluate(() => window.SmartBooksIcons?.fix(document));
     await page.waitForTimeout(75);
@@ -136,4 +142,46 @@ test("button sizing stays consistent across sections, tabs, and action columns",
   expect(totals.actionGroups, "action button groups audited").toBeGreaterThan(0);
   expect(totals.tabGroups, "tab groups audited").toBeGreaterThan(0);
   expect(totals.iconButtons, "icon buttons audited").toBeGreaterThan(0);
+});
+
+test("workflow table sections avoid side-by-side table-card grids", async ({ page }) => {
+  await openFreshApp(page);
+
+  const assertNoTablePairs = async (context) => {
+    const offenders = await page.evaluate(() => {
+      const visible = element => {
+        const rect = element.getBoundingClientRect();
+        const style = getComputedStyle(element);
+        return rect.width > 0 && rect.height > 0 && style.display !== "none" && style.visibility !== "hidden";
+      };
+      return Array.from(document.querySelectorAll(".page.active .grid.two"))
+        .map(grid => {
+          const tableCards = Array.from(grid.children).filter(child => child.matches?.(".table-card") && visible(child));
+          const title = tableCards.map(card => card.querySelector("h3")?.textContent?.trim() || "Untitled table").join(" + ");
+          return { title, count: tableCards.length };
+        })
+        .filter(item => item.count > 1)
+        .map(item => item.title);
+    });
+    expect(offenders, `${context} should not render two table cards side by side`).toEqual([]);
+  };
+
+  for(const nav of ["accounting", "sales", "expenses", "time", "payroll", "reports"]) {
+    await page.locator(`[data-nav="${nav}"]`).first().click();
+    await expect(page.locator(`#page-${nav}.active`)).toBeVisible();
+    await assertNoTablePairs(nav);
+  }
+
+  await page.locator('[data-nav="inventory"]').first().click();
+  await expect(page.locator("#page-inventory.active")).toBeVisible();
+  const receivingTab = page.locator('[data-action="set-inventory-tab"][data-id="receiving"]');
+  if(await receivingTab.count()) {
+    await receivingTab.click();
+    await assertNoTablePairs("inventory receiving");
+  }
+
+  await page.locator('[data-nav="taxes"]').first().click();
+  await expect(page.locator("#page-taxes.active")).toBeVisible();
+  await page.locator('[data-action="set-tax-tab"][data-id="settings"]').click();
+  await assertNoTablePairs("tax settings");
 });

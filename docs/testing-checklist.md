@@ -21,7 +21,7 @@ Use this checklist before larger releases or after changes to navigation, icons,
 
 ## Sidebar And Menu
 
-- Confirm the default order starts with Get Things Done, Dashboards, Reports, My Apps, Settings, and Setup Checklist.
+- Confirm the default order starts with Get Things Done, Dashboards, and Reports, and does not show My Apps, Settings, or Setup Checklist until they are added from Manage.
 - Open Customize from the rail.
 - Add a bookmark with the star button, save, and verify it appears in Bookmarks.
 - Cancel a bookmark change and verify it does not persist.

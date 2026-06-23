@@ -574,12 +574,23 @@
   function v12SectionTitle(title,subtitle,actions=''){
     return `<div class="v12-section-title"><div><h3>${escapeHTML(title)}</h3><p>${escapeHTML(subtitle||'')}</p></div><div style="display:flex;gap:8px;flex-wrap:wrap">${actions}</div></div>`;
   }
+  function v12RecordCenter(title, subtitle, headings, rows, actions=''){
+    const actionHtml = actions ? `<div class="right">${actions}</div>` : '';
+    return `<div class="card table-card sb-record-center"><div class="toolbar"><div><h3 style="margin:0">${escapeHTML(title)}</h3><div class="muted small">${escapeHTML(subtitle||'')}</div></div>${actionHtml}</div>${table(headings, rows)}</div>`;
+  }
   function v12SafeRows(arr, mapper){ return (arr||[]).map(mapper); }
   function v12SalesRecordHub(){
     ensureV12State();
     const pendingDelayed=(state.delayedCharges||[]).filter(x=>String(x.status||'').toLowerCase().includes('pending'));
     const unappliedCredits=(state.creditMemos||[]).filter(x=>String(x.status||'').toLowerCase().includes('unapplied')).length + (state.delayedCredits||[]).filter(x=>String(x.status||'').toLowerCase().includes('available')).length;
     const totalAdjustments=[...(state.creditMemos||[]),...(state.refundReceipts||[]),...(state.delayedCredits||[]),...(state.delayedCharges||[])].reduce((s,x)=>s+num(x.total || (num(x.amount)+num(x.tax))),0);
+    const customerDocs = [
+      ...v12SafeRows(state.statements, r=>({type:'Statement',ref:r.id,customer:v12CustomerName(r.customerId),sortDate:r.endDate||r.startDate||r.date,date:`${v12Date(r.startDate)} -> ${v12Date(r.endDate)}`,amount:money(r.openBalance),status:v12Status(r.status),detail:escapeHTML(r.delivery||'-')})),
+      ...v12SafeRows(state.creditMemos, r=>({type:'Credit memo',ref:r.id,customer:v12CustomerName(r.customerId),sortDate:r.date,date:v12Date(r.date),amount:money(r.total),status:v12Status(r.status),detail:escapeHTML(r.memo||'Customer credit')})),
+      ...v12SafeRows(state.refundReceipts, r=>({type:'Refund receipt',ref:r.id,customer:v12CustomerName(r.customerId),sortDate:r.date,date:v12Date(r.date),amount:money(r.total),status:v12Status(r.status),detail:escapeHTML(r.memo||'Refund issued')})),
+      ...v12SafeRows(state.delayedCredits, r=>({type:'Delayed credit',ref:r.id,customer:v12CustomerName(r.customerId),sortDate:r.date,date:v12Date(r.date),amount:money(r.total),status:v12Status(r.status),detail:escapeHTML(r.memo||'Available for future invoice')})),
+      ...v12SafeRows(state.delayedCharges, r=>({type:'Delayed charge',ref:r.id,customer:v12CustomerName(r.customerId),sortDate:r.date,date:v12Date(r.date),amount:money(r.total),status:v12Status(r.status),detail:escapeHTML(r.memo||'Ready to add to invoice')}))
+    ].sort((a,b)=>String(b.sortDate||'').localeCompare(String(a.sortDate||''))).map(r=>[escapeHTML(r.type),`<strong>${escapeHTML(r.ref)}</strong>`,r.customer,r.date,`<span class="amount">${r.amount}</span>`,r.status,r.detail]);
     return v12SectionTitle('Saved sales workflow records','Records created from the + New menu are now visible in the related sales workflow.',`<button class="btn" data-modal="statement">Statement</button><button class="btn" data-modal="creditMemo">Credit memo</button><button class="btn" data-modal="delayedCharge">Delayed charge</button>`)+
       v12MetricCards([
         {label:'Statements',value:(state.statements||[]).length,sub:'prepared customer statements'},
@@ -587,13 +598,7 @@
         {label:'Pending charges',value:pendingDelayed.length,sub:'ready to add to future invoice'},
         {label:'Unapplied credits',value:unappliedCredits,sub:'available customer credits'}
       ])+
-      `<div class="grid two"><div class="card table-card"><div class="toolbar"><div><h3 style="margin:0">Statements</h3><div class="muted small">Customer statements prepared from + New.</div></div></div>${table(['Statement','Customer','Period','Open balance','Delivery','Status'], v12SafeRows(state.statements, r=>[`<strong>${escapeHTML(r.id)}</strong>`,v12CustomerName(r.customerId),`${v12Date(r.startDate)} → ${v12Date(r.endDate)}`,`<span class="amount">${money(r.openBalance)}</span>`,escapeHTML(r.delivery||'—'),v12Status(r.status)]))}</div>`+
-      `<div class="card table-card"><div class="toolbar"><div><h3 style="margin:0">Customer credits, refunds, and delayed items</h3><div class="muted small">Credit memos, refund receipts, delayed credits, and delayed charges.</div></div></div>${table(['Type','Reference','Customer','Date','Amount','Status'], [
-        ...v12SafeRows(state.creditMemos, r=>['Credit memo',`<strong>${escapeHTML(r.id)}</strong>`,v12CustomerName(r.customerId),v12Date(r.date),`<span class="amount">${money(r.total)}</span>`,v12Status(r.status)]),
-        ...v12SafeRows(state.refundReceipts, r=>['Refund receipt',`<strong>${escapeHTML(r.id)}</strong>`,v12CustomerName(r.customerId),v12Date(r.date),`<span class="amount">${money(r.total)}</span>`,v12Status(r.status)]),
-        ...v12SafeRows(state.delayedCredits, r=>['Delayed credit',`<strong>${escapeHTML(r.id)}</strong>`,v12CustomerName(r.customerId),v12Date(r.date),`<span class="amount">${money(r.total)}</span>`,v12Status(r.status)]),
-        ...v12SafeRows(state.delayedCharges, r=>['Delayed charge',`<strong>${escapeHTML(r.id)}</strong>`,v12CustomerName(r.customerId),v12Date(r.date),`<span class="amount">${money(r.total)}</span>`,v12Status(r.status)])
-      ].sort((a,b)=>String(b[3]).localeCompare(String(a[3]))))}</div></div>`+
+      v12RecordCenter('Customer documents & adjustments','Statements, credits, refunds, and delayed items share the same customer follow-up workflow.', ['Type','Reference','Customer','Date / period','Amount','Status','Detail'], customerDocs)+
       `<div class="card table-card" style="margin-top:16px"><div class="toolbar"><div><h3 style="margin:0">Shipping labels</h3><div class="muted small">Shipment records created from + New.</div></div><button class="btn" data-modal="shippingLabel">Create label</button></div>${table(['Label','Customer','Ship date','Carrier','Service','Tracking','Status'], v12SafeRows(state.shippingLabels, r=>[`<strong>${escapeHTML(r.id)}</strong>`,v12CustomerName(r.customerId),v12Date(r.shipDate),escapeHTML(r.carrier||'—'),escapeHTML(r.serviceLevel||'—'),escapeHTML(r.trackingNo||'—'),v12Status(r.status)]))}</div>`;
   }
   function v12ExpenseRecordHub(){
@@ -601,6 +606,13 @@
     const unprinted=(state.checks||[]).filter(c=>!c.printed).length;
     const unappliedVendor=(state.vendorCredits||[]).filter(x=>String(x.status||'').toLowerCase().includes('unapplied')).length;
     const ccPayments=(state.creditCardPayments||[]).reduce((s,x)=>s+num(x.amount),0);
+    const vendorActivity = [
+      ...v12SafeRows(state.checks, r=>({type:'Check',ref:r.id,name:v12VendorName(r.vendorId),sortDate:r.date,date:v12Date(r.date),amount:money(r.total),status:v12Status(r.status),detail:`No. ${escapeHTML(r.checkNo||'-')} · ${r.printed?'Printed':'Not printed'}`})),
+      ...v12SafeRows(state.checkPrintRuns, r=>({type:'Check print run',ref:r.id,name:escapeHTML(getBank(r.bankAccountId).name||'-'),sortDate:r.date,date:v12Date(r.date),amount:'-',status:v12Status(r.status),detail:`Start ${escapeHTML(r.startNo||'-')} · ${escapeHTML(r.format||'-')}`})),
+      ...v12SafeRows(state.vendorCredits, r=>({type:'Vendor credit',ref:r.id,name:v12VendorName(r.vendorId),sortDate:r.date,date:v12Date(r.date),amount:money(r.total),status:v12Status(r.status),detail:escapeHTML(r.memo||'Unapplied vendor credit')})),
+      ...v12SafeRows(state.creditCardCredits, r=>({type:'Credit-card credit',ref:r.id,name:v12VendorName(r.vendorId),sortDate:r.date,date:v12Date(r.date),amount:money(r.total),status:v12Status(r.status),detail:escapeHTML(r.memo||'Card credit')})),
+      ...v12SafeRows(state.creditCardPayments, r=>({type:'Card payment',ref:r.id,name:escapeHTML(accountLabel(r.creditCardAccountId)||'Credit card'),sortDate:r.date,date:v12Date(r.date),amount:money(r.amount),status:v12Status(r.status),detail:escapeHTML(getBank(r.bankAccountId).name||'Paid from bank')}))
+    ].sort((a,b)=>String(b.sortDate||'').localeCompare(String(a.sortDate||''))).map(r=>[escapeHTML(r.type),`<strong>${escapeHTML(r.ref)}</strong>`,r.name,r.date,`<span class="amount">${r.amount}</span>`,r.status,r.detail]);
     return v12SectionTitle('Saved expense and vendor workflow records','Checks, vendor credits, credit-card credits, print runs, and credit-card payments are now tracked after saving.',`<button class="btn" data-modal="check">Write check</button><button class="btn" data-modal="vendorCredit">Vendor credit</button><button class="btn" data-modal="payDownCreditCard">Pay down credit card</button>`)+
       v12MetricCards([
         {label:'Checks',value:(state.checks||[]).length,sub:`${unprinted} not printed`},
@@ -608,19 +620,18 @@
         {label:'Card payments',value:money(ccPayments),sub:'credit-card paydown recorded'},
         {label:'Print runs',value:(state.checkPrintRuns||[]).length,sub:'prepared check batches'}
       ])+
-      `<div class="grid two"><div class="card table-card"><div class="toolbar"><div><h3 style="margin:0">Checks and print runs</h3><div class="muted small">Checks posted from + New and optional check print batches.</div></div><button class="btn" data-action="v12-mark-checks-printed">Mark all printed</button></div>${table(['Check','Vendor','Date','No.','Total','Printed','Status'], v12SafeRows(state.checks, r=>[`<strong>${escapeHTML(r.id)}</strong>`,v12VendorName(r.vendorId),v12Date(r.date),escapeHTML(r.checkNo||'—'),`<span class="amount">${money(r.total)}</span>`,r.printed?'Yes':'No',v12Status(r.status)]))}</div>`+
-      `<div class="card table-card"><div class="toolbar"><div><h3 style="margin:0">Vendor and credit-card credits</h3><div class="muted small">Credits and card-credit records saved from + New.</div></div></div>${table(['Type','Reference','Vendor','Date','Amount','Status'], [
-        ...v12SafeRows(state.vendorCredits, r=>['Vendor credit',`<strong>${escapeHTML(r.id)}</strong>`,v12VendorName(r.vendorId),v12Date(r.date),`<span class="amount">${money(r.total)}</span>`,v12Status(r.status)]),
-        ...v12SafeRows(state.creditCardCredits, r=>['Credit-card credit',`<strong>${escapeHTML(r.id)}</strong>`,v12VendorName(r.vendorId),v12Date(r.date),`<span class="amount">${money(r.total)}</span>`,v12Status(r.status)]),
-        ...v12SafeRows(state.creditCardPayments, r=>['Card payment',`<strong>${escapeHTML(r.id)}</strong>`,escapeHTML(accountLabel(r.creditCardAccountId)||'Credit card'),v12Date(r.date),`<span class="amount">${money(r.amount)}</span>`,v12Status(r.status)])
-      ].sort((a,b)=>String(b[3]).localeCompare(String(a[3]))))}</div></div>`+
-      `<div class="card table-card" style="margin-top:16px"><div class="toolbar"><div><h3 style="margin:0">Check print runs</h3><div class="muted small">Prepared check printing batches.</div></div><button class="btn" data-modal="printChecks">Print checks</button></div>${table(['Run','Date','Bank','Starting no.','Format','Marked printed','Status'], v12SafeRows(state.checkPrintRuns, r=>[`<strong>${escapeHTML(r.id)}</strong>`,v12Date(r.date),escapeHTML(getBank(r.bankAccountId).name||'—'),escapeHTML(r.startNo||'—'),escapeHTML(r.format||'—'),r.markPrinted?'Yes':'No',v12Status(r.status)]))}</div>`;
+      v12RecordCenter('Vendor payment & credit activity','Checks, print batches, vendor credits, card credits, and card payments are shown in one action queue.', ['Type','Reference','Vendor / account','Date','Amount','Status','Detail'], vendorActivity, `<button class="btn" data-action="v12-mark-checks-printed">Mark all printed</button><button class="btn" data-modal="printChecks">Print checks</button>`);
   }
   function v12TimeRecordHub(){
     ensureV12State();
     const submitted=(state.timeEntries||[]).filter(t=>String(t.status||'Submitted').toLowerCase()==='submitted');
     const totalHours=(state.timeEntries||[]).reduce((s,t)=>s+num(t.hours),0);
     const billableHours=(state.timeEntries||[]).filter(t=>t.billable).reduce((s,t)=>s+num(t.hours),0);
+    const timeActivity = [
+      ...v12SafeRows(state.timeEntries, r=>({type:'Time entry',ref:r.id||'TIME',person:escapeHTML(r.employee||'-'),sortDate:r.date,date:v12Date(r.date),context:v12CustomerName(r.customerId),quantity:num(r.hours).toFixed(2),status:v12Status(r.status||'Submitted'),detail:r.billable?'Billable':'Non-billable'})),
+      ...v12SafeRows(state.weeklyTimesheets, r=>({type:'Weekly timesheet',ref:r.id,person:escapeHTML(r.employee||'-'),sortDate:r.weekStart,date:v12Date(r.weekStart),context:v12CustomerName(r.customerId),quantity:num(r.totalHours).toFixed(2),status:v12Status(r.status),detail:r.billable?'Billable week':'Non-billable week'})),
+      ...v12SafeRows(state.timeApprovals, r=>({type:'Time review',ref:r.id,person:escapeHTML(r.reviewer||'-'),sortDate:r.date,date:v12Date(r.date),context:v12Status(r.action),quantity:String(Array.isArray(r.timeEntryIds)?r.timeEntryIds.length:0),status:v12Status(r.action),detail:escapeHTML(r.notes||'Review decision')}))
+    ].sort((a,b)=>String(b.sortDate||'').localeCompare(String(a.sortDate||''))).map(r=>[escapeHTML(r.type),`<strong>${escapeHTML(r.ref)}</strong>`,r.person,r.date,r.context,r.quantity,r.status,escapeHTML(r.detail)]);
     return v12SectionTitle('Saved time workflow records','Single time activities, weekly timesheets, and review decisions are connected here.',`<button class="btn" data-modal="singleActivity">Single activity</button><button class="btn" data-modal="weeklyTimesheet">Weekly timesheet</button><button class="btn primary" data-modal="reviewTime">Review time</button>`)+
       v12MetricCards([
         {label:'Total hours',value:totalHours.toFixed(2),sub:'all captured time'},
@@ -629,12 +640,16 @@
         {label:'Timesheets',value:(state.weeklyTimesheets||[]).length,sub:'weekly submissions'}
       ])+
       (submitted.length?`<div class="v12-task-callout warn"><div><strong>${submitted.length} time entries need review</strong><span>Approve submitted time or reject entries before billing/payroll.</span></div><button class="btn primary" data-modal="reviewTime">Review time</button></div>`:'')+
-      `<div class="grid two"><div class="card table-card"><div class="toolbar"><div><h3 style="margin:0">Weekly timesheets</h3><div class="muted small">Weekly submissions from + New.</div></div></div>${table(['Timesheet','Team member','Week start','Customer','Hours','Billable','Status'], v12SafeRows(state.weeklyTimesheets, r=>[`<strong>${escapeHTML(r.id)}</strong>`,escapeHTML(r.employee||'—'),v12Date(r.weekStart),v12CustomerName(r.customerId),num(r.totalHours).toFixed(2),r.billable?'Yes':'No',v12Status(r.status)]))}</div>`+
-      `<div class="card table-card"><div class="toolbar"><div><h3 style="margin:0">Time reviews</h3><div class="muted small">Approval/rejection history.</div></div></div>${table(['Review','Date','Reviewer','Action','Entries','Notes'], v12SafeRows(state.timeApprovals, r=>[`<strong>${escapeHTML(r.id)}</strong>`,v12Date(r.date),escapeHTML(r.reviewer||'—'),v12Status(r.action),Array.isArray(r.timeEntryIds)?r.timeEntryIds.length:0,escapeHTML(r.notes||'')]))}</div></div>`;
+      v12RecordCenter('Time submissions','Single entries, weekly submissions, and review decisions are one time-approval queue.', ['Type','Reference','Team member / reviewer','Date / week','Customer / action','Hours / entries','Status','Detail'], timeActivity);
   }
   function v12PayrollHub(){
     ensureV12State();
     const gross=(state.payrollRuns||[]).reduce((s,p)=>s+num(p.grossPay),0), net=(state.payrollRuns||[]).reduce((s,p)=>s+num(p.netPay),0);
+    const payrollRuns = v12SafeRows(state.payrollRuns, r=>[`<strong>${escapeHTML(r.id)}</strong>`,escapeHTML(r.employee||'-'),v12Date(r.payDate),`${v12Date(r.periodStart)} -> ${v12Date(r.periodEnd)}`,`<span class="amount">${money(r.grossPay)}</span>`,`<span class="amount">${money(r.deductions)}</span>`,`<span class="amount">${money(r.netPay)}</span>`,v12Status(r.status)]);
+    const peopleRows = [
+      ...v12SafeRows(state.employees, r=>({type:'Employee',name:r.name,email:r.email,role:r.title||'-',group:r.department||'-',rate:`${escapeHTML(r.payType||'-')} · ${money(r.rate)}`,status:r.status||'Active',link:'-'})),
+      ...v12SafeRows(state.contractors, r=>({type:'Contractor',name:r.name,email:r.email,role:r.serviceType||'-',group:r.terms||'-',rate:`${escapeHTML(r.rateType||'-')} · ${money(r.rate)}`,status:r.status||'Active',link:r.vendorId?getVendor(r.vendorId).name:'-' }))
+    ].map(r=>[escapeHTML(r.type),`<strong>${escapeHTML(r.name||'-')}</strong><div class="muted small">${escapeHTML(r.email||'')}</div>`,escapeHTML(r.role),escapeHTML(r.group),r.rate,v12Status(r.status),escapeHTML(r.link)]);
     return header('Payroll', 'Payroll runs, employees, contractors, and pay setup records created from + New.', `<button class="btn" data-modal="employee">Add employee</button><button class="btn" data-modal="contractor">Add contractor</button><button class="btn primary" data-modal="payroll">Run payroll</button>`)+
       v12MetricCards([
         {label:'Employees',value:(state.employees||[]).length,sub:'active or setup records'},
@@ -642,9 +657,8 @@
         {label:'Gross payroll',value:money(gross),sub:'saved payroll runs'},
         {label:'Net pay',value:money(net),sub:'after deductions'}
       ])+
-      `<div class="grid two"><div class="card table-card"><div class="toolbar"><div><h3 style="margin:0">Payroll runs</h3><div class="muted small">Pay summaries saved from + New.</div></div></div>${table(['Run','Employee','Pay date','Period','Gross','Deductions','Net','Status'], v12SafeRows(state.payrollRuns, r=>[`<strong>${escapeHTML(r.id)}</strong>`,escapeHTML(r.employee||'—'),v12Date(r.payDate),`${v12Date(r.periodStart)} → ${v12Date(r.periodEnd)}`,`<span class="amount">${money(r.grossPay)}</span>`,`<span class="amount">${money(r.deductions)}</span>`,`<span class="amount">${money(r.netPay)}</span>`,v12Status(r.status)]))}</div>`+
-      `<div class="card table-card"><div class="toolbar"><div><h3 style="margin:0">Employees</h3><div class="muted small">Employee setup records.</div></div></div>${table(['Employee','Title','Department','Pay type','Rate','Status'], v12SafeRows(state.employees, r=>[`<strong>${escapeHTML(r.name||'—')}</strong><div class="muted small">${escapeHTML(r.email||'')}</div>`,escapeHTML(r.title||'—'),escapeHTML(r.department||'—'),escapeHTML(r.payType||'—'),`<span class="amount">${money(r.rate)}</span>`,v12Status(r.status||'Active')]))}</div></div>`+
-      `<div class="card table-card" style="margin-top:16px"><div class="toolbar"><div><h3 style="margin:0">Contractors</h3><div class="muted small">Contractor records and optional vendor links.</div></div><button class="btn" data-modal="contractor">Add contractor</button></div>${table(['Contractor','Service type','Rate type','Rate','Payment terms','Vendor link'], v12SafeRows(state.contractors, r=>[`<strong>${escapeHTML(r.name||'—')}</strong><div class="muted small">${escapeHTML(r.email||'')}</div>`,escapeHTML(r.serviceType||'—'),escapeHTML(r.rateType||'—'),`<span class="amount">${money(r.rate)}</span>`,escapeHTML(r.terms||'—'),r.vendorId?escapeHTML(getVendor(r.vendorId).name):'—']))}</div>`;
+      v12RecordCenter('Payroll runs','Pay summaries stay separate from people setup records.', ['Run','Employee','Pay date','Period','Gross','Deductions','Net','Status'], payrollRuns)+
+      `<div style="margin-top:16px">${v12RecordCenter('People','Employees and contractors are master data, combined here by worker type.', ['Type','Name','Role / service','Department / terms','Pay type / rate','Status','Vendor link'], peopleRows, `<button class="btn" data-modal="employee">Add employee</button><button class="btn" data-modal="contractor">Add contractor</button>`)}</div>`;
   }
   const v12RenderSalesBase=renderSales;
   renderSales=function(){ injectV12RecordStyles(); ensureV12State(); v12RenderSalesBase(); document.getElementById('page-sales')?.insertAdjacentHTML('beforeend', v12SalesRecordHub()); };
@@ -653,7 +667,11 @@
   const v12RenderExpensesBase=renderExpenses;
   renderExpenses=function(){ injectV12RecordStyles(); ensureV12State(); v12RenderExpensesBase(); document.getElementById('page-expenses')?.insertAdjacentHTML('beforeend', v12ExpenseRecordHub()); };
   const v12RenderVendorsBase=renderVendors;
-  renderVendors=function(){ injectV12RecordStyles(); ensureV12State(); v12RenderVendorsBase(); const el=document.getElementById('page-vendors'); el?.insertAdjacentHTML('beforeend', v12SectionTitle('Vendor credit history','Vendor credits and check payments linked to vendor workflows.',`<button class="btn" data-modal="vendorCredit">Vendor credit</button><button class="btn" data-modal="check">Write check</button>`)+`<div class="grid two"><div class="card table-card">${table(['Credit','Vendor','Date','Amount','Status'], v12SafeRows(state.vendorCredits, r=>[`<strong>${escapeHTML(r.id)}</strong>`,v12VendorName(r.vendorId),v12Date(r.date),`<span class="amount">${money(r.total)}</span>`,v12Status(r.status)]))}</div><div class="card table-card">${table(['Check','Vendor','Date','No.','Total','Status'], v12SafeRows(state.checks, r=>[`<strong>${escapeHTML(r.id)}</strong>`,v12VendorName(r.vendorId),v12Date(r.date),escapeHTML(r.checkNo||'—'),`<span class="amount">${money(r.total)}</span>`,v12Status(r.status)]))}</div></div>`); };
+  renderVendors=function(){ injectV12RecordStyles(); ensureV12State(); v12RenderVendorsBase(); const el=document.getElementById('page-vendors'); const rows=[
+      ...v12SafeRows(state.vendorCredits, r=>({type:'Vendor credit',ref:r.id,vendor:v12VendorName(r.vendorId),sortDate:r.date,date:v12Date(r.date),amount:money(r.total),status:v12Status(r.status),detail:escapeHTML(r.memo||'-')})),
+      ...v12SafeRows(state.checks, r=>({type:'Check',ref:r.id,vendor:v12VendorName(r.vendorId),sortDate:r.date,date:v12Date(r.date),amount:money(r.total),status:v12Status(r.status),detail:`No. ${escapeHTML(r.checkNo||'-')}`}))
+    ].sort((a,b)=>String(b.sortDate||'').localeCompare(String(a.sortDate||''))).map(r=>[escapeHTML(r.type),`<strong>${escapeHTML(r.ref)}</strong>`,r.vendor,r.date,`<span class="amount">${r.amount}</span>`,r.status,r.detail]);
+    el?.insertAdjacentHTML('beforeend', v12SectionTitle('Vendor payment and credit history','Vendor credits and check payments linked to vendor workflows.',`<button class="btn" data-modal="vendorCredit">Vendor credit</button><button class="btn" data-modal="check">Write check</button>`)+v12RecordCenter('Vendor activity','Credits and checks share a vendor follow-up workflow.', ['Type','Reference','Vendor','Date','Amount','Status','Detail'], rows)); };
   const v12RenderTimeBase=renderTime;
   renderTime=function(){ injectV12RecordStyles(); ensureV12State(); v12RenderTimeBase(); document.getElementById('page-time')?.insertAdjacentHTML('beforeend', v12TimeRecordHub()); };
   renderPayroll=function(){ injectV12RecordStyles(); ensureV12State(); const el=document.getElementById('page-payroll'); if(el) el.innerHTML=v12PayrollHub(); };
