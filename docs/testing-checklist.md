@@ -4,7 +4,7 @@ Use this checklist before larger releases or after changes to navigation, icons,
 
 ## Automated Checks
 
-- Confirm `SmartBooks CI` passes on GitHub Actions.
+- Confirm `SmartBooks CI / CI Result` passes on GitHub Actions.
 - Confirm `Deploy SmartBooks Pages` succeeds after CI.
 - Confirm `Live Pages Smoke` succeeds after Pages deploy.
 - Run locally when changing app logic: `npm run test:all`.

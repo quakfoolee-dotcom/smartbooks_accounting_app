@@ -9,6 +9,11 @@ on:
     types:
       - completed
   workflow_dispatch:
+    inputs:
+      pages_url:
+        description: "Deployed SmartBooks URL to smoke test"
+        required: false
+        default: "https://quakfoolee-dotcom.github.io/smartbooks_accounting_app/"
   schedule:
     - cron: "30 15 * * 1"
 
@@ -26,11 +31,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      SMARTBOOKS_PAGES_URL: https://quakfoolee-dotcom.github.io/smartbooks_accounting_app/
+      SMARTBOOKS_PAGES_URL: ${{ github.event.inputs.pages_url || vars.SMARTBOOKS_PAGES_URL || 'https://quakfoolee-dotcom.github.io/smartbooks_accounting_app/' }}
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -44,6 +51,9 @@ jobs:
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 
+      - name: Print smoke target
+        run: echo "Smoke testing ${SMARTBOOKS_PAGES_URL}"
+
       - name: Run live Pages smoke test
         run: npm run test:pages-smoke
 
@@ -56,4 +66,4 @@ jobs:
             test-results/
             playwright-report/
           if-no-files-found: ignore
-          retention-days: 7
+          retention-days: 14
