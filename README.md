@@ -153,6 +153,12 @@ Run syntax checks:
 npm run check
 ```
 
+Run documentation link and screenshot-asset checks:
+
+```powershell
+npm run docs:check
+```
+
 Run unit tests:
 
 ```powershell
@@ -185,7 +191,8 @@ npm run test:all
 
 What each command covers:
 
-- `npm run check` verifies JavaScript syntax across app files, Playwright configs, unit tests, and functional tests.
+- `npm run check` verifies documentation links/assets and JavaScript syntax across app files, Playwright configs, unit tests, and functional tests.
+- `npm run docs:check` verifies local Markdown links and user-manual screenshot assets.
 - `npm test` validates service-level behavior such as navigation normalization, bookmark mapping, storage handling, icon inference, accounting totals, ledger balance, payment clamping, and bank-feed posting lines.
 - `npm run coverage` runs the unit suite through `c8` and writes service coverage reports to `coverage/`.
 - `npm run coverage:check` applies the current service coverage thresholds for local quality review.
@@ -205,7 +212,7 @@ This repository uses five GitHub automation layers:
 
 - `SmartBooks CI`
   - Runs on pushes and pull requests to `main`.
-  - Splits checks into syntax, unit, service coverage, and functional browser jobs.
+  - Splits checks into syntax, documentation, unit, service coverage, and functional browser jobs.
   - Publishes a final `CI Result` job for branch protection.
   - Runs service coverage thresholds and uploads a `coverage-report` artifact.
   - Uploads Playwright failure artifacts when browser tests fail.
