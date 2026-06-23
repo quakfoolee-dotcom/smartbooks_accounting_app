@@ -70,6 +70,8 @@ docs/
     user-manual/
   business-logic-test-cases.md
   codebase-health-audit.md
+  navigation-settings-architecture.md
+  release-checklist.md
   release-workflow.md
   style-conventions.md
   migration-notes.md
@@ -77,6 +79,7 @@ docs/
   testing-strategy.md
   ui-ux-audit.md
   user-manual.md
+  visual-snapshot-testing-plan.md
 frontend/
   index.html
   src/
@@ -112,6 +115,9 @@ tests/
     startup-navigation.spec.js
     support/
       smartbooks-app.js
+    snapshots/
+      ui-contract-baseline.json
+    ui-contract-snapshots.spec.js
     utilities.spec.js
   unit/
     accounting-service.test.js
@@ -167,10 +173,22 @@ Run unit tests:
 npm test
 ```
 
+Run focused business logic and accounting workflow tests:
+
+```powershell
+npm run test:business
+```
+
 Generate a service coverage report:
 
 ```powershell
 npm run coverage
+```
+
+Run structured UI contract snapshot tests:
+
+```powershell
+npm run test:ui-contracts
 ```
 
 Run local browser functional tests:
@@ -196,8 +214,10 @@ What each command covers:
 - `npm run check` verifies documentation links/assets and JavaScript syntax across app files, Playwright configs, unit tests, and functional tests.
 - `npm run docs:check` verifies local Markdown links and user-manual screenshot assets.
 - `npm test` validates service-level behavior such as navigation normalization, bookmark mapping, storage handling, icon inference, accounting totals, ledger balance, payment clamping, and bank-feed posting lines.
+- `npm run test:business` runs accounting service tests plus browser workflow tests for invoices, payments, expenses, bills, bank feed, deposits, and reports.
 - `npm run coverage` runs the unit suite through `c8` and writes service coverage reports to `coverage/`.
 - `npm run coverage:check` applies the current service coverage thresholds for local quality review.
+- `npm run test:ui-contracts` verifies the approved structured UI contract snapshot for startup navigation, optional shortcuts, and Manage menu defaults.
 - `npm run test:functional` starts the local Node server and runs Chromium workflow tests against startup, navigation, Customize, dashboard layout, search, accounting workflows, accessibility, visual regressions, and utilities.
 - `npm run test:pages-smoke` opens the live GitHub Pages URL and checks for load failures, browser errors, visible mojibake, sidebar chevrons, Manage menu, and Reports navigation.
 - `npm run test:all` runs `check`, unit tests, and local functional tests.
@@ -253,6 +273,12 @@ Detailed release steps live in:
 
 ```text
 docs/release-workflow.md
+```
+
+The practical pre-merge and post-merge checklist lives in:
+
+```text
+docs/release-checklist.md
 ```
 
 ## Deployment
@@ -322,6 +348,18 @@ docs/style-conventions.md
 ```
 
 It covers module ownership, JavaScript patterns, state handling, rendering/event conventions, icon rules, CSS/UI patterns, testing expectations, pull request workflow, and documentation rules.
+
+The sidebar, Manage menu, and optional Settings/Setup/My Apps shortcut rules are documented here:
+
+```text
+docs/navigation-settings-architecture.md
+```
+
+The structured UI snapshot plan and future pixel snapshot path are documented here:
+
+```text
+docs/visual-snapshot-testing-plan.md
+```
 
 ## UI/UX Audit
 

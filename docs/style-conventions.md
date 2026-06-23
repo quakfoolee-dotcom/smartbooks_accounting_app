@@ -132,6 +132,18 @@ When a change touches more than one ownership area, describe why in the PR.
 - Dashboard and report controls should use shared button sizing and avoid one-off icon dimensions.
 - Do not add new version-numbered CSS patches unless they replace or consolidate an older behavior. Prefer improving the shared baseline layer.
 
+### Design System Hardening Queue
+
+Use this sequence when improving UI consistency:
+
+1. Normalize controls first: shared `.btn`, icon-only square controls, tab height, and action group sizing.
+2. Normalize table layouts next: avoid two table cards side by side, right-align money, and keep row actions predictable.
+3. Normalize theme contrast after the layout is stable: light and dark mode tokens should keep body text, muted text, metrics, chart labels, and table headers readable.
+4. Add or update functional checks for each repeated rule.
+5. Move to pixel snapshots only after the structured UI contract is stable.
+
+The design goal is a quiet accounting workspace: dense, scannable, predictable, and consistent across workflows.
+
 ## Modal Conventions
 
 - Modal open/close behavior should be deterministic.
@@ -161,6 +173,18 @@ For app behavior changes, also run:
 npm run test:functional
 ```
 
+For accounting workflow changes, also run:
+
+```powershell
+npm run test:business
+```
+
+For navigation/default-UI contract changes, also run:
+
+```powershell
+npm run test:ui-contracts
+```
+
 For deployment or public-site changes, also run:
 
 ```powershell
@@ -174,6 +198,7 @@ Functional tests should:
 - use stable selectors rather than brittle text-only selectors
 - include enough diagnostics to explain failures in CI artifacts
 - avoid depending on the live Pages site unless the test uses `playwright.pages.config.js`
+- prefer structured UI contract snapshots before full pixel snapshots
 
 ## Git And Pull Requests
 

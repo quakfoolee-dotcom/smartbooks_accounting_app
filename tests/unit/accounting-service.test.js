@@ -151,6 +151,35 @@ test("accounting service buckets receivables and payables by due date aging", ()
   });
 });
 
+test("aging reports ignore fully paid and overpaid records", () => {
+  const accounting = loadAccountingService();
+  const invoices = [
+    { id:"INV-OPEN", dueDate:"2026-06-01", subtotal:200, tax:10, paid:50 },
+    { id:"INV-PAID", dueDate:"2026-05-01", subtotal:100, tax:5, paid:105 },
+    { id:"INV-OVERPAID", dueDate:"2026-03-01", subtotal:100, tax:5, paid:150 }
+  ];
+  const bills = [
+    { id:"BILL-OPEN", dueDate:"2026-06-01", amount:200, tax:10, paid:50 },
+    { id:"BILL-PAID", dueDate:"2026-05-01", amount:100, tax:5, paid:105 },
+    { id:"BILL-OVERPAID", dueDate:"2026-03-01", amount:100, tax:5, paid:150 }
+  ];
+
+  assert.deepEqual(plain(accounting.receivablesAging(invoices, "2026-06-20")), {
+    current:0,
+    d1_30:160,
+    d31_60:0,
+    d61_plus:0,
+    total:160
+  });
+  assert.deepEqual(plain(accounting.payablesAging(bills, "2026-06-20")), {
+    current:0,
+    d1_30:160,
+    d31_60:0,
+    d61_plus:0,
+    total:160
+  });
+});
+
 test("accounting service maps expense names to expected fallback accounts", () => {
   const accounting = loadAccountingService();
   assert.equal(accounting.expenseAccountFromName("Utility bill"), "6100");
@@ -177,6 +206,42 @@ test("accounting service builds balanced ledger rows and report totals", () => {
   assert.equal(totals.tax.net, 1);
   assert.equal(accounting.normalBalance(state, "1200"), 160);
   assert.equal(accounting.normalBalance(state, "2000"), 80);
+});
+
+test("sales tax summary agrees with ledger tax control accounts", () => {
+  const accounting = loadAccountingService();
+  const state = sampleState();
+  const summary = accounting.salesTaxSummary(state);
+
+  assert.equal(summary.collected, accounting.normalBalance(state, "2200"));
+  assert.equal(summary.itc, accounting.normalBalance(state, "2210"));
+  assert.equal(summary.net, summary.collected - summary.itc);
+  assert.equal(summary.net, accounting.normalBalance(state, "2200") - accounting.normalBalance(state, "2210"));
+});
+
+test("bank summary includes savings and subtracts credit card liability", () => {
+  const accounting = loadAccountingService();
+  const state = sampleState();
+  state.journalEntries.push({
+    id:"JE-SAVINGS",
+    date:"2026-02-12",
+    memo:"Move cash into savings reserve",
+    status:"Posted",
+    lines:[
+      { accountId:"1010", debit:250, credit:0 },
+      { accountId:"3000", debit:0, credit:250 }
+    ]
+  });
+
+  const expectedBank =
+    accounting.normalBalance(state, "1000") +
+    accounting.normalBalance(state, "1010") -
+    accounting.normalBalance(state, "2100");
+
+  assert.equal(accounting.normalBalance(state, "1010"), 250);
+  assert.equal(accounting.normalBalance(state, "2100"), 84);
+  assert.equal(accounting.totals(state).bank, expectedBank);
+  assert.equal(accounting.trialBalanceStatus(state).ok, true);
 });
 
 test("payment application supports partial, exact, default, and invalid invoice payments", () => {

@@ -110,11 +110,13 @@ The app is still a prototype, but these rules should stay stable as the codebase
 | Bank feed posting lines | `tests/unit/accounting-service.test.js` | `tests/functional/accounting-workflows.spec.js` |
 | Bank feed invoice/bill matching | `tests/unit/accounting-service.test.js` | `tests/functional/accounting-workflows.spec.js` |
 | Trial balance and report totals | `tests/unit/accounting-service.test.js` | `tests/functional/accounting-workflows.spec.js` |
-| A/R and A/P aging buckets | `tests/unit/accounting-service.test.js` | Report rendering covered by `tests/functional/accounting-workflows.spec.js` |
+| A/R and A/P aging buckets | `tests/unit/accounting-service.test.js` | Report headings and visible report rendering covered by `tests/functional/accounting-workflows.spec.js` |
 | A/R, A/P, and P&L report assertions | `tests/unit/accounting-service.test.js` | `tests/functional/accounting-workflows.spec.js` |
+| Sales tax control accounts | `tests/unit/accounting-service.test.js` | Tax UI coverage handled by workflow and report tests |
+| Bank, savings, and credit-card summary math | `tests/unit/accounting-service.test.js` | Dashboard/report display covered by functional workflow tests |
 | Reset/export utilities | Service tests indirectly; functional coverage primary | `tests/functional/utilities.spec.js` |
 
 ## Gaps To Close Next
 
-- Add report-detail assertions for visible aging bucket column values if report selectors become stable enough.
 - Add API-level accounting tests when persistence moves beyond browser localStorage.
+- Add deeper report table row assertions when report rows get stable data attributes.

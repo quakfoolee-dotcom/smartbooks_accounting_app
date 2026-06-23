@@ -96,6 +96,12 @@ The GitHub Actions coverage job runs `npm run coverage:check`, uploads a `covera
 
 ## Accounting Service Tests
 
+Focused command:
+
+```powershell
+npm run test:business
+```
+
 The accounting rules live in:
 
 ```text
@@ -110,6 +116,7 @@ When adding accounting behavior, prefer this order:
 2. Add direct unit coverage in `tests/unit/accounting-service.test.js`.
 3. Wire the helper into the UI workflow.
 4. Add a functional regression test if the workflow has user-visible behavior.
+5. Run `npm run test:business` when the change affects accounting outcomes.
 
 High-value accounting cases to test:
 
@@ -144,7 +151,9 @@ tests/functional/accounting-workflows.spec.js
 tests/functional/customize-menu.spec.js
 tests/functional/dashboard-customization.spec.js
 tests/functional/global-search.spec.js
+tests/functional/pages-smoke.spec.js
 tests/functional/startup-navigation.spec.js
+tests/functional/ui-contract-snapshots.spec.js
 tests/functional/utilities.spec.js
 tests/functional/support/smartbooks-app.js
 ```
@@ -171,6 +180,31 @@ Current coverage:
 - reports page rendering
 - export JSON and reset company data
 - modal accessibility, icon-only close, Escape close, and focus return
+- structured UI contract snapshot for startup navigation and Manage menu defaults
+
+## UI Contract Snapshots
+
+Command:
+
+```powershell
+npm run test:ui-contracts
+```
+
+Files:
+
+```text
+tests/functional/ui-contract-snapshots.spec.js
+tests/functional/snapshots/ui-contract-baseline.json
+```
+
+Purpose:
+
+- protects high-level UI and navigation contracts without brittle pixel comparisons
+- confirms My Apps, Settings, and Setup Checklist are optional by default
+- confirms Dashboard remains locked on
+- confirms the dashboard startup and quick-action contract
+
+Update the baseline only when the product contract intentionally changes. Explain the change in the PR.
 
 ## Live Pages Smoke Test
 
@@ -237,12 +271,14 @@ Do not add broad end-to-end coverage for every page just to increase test count.
 
 Avoid for now:
 
-- full screenshot snapshot testing
+- broad pixel screenshot snapshot testing
 - cross-browser testing
 - testing archived/original HTML
 - testing every report variant
 - testing every placeholder workflow
 - testing implementation details of legacy compatibility patches
+
+Structured UI contract snapshots are allowed now. Pixel snapshots should wait until the design baseline is stable enough to avoid noisy failures.
 
 Add these later when the codebase is more modular and the highest-risk workflows are already covered.
 
@@ -256,6 +292,7 @@ Use the closest workflow file:
 - search -> `global-search.spec.js`
 - accounting workflows -> `accounting-workflows.spec.js`
 - accessibility or layout regressions -> `accessibility-and-visual.spec.js`
+- UI/navigation contract snapshots -> `ui-contract-snapshots.spec.js`
 - export/reset utilities -> `utilities.spec.js`
 
 Use shared helpers from:
@@ -290,6 +327,18 @@ When touching service logic, also run:
 
 ```powershell
 npm run coverage
+```
+
+When touching accounting workflows, also run:
+
+```powershell
+npm run test:business
+```
+
+When touching default navigation, Manage menu behavior, or startup UI contracts, also run:
+
+```powershell
+npm run test:ui-contracts
 ```
 
 Before or after deployment-related work, also run:

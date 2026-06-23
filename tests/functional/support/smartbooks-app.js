@@ -183,6 +183,13 @@ async function submitModal(page) {
   }
 }
 
+async function navigateTo(page, nav) {
+  const item = page.locator(`[data-nav="${nav}"]:visible`).first();
+  await expect(item, `${nav} navigation item should be visible`).toBeVisible();
+  await item.click();
+  await expect(page.locator(`#page-${nav}.active`), `${nav} page should be active`).toBeVisible();
+}
+
 async function sidebarLabels(page) {
   return page.locator("#menuList .nav-item .nav-label").evaluateAll(items =>
     items.map(item => item.textContent.replace(/\s+/g, " ").trim())
@@ -197,6 +204,7 @@ module.exports = {
   installSmartBooksChecks,
   openFreshApp,
   openModal,
+  navigateTo,
   sidebarLabels,
   state,
   submitModal,
