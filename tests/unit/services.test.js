@@ -1,7 +1,5 @@
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
 const path = require('node:path');
-const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '../..');
 
@@ -46,6 +44,25 @@ function fakeDocument(){
 }
 
 function loadBrowserScript(relativePath, extras = {}){
+  const modulePath = path.join(root, relativePath);
+  const globalKeys = [
+    'Blob',
+    'MutationObserver',
+    'NodeFilter',
+    'TextDecoder',
+    'URL',
+    'clearTimeout',
+    'document',
+    'localStorage',
+    'sessionStorage',
+    'setTimeout',
+    'structuredClone',
+    'window'
+  ];
+  const previous = new Map(globalKeys.map(key => [key, {
+    existed:Object.prototype.hasOwnProperty.call(globalThis, key),
+    value:globalThis[key]
+  }]));
   const sandbox = {
     console,
     setTimeout(fn){ if(typeof fn === 'function') fn(); return 0; },
@@ -64,14 +81,24 @@ function loadBrowserScript(relativePath, extras = {}){
       observe(){}
       disconnect(){}
     },
+    structuredClone: globalThis.structuredClone,
     window: {},
     document: fakeDocument(),
     ...extras
   };
   sandbox.window = Object.assign(sandbox.window, sandbox);
-  const code = fs.readFileSync(path.join(root, relativePath), 'utf8');
-  vm.runInNewContext(code, sandbox, { filename: relativePath });
-  return sandbox;
+  try{
+    Object.assign(globalThis, sandbox);
+    delete require.cache[require.resolve(modulePath)];
+    require(modulePath);
+    return { ...sandbox, window: sandbox.window };
+  }finally{
+    delete require.cache[require.resolve(modulePath)];
+    previous.forEach((entry, key) => {
+      if(entry.existed) globalThis[key] = entry.value;
+      else delete globalThis[key];
+    });
+  }
 }
 
 function test(name, fn){

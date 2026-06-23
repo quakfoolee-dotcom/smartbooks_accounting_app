@@ -8,5 +8,7 @@ npm-debug.log*
 *.log
 test-results/
 playwright-report/
+coverage/
+.nyc_output/
 backend/data/*.json
 !backend/data/.gitkeep

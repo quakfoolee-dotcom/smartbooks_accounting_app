@@ -53,9 +53,32 @@ Current coverage:
 - ledger balance and trial balance checks
 - sales tax collected / input tax credit summary
 - invoice and bill overpayment clamping
+- A/R and A/P aging bucket calculations
 - bank-feed posting lines
 
 Unit tests should stay fast and deterministic. They should not depend on a real browser, GitHub Pages, network calls, timers, or UI layout.
+
+### Service Coverage
+
+Command:
+
+```powershell
+npm run coverage
+```
+
+Threshold check:
+
+```powershell
+npm run coverage:check
+```
+
+Purpose:
+
+- measures unit coverage for `frontend/src/services/**/*.js`
+- produces text, HTML, and lcov reports in `coverage/`
+- gives a baseline for service-level maintainability before broader refactors
+
+The GitHub Actions coverage job is informational for now. It uploads a `coverage-report` artifact but is not part of the required branch protection result yet. Keep it non-blocking until the baseline is stable enough that coverage changes are a useful quality signal instead of CI noise.
 
 ## Accounting Service Tests
 
@@ -82,6 +105,7 @@ High-value accounting cases to test:
 - bill payment application and overpayment prevention
 - expense total and tax input credit
 - bank-feed posting lines
+- A/R and A/P aging buckets
 - A/R, A/P, bank, income, expense, profit, and sales-tax summaries
 
 ## Functional Browser Tests
@@ -246,6 +270,12 @@ For a fast service-only check while iterating, run:
 
 ```powershell
 npm run test:unit
+```
+
+When touching service logic, also run:
+
+```powershell
+npm run coverage
 ```
 
 Before or after deployment-related work, also run:
