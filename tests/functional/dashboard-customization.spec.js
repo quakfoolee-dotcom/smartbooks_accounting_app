@@ -31,3 +31,22 @@ test("dashboard customization supports cancel, save, and restore defaults", asyn
   await submitModal(page);
   expect((await state(page)).settings.dashboardLayout.slice(0, 4)).toEqual(["cashflow", "arAging", "apAging", "salesPipeline"]);
 });
+
+test("dashboard operations console summarizes attention, money, cash, and work", async ({ page }) => {
+  await openFreshApp(page);
+
+  const console = page.locator(".v25-ops-console");
+  await expect(console).toBeVisible();
+  await expect(console.locator(".v25-ops-lead")).toContainText("Operations console");
+  await expect(console.locator(".v25-ops-item")).toHaveCount(5);
+
+  await expect(console.locator(".v25-ops-item").nth(0)).toContainText("Attention needed");
+  await expect(console.locator(".v25-ops-item").nth(1)).toContainText("Money in");
+  await expect(console.locator(".v25-ops-item").nth(2)).toContainText("Money out");
+  await expect(console.locator(".v25-ops-item").nth(3)).toContainText("Cash position");
+  await expect(console.locator(".v25-ops-item").nth(4)).toContainText("Open work");
+
+  await expect(console.locator('[data-modal="payment"]')).toBeVisible();
+  await expect(console.locator('[data-modal="payBill"]')).toBeVisible();
+  await expect(console.locator('[data-nav="banking"]')).toBeVisible();
+});
