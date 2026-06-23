@@ -1508,6 +1508,16 @@
       body.v8-ui .quick-actions strong{
         flex:0 0 auto!important;
       }
+      body.v8-ui.dark-mode{
+        --ink:#e8edf3;
+        --text:#f3f7fb;
+        --panel:#14202d;
+        --card:#14202d;
+        --soft:#101b27;
+        --muted:#b7c4d4;
+        --line:#2a3c4f;
+        --sb-shadow-soft:0 12px 32px rgba(0,0,0,.28);
+      }
       body.v8-ui.dark-mode .page > .section-header,
       body.v8-ui.dark-mode .v25-dashboard-toolbar,
       body.v8-ui.dark-mode .sales-page-header-card,
@@ -1531,6 +1541,88 @@
       body.v8-ui.dark-mode .table-card th{
         background:#101b27!important;
         color:#cbd5e1!important;
+      }
+      body.v8-ui.dark-mode .card,
+      body.v8-ui.dark-mode .feed-card,
+      body.v8-ui.dark-mode .funnel-card,
+      body.v8-ui.dark-mode .app-tile,
+      body.v8-ui.dark-mode .kpi-card,
+      body.v8-ui.dark-mode .service-metric,
+      body.v8-ui.dark-mode .service-card,
+      body.v8-ui.dark-mode .invoice-report-card,
+      body.v8-ui.dark-mode .estimate-kpi,
+      body.v8-ui.dark-mode .v27-metric,
+      body.v8-ui.dark-mode .dashboard-cash-hero,
+      body.v8-ui.dark-mode .v22-cash-card,
+      body.v8-ui.dark-mode .v823-cash-card,
+      body.v8-ui.dark-mode .v824-cash-card{
+        background:#14202d!important;
+        border-color:#2a3c4f!important;
+        color:#e8edf3!important;
+        box-shadow:var(--sb-shadow-soft)!important;
+      }
+      body.v8-ui.dark-mode .card h3,
+      body.v8-ui.dark-mode .card h4,
+      body.v8-ui.dark-mode .kpi-card strong,
+      body.v8-ui.dark-mode .service-metric strong,
+      body.v8-ui.dark-mode .service-card strong,
+      body.v8-ui.dark-mode .invoice-report-card strong,
+      body.v8-ui.dark-mode .estimate-kpi strong,
+      body.v8-ui.dark-mode .v27-metric strong,
+      body.v8-ui.dark-mode .v824-cash-title .cash-balance,
+      body.v8-ui.dark-mode .v823-cash-title .cash-balance,
+      body.v8-ui.dark-mode .v22-cash-title .cash-balance{
+        color:#f8fafc!important;
+      }
+      body.v8-ui.dark-mode .kpi-card h4,
+      body.v8-ui.dark-mode .kpi-card .hint,
+      body.v8-ui.dark-mode .service-metric h4,
+      body.v8-ui.dark-mode .service-metric .item-note,
+      body.v8-ui.dark-mode .service-card .item-note,
+      body.v8-ui.dark-mode .invoice-report-card h4,
+      body.v8-ui.dark-mode .estimate-kpi span,
+      body.v8-ui.dark-mode .v27-metric span,
+      body.v8-ui.dark-mode .v27-metric em,
+      body.v8-ui.dark-mode .cash-caption,
+      body.v8-ui.dark-mode .v824-cash-title .eyebrow,
+      body.v8-ui.dark-mode .v823-cash-title .eyebrow,
+      body.v8-ui.dark-mode .v22-cash-title .eyebrow{
+        color:#b7c4d4!important;
+      }
+      body.v8-ui.dark-mode .ops-tab{
+        background:#14202d!important;
+        border-color:#2f4255!important;
+        color:#e7eef6!important;
+      }
+      body.v8-ui.dark-mode .ops-tab.active{
+        background:var(--green)!important;
+        border-color:var(--green)!important;
+        color:#fff!important;
+      }
+      body.v8-ui.dark-mode .v22-axis-label,
+      body.v8-ui.dark-mode .v22-x-label,
+      body.v8-ui.dark-mode .v22-axis-title,
+      body.v8-ui.dark-mode .v22-legend text,
+      body.v8-ui.dark-mode .v823-axis-label,
+      body.v8-ui.dark-mode .v823-x-label,
+      body.v8-ui.dark-mode .v823-axis-title,
+      body.v8-ui.dark-mode .v823-legend text,
+      body.v8-ui.dark-mode .v824-axis-label,
+      body.v8-ui.dark-mode .v824-x-label,
+      body.v8-ui.dark-mode .v824-axis-title,
+      body.v8-ui.dark-mode .v824-legend text{
+        fill:#cbd5e1!important;
+        color:#cbd5e1!important;
+      }
+      body.v8-ui.dark-mode .v22-gridline,
+      body.v8-ui.dark-mode .v823-gridline,
+      body.v8-ui.dark-mode .v824-gridline{
+        stroke:rgba(203,213,225,.18)!important;
+      }
+      body.v8-ui.dark-mode .v22-baseline,
+      body.v8-ui.dark-mode .v823-baseline,
+      body.v8-ui.dark-mode .v824-baseline{
+        stroke:#526579!important;
       }
       @media(max-width:980px){
         body.v8-ui .section-header,
