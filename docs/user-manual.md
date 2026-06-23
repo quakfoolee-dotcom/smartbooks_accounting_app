@@ -145,6 +145,108 @@ Expected result:
 - The paid invoice does not appear as an open receivable.
 - Open A/R only includes unpaid invoices from the demo data.
 
+## Flow 2: Record Expense, Verify Expense Report, Verify Bank/Cash Impact
+
+### Business Logic Summary
+
+| Step | User action | Expected accounting result |
+| --- | --- | --- |
+| Record expense | Save a paid vendor expense | Debit the selected expense account, debit recoverable GST/HST input tax credit, credit the paid-from bank or card account |
+| Verify expense report | Open Profit and Loss | Expense total increases by the pre-tax expense amount, not the recoverable tax amount |
+| Verify bank/cash | Open Banking Center | Bank or cash balance decreases by the full paid amount, including tax |
+
+For the example below, the expense uses:
+
+| Field | Value |
+| --- | --- |
+| Vendor | Metro Office Supplies |
+| Expense account | 6000 - Office Expenses |
+| Payment method | Bank transfer |
+| Paid from | Operating Checking (1234) |
+| Amount before tax | 240 |
+| Purchase tax code | GST 5% |
+| Calculated ITC / tax | 12 |
+| Expense total paid | 252 |
+
+Expected accounting effect:
+
+| Account area | Expected change |
+| --- | --- |
+| Office Expenses | Increases by 240 |
+| GST/HST input tax credit | Increases by 12 |
+| Operating Checking | Decreases by 252 |
+| Profit and Loss expenses | Increases by 240 |
+
+### Step 1: Record The Expense
+
+Open the record expense workflow and enter the vendor, expense account, payment method, paid-from account, amount, tax code, and memo.
+
+![Record expense modal](assets/user-manual/expense-flow-01-record-expense.png)
+
+Use these example values:
+
+| Field | Value |
+| --- | --- |
+| Vendor | Metro Office Supplies |
+| Date | 2026-06-23 |
+| Expense account | 6000 - Office Expenses |
+| Payment method | Bank transfer |
+| Paid from | Operating Checking (1234) |
+| Amount before tax | 240 |
+| Purchase tax code | GST 5% |
+| Memo | User manual office supplies |
+
+Click **Save**.
+
+Expected result:
+
+- SmartBooks records a paid expense.
+- Calculated ITC / tax is 12.
+- Expense total is 252.
+- The selected expense category receives the pre-tax amount.
+- The selected bank account is reduced by the full paid amount.
+
+### Step 2: Confirm The Expense Posted
+
+Open **Expenses & Pay Bills**, then select the **Expenses** tab.
+
+![Saved expense in Expenses tab](assets/user-manual/expense-flow-02-expense-posted.png)
+
+Expected result:
+
+- The new expense appears at the top of the Expenses table.
+- Amount shows 240.
+- Tax shows 12.
+- Total shows 252.
+- Paid from shows Bank transfer.
+
+### Step 3: Verify Profit And Loss
+
+Open Reports, then open **Profit and Loss**.
+
+![Profit and Loss report after expense](assets/user-manual/expense-flow-03-profit-loss-report.png)
+
+Expected result:
+
+- Profit and Loss opens without errors.
+- Expenses include the new pre-tax expense amount.
+- In this example, total expenses increase from 2,361.49 to 2,601.49.
+- Net income decreases by the pre-tax expense amount.
+- The 12 recoverable tax amount is not treated as a P&L expense.
+
+### Step 4: Verify Bank/Cash Impact
+
+Open the Banking Center and review the Operating Book Balance and Bank Accounts section.
+
+![Banking Center after expense](assets/user-manual/expense-flow-04-bank-cash-impact.png)
+
+Expected result:
+
+- Operating Checking decreases by the full paid amount.
+- In this example, Operating Checking changes from 34,518.99 to 34,266.99.
+- Total bank/cash impact is -252.
+- The bank/cash movement includes both the expense amount and the recoverable tax amount because that is the actual cash paid.
+
 ## Troubleshooting
 
 | Symptom | What to check |
@@ -152,13 +254,15 @@ Expected result:
 | Invoice does not appear after save | Confirm the invoice modal was submitted with **Create invoice** and no required fields were blank. |
 | Payment does not close the invoice | Confirm the selected customer and selected invoice match, and that the payment amount equals the invoice balance. |
 | A/R report still shows the paid invoice | Refresh or rerun the report, confirm the payment was saved, and confirm the report date range includes the invoice date. |
+| Expense does not appear after save | Confirm **Save** was clicked, then open **Expenses & Pay Bills** and switch to the **Expenses** tab. |
+| Profit and Loss does not increase by the full paid amount | Confirm whether the purchase tax is recoverable. Recoverable GST/HST increases input tax credit instead of P&L expenses. |
+| Bank balance does not match the paid amount | Confirm the selected **Paid from** account and remember that bank/cash decreases by amount plus tax. |
 | Values differ from this manual | Demo data may have changed. Reset company data before retesting the exact example values. |
 
 ## Next Manual Candidates
 
 Use this same format for the next business flows:
 
-- Record expense -> Verify expense report and bank/cash impact.
 - Create bill -> Pay bill -> Verify A/P Aging Summary.
 - Review bank transaction -> Categorize -> Verify banking and ledger impact.
 - Customize menu -> Add bookmark -> Save -> Confirm sidebar persistence.
