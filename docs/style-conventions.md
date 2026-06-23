@@ -93,6 +93,28 @@ When a change touches more than one ownership area, describe why in the PR.
 - Make mobile and desktop layouts explicit with responsive constraints.
 - When fixing visual regressions, add functional checks for computed layout or visible behavior when practical.
 
+### UI Stabilization Baseline
+
+- Runtime UI rules should live in one explicit styling mode, currently `body.v8-ui`.
+- Shared page headers should use the same hierarchy:
+  - page title and concise subtitle on the left
+  - primary and secondary actions grouped on the right
+  - actions wrap below the title on narrow screens
+- Financial tables should use one scan pattern:
+  - compact uppercase headers
+  - stable row padding
+  - right-aligned money columns
+  - tabular numeric spacing
+  - final-column row actions
+- Modals should use one form rhythm:
+  - consistent header/body/footer padding
+  - icon-only close control
+  - two-column form grid on desktop
+  - single-column form grid on mobile
+  - sticky footer for long forms
+- Dashboard and report controls should use shared button sizing and avoid one-off icon dimensions.
+- Do not add new version-numbered CSS patches unless they replace or consolidate an older behavior. Prefer improving the shared baseline layer.
+
 ## Modal Conventions
 
 - Modal open/close behavior should be deterministic.
