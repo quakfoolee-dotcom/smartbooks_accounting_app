@@ -66,6 +66,7 @@ backend/
 docs/
   assets/
     smartbooks-logo.svg
+    ui-ux-audit/
     user-manual/
   business-logic-test-cases.md
   codebase-health-audit.md
@@ -74,6 +75,7 @@ docs/
   migration-notes.md
   testing-checklist.md
   testing-strategy.md
+  ui-ux-audit.md
   user-manual.md
 frontend/
   index.html
@@ -320,6 +322,16 @@ docs/style-conventions.md
 ```
 
 It covers module ownership, JavaScript patterns, state handling, rendering/event conventions, icon rules, CSS/UI patterns, testing expectations, pull request workflow, and documentation rules.
+
+## UI/UX Audit
+
+The current UI/UX audit and design-stabilization plan are documented here:
+
+```text
+docs/ui-ux-audit.md
+```
+
+It covers current strengths, prioritized design findings, recommended UI improvement sequence, and snapshot-readiness criteria.
 
 ## Codebase Health
 
