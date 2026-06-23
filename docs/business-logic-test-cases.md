@@ -108,9 +108,9 @@ The app is still a prototype, but these rules should stay stable as the codebase
 | Bank feed posting lines | `tests/unit/accounting-service.test.js` | `tests/functional/accounting-workflows.spec.js` |
 | Bank feed invoice/bill matching | `tests/unit/accounting-service.test.js` | `tests/functional/accounting-workflows.spec.js` |
 | Trial balance and report totals | `tests/unit/accounting-service.test.js` | `tests/functional/accounting-workflows.spec.js` |
+| A/R, A/P, and P&L report assertions | `tests/unit/accounting-service.test.js` | `tests/functional/accounting-workflows.spec.js` |
 | Reset/export utilities | Service tests indirectly; functional coverage primary | `tests/functional/utilities.spec.js` |
 
 ## Gaps To Close Next
 
-- Add report-table row assertions for A/R, A/P, and P&L once report selectors are stabilized.
 - Add date-aging cases for overdue invoices and bills once aging buckets are formalized.

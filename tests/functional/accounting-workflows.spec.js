@@ -29,6 +29,29 @@ async function ledgerRowsFor(page, source, sourceId) {
       .map(row => [row.accountId, row.debit, row.credit]), { savedState:appState, sourceName:source, id:sourceId });
 }
 
+function money(value) {
+  return new Intl.NumberFormat("en-CA", { style:"currency", currency:"CAD" }).format(Number(value) || 0);
+}
+
+async function reportSummary(page) {
+  const appState = await state(page);
+  return page.evaluate(savedState => {
+    const income = window.SmartBooksAccounting.sumTypes(savedState, ["Income"]);
+    const expenses = window.SmartBooksAccounting.sumTypes(savedState, ["Expense", "COGS"]);
+    return { income, expenses, net:income - expenses };
+  }, appState);
+}
+
+async function openReportDetail(page, reportId) {
+  await page.locator(`[data-action="open-report"][data-id="${reportId}"]`).first().click();
+  const detail = page.locator("#reportDetailArea");
+  await expect(detail).toBeVisible();
+  await page.locator("#reportStartDate").fill("2026-01-01");
+  await page.locator("#reportEndDate").fill("2026-12-31");
+  await page.locator(`[data-action="run-report"][data-id="${reportId}"]`).click();
+  return detail;
+}
+
 test("core accounting workflows create and post records", async ({ page }) => {
   await openFreshApp(page);
 
@@ -290,4 +313,40 @@ test("bank feed matching links invoices and bills without double posting bank fe
   expect(billAfter.paid).toBe(billBefore.amount + billBefore.tax);
   expect(billAfter.status).toBe("Paid");
   expect(await ledgerRowsFor(page, "Bank feed", "BFT-1005")).toEqual([]);
+});
+
+test("reports display ledger-backed profit, receivable, and payable values", async ({ page }) => {
+  await openFreshApp(page);
+
+  const appState = await state(page);
+  const totals = await accountingTotals(page);
+  const summary = await reportSummary(page);
+  const openInvoice = appState.invoices.find(item => item.id === "INV-1001");
+  const openBill = appState.bills.find(item => item.id === "BILL-9001");
+  const openInvoiceAmount = openInvoice.subtotal + openInvoice.tax - openInvoice.paid;
+  const openBillAmount = openBill.amount + openBill.tax - openBill.paid;
+
+  await page.locator('[data-nav="reports"]').first().click();
+  const reports = page.locator("#page-reports.active");
+  await expect(reports).toContainText("Profit and Loss");
+  await expect(reports).toContainText(`Open A/R ${money(totals.ar)}`);
+  await expect(reports).toContainText(`Open A/P ${money(totals.ap)}`);
+
+  let detail = await openReportDetail(page, "profit-loss");
+  await expect(detail).toContainText("Profit and Loss");
+  await expect(detail).toContainText(money(summary.income));
+  await expect(detail).toContainText(money(summary.expenses));
+  await expect(detail).toContainText(money(summary.net));
+  await page.locator('[data-action="back-reports"]').click();
+
+  detail = await openReportDetail(page, "ar-aging");
+  await expect(detail).toContainText("Accounts Receivable Aging Summary");
+  await expect(reports).toContainText("INV-1001");
+  await expect(reports).toContainText(money(openInvoiceAmount));
+  await page.locator('[data-action="back-reports"]').click();
+
+  detail = await openReportDetail(page, "ap-aging");
+  await expect(detail).toContainText("Accounts Payable Aging Summary");
+  await expect(reports).toContainText("BILL-9001");
+  await expect(reports).toContainText(money(openBillAmount));
 });
