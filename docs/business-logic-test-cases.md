@@ -32,6 +32,15 @@ The app is still a prototype, but these rules should stay stable as the codebase
 | Overpayment | Open invoice 315 | Receive 999 | Payment amount is clamped to 315 | No over-credit to A/R | No negative invoice balance |
 | Invalid payment | No invoice or amount <= 0 | Submit payment | No payment saved | No ledger movement | Modal stays open or shows validation message |
 
+## Deposits
+
+| Case | Starting State | Action | Expected Saved Record | Expected Ledger Effect | Expected UI / Report Effect |
+| --- | --- | --- | --- | --- | --- |
+| Undeposited payment | Payment received to account 1400 | Select payment in Bank Deposit | Deposit stores paymentIds and linkedPaymentTotal | Debit bank, credit 1400 | Payment no longer appears in deposit queue |
+| Standalone deposit | No selected payments, amount 500 | Save bank deposit | Deposit additionalAmount is 500 | Debit bank, credit selected income/equity/liability account | Deposit appears in bank register |
+| Mixed deposit | Selected payment 125 plus extra 25 | Save bank deposit | Deposit amount is 150, linkedPaymentTotal 125, additionalAmount 25 | Debit bank 150, credit 1400 for 125, credit selected account for 25 | Undeposited Funds clears without overstating income |
+| Empty deposit | No selected payments and zero amount | Submit deposit | No deposit saved | No ledger movement | Modal stays open or shows validation message |
+
 ## Expenses
 
 | Case | Starting State | Action | Expected Saved Record | Expected Ledger Effect | Expected UI / Report Effect |
@@ -95,13 +104,14 @@ The app is still a prototype, but these rules should stay stable as the codebase
 | Payment clamping | `tests/unit/accounting-service.test.js` | `tests/functional/accounting-workflows.spec.js` |
 | Expense totals and ITC | `tests/unit/accounting-service.test.js` | `tests/functional/accounting-workflows.spec.js` |
 | Bill totals and bill payment clamping | `tests/unit/accounting-service.test.js` | `tests/functional/accounting-workflows.spec.js` |
+| Deposit application and split deposit ledger lines | `tests/unit/accounting-service.test.js` | `tests/functional/accounting-workflows.spec.js` |
 | Bank feed posting lines | `tests/unit/accounting-service.test.js` | `tests/functional/accounting-workflows.spec.js` |
+| Bank feed invoice/bill matching | `tests/unit/accounting-service.test.js` indirectly through ledger helpers | `tests/functional/accounting-workflows.spec.js` |
 | Trial balance and report totals | `tests/unit/accounting-service.test.js` | `tests/functional/accounting-workflows.spec.js` |
 | Reset/export utilities | Service tests indirectly; functional coverage primary | `tests/functional/utilities.spec.js` |
 
 ## Gaps To Close Next
 
-- Add a browser test for matching a bank transaction to an invoice or bill.
-- Add unit tests around deposit workflows when payment/deposit logic is extracted into a pure helper.
-- Add browser coverage for deposit workflows once deposit logic has a pure helper.
 - Add report-table row assertions for A/R, A/P, and P&L once report selectors are stabilized.
+- Add focused unit coverage for bank-match record creation after matching logic is extracted from the browser event layer.
+- Add date-aging cases for overdue invoices and bills once aging buckets are formalized.

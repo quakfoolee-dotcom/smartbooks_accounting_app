@@ -33,6 +33,7 @@ function sampleState(){
       { id:"1000", code:"1000", name:"Operating Checking", type:"Asset", normal:"Debit" },
       { id:"1010", code:"1010", name:"Savings Reserve", type:"Asset", normal:"Debit" },
       { id:"1200", code:"1200", name:"Accounts Receivable", type:"Asset", normal:"Debit" },
+      { id:"1400", code:"1400", name:"Undeposited Funds", type:"Asset", normal:"Debit" },
       { id:"2000", code:"2000", name:"Accounts Payable", type:"Liability", normal:"Credit" },
       { id:"2100", code:"2100", name:"Credit Card Payable", type:"Liability", normal:"Credit" },
       { id:"2200", code:"2200", name:"GST/HST Payable", type:"Liability", normal:"Credit" },
@@ -112,6 +113,9 @@ test("accounting service maps expense names to expected fallback accounts", () =
 test("accounting service builds balanced ledger rows and report totals", () => {
   const accounting = loadAccountingService();
   const state = sampleState();
+  assert.equal(accounting.bankAccountIdToLedger(state, "BA-1"), "1000");
+  assert.equal(accounting.bankAccountIdToLedger(state, "1400"), "1400");
+
   const trialBalance = accounting.trialBalanceStatus(state);
   assert.equal(trialBalance.ok, true);
   assert.equal(trialBalance.debits, trialBalance.credits);
@@ -189,6 +193,69 @@ test("payment application clamps overpayments to open invoice and bill balances"
   assert.equal(billApplied.appliedAmount, 42.5);
   assert.equal(billApplied.paid, 52.5);
   assert.equal(billApplied.fullyPaid, true);
+});
+
+test("deposit application links undeposited payments and additional deposits", () => {
+  const accounting = loadAccountingService();
+  const payments = [
+    { id:"PMT-1", amount:125, accountId:"1400" },
+    { id:"PMT-2", amount:75, accountId:"1400", depositId:"DEP-OLD" },
+    { id:"PMT-3", amount:50, accountId:"BA-1" }
+  ];
+
+  const deposit = accounting.depositApplication(payments, ["PMT-1", "PMT-2", "PMT-3", "missing"], 25, "4100");
+  assert.equal(deposit.canDeposit, true);
+  assert.deepEqual(plain(deposit.paymentIds), ["PMT-1"]);
+  assert.equal(deposit.linkedPaymentTotal, 125);
+  assert.equal(deposit.additionalAmount, 25);
+  assert.equal(deposit.total, 150);
+  assert.equal(deposit.incomeAccountId, "4100");
+  assert.equal(deposit.clearingAccountId, "1400");
+});
+
+test("deposit application supports standalone deposits and rejects empty deposits", () => {
+  const accounting = loadAccountingService();
+  const standalone = accounting.depositApplication([], [], 500, "4100");
+  assert.equal(standalone.canDeposit, true);
+  assert.equal(standalone.total, 500);
+  assert.equal(standalone.linkedPaymentTotal, 0);
+  assert.equal(standalone.additionalAmount, 500);
+  assert.equal(standalone.incomeAccountId, "4100");
+
+  const empty = accounting.depositApplication([], [], 0, "4100");
+  assert.equal(empty.canDeposit, false);
+  assert.equal(empty.total, 0);
+
+  const negative = accounting.depositApplication([], [], -20, "4100");
+  assert.equal(negative.canDeposit, false);
+  assert.equal(negative.additionalAmount, 0);
+});
+
+test("deposit ledger clears undeposited funds and credits extra deposits separately", () => {
+  const accounting = loadAccountingService();
+  const state = sampleState();
+  state.payments.push({ id:"PMT-UND", invoiceId:"INV-1", customerId:"C-1", date:"2026-02-12", accountId:"1400", amount:125, memo:"Undeposited customer payment" });
+  state.deposits.push({
+    id:"DEP-TEST",
+    date:"2026-02-13",
+    accountId:"BA-1",
+    incomeAccountId:"4100",
+    clearingAccountId:"1400",
+    amount:150,
+    memo:"Mixed bank deposit",
+    paymentIds:["PMT-UND"],
+    linkedPaymentTotal:125,
+    additionalAmount:25
+  });
+
+  const depositRows = accounting.ledger(state).filter(row => row.source === "Deposit" && row.sourceId === "DEP-TEST");
+  assert.deepEqual(plain(depositRows.map(row => [row.accountId, row.debit, row.credit])), [
+    ["1000", 150, 0],
+    ["1400", 0, 125],
+    ["4100", 0, 25]
+  ]);
+  assert.equal(accounting.normalBalance(state, "1400"), 0);
+  assert.equal(accounting.trialBalanceStatus(state).ok, true);
 });
 
 test("mixed transactions keep trial balance balanced and calculate normal balances", () => {

@@ -1585,12 +1585,11 @@
     }
     if(currentModal==='deposit'){
       e.preventDefault(); const f=new FormData(e.target), data=Object.fromEntries(f.entries()); const paymentIds=f.getAll('paymentIds');
-      const selected=(state.payments||[]).filter(p=>paymentIds.includes(p.id) && !p.depositId);
-      const linkedTotal=selected.reduce((s,p)=>s+num(p.amount),0); const extra=num(data.amount); const total=linkedTotal+extra;
-      if(total<=0){ showToast('Select payments to deposit or enter an additional deposit amount.'); return; }
-      const dep={id:uid('DEP'), date:data.date||todayISO(), accountId:data.accountId||'BA-1', incomeAccountId:selected.length?'1400':(data.incomeAccountId||'4100'), amount:total, memo:data.memo||'Bank deposit', paymentIds:selected.map(p=>p.id)};
-      state.deposits.unshift(dep); selected.forEach(p=>{ p.depositId=dep.id; p.depositedToAccountId=dep.accountId; p.depositedDate=dep.date; });
-      audit(`Deposit ${dep.id} posted: ${money(total)}`); state.settings.salesTab='transactions'; saveState(); closeModal(); renderAll(); showToast(selected.length?`Deposited ${selected.length} payment${selected.length===1?'':'s'} to bank.`:'Deposit added and posted.'); return;
+      const deposit=window.SmartBooksAccounting.depositApplication(state.payments||[], paymentIds, data.amount, data.incomeAccountId||'4100');
+      if(!deposit.canDeposit){ showToast('Select payments to deposit or enter an additional deposit amount.'); return; }
+      const dep={id:uid('DEP'), date:data.date||todayISO(), accountId:data.accountId||'BA-1', incomeAccountId:deposit.incomeAccountId, clearingAccountId:deposit.clearingAccountId, amount:deposit.total, memo:data.memo||'Bank deposit', paymentIds:deposit.paymentIds, linkedPaymentTotal:deposit.linkedPaymentTotal, additionalAmount:deposit.additionalAmount};
+      state.deposits.unshift(dep); deposit.selectedPayments.forEach(p=>{ p.depositId=dep.id; p.depositedToAccountId=dep.accountId; p.depositedDate=dep.date; });
+      audit(`Deposit ${dep.id} posted: ${money(deposit.total)}`); state.settings.salesTab='transactions'; saveState(); closeModal(); renderAll(); showToast(deposit.selectedPayments.length?`Deposited ${deposit.selectedPayments.length} payment${deposit.selectedPayments.length===1?'':'s'} to bank.`:'Deposit added and posted.'); return;
     }
     return v17SubmitModalBase(e);
   };
@@ -1850,12 +1849,11 @@
     }
     if(currentModal==='deposit'){
       e.preventDefault(); const f=new FormData(e.target), data=Object.fromEntries(f.entries()); const paymentIds=f.getAll('paymentIds');
-      const selected=(state.payments||[]).filter(p=>paymentIds.includes(p.id) && !p.depositId);
-      const linkedTotal=selected.reduce((s,p)=>s+num(p.amount),0), extra=num(data.amount), total=linkedTotal+extra;
-      if(total<=0){ showToast('Select payments to deposit or enter an additional deposit amount.'); return; }
-      const dep={id:uid('DEP'), date:data.date||todayISO(), accountId:data.accountId||'BA-1', incomeAccountId:selected.length?'1400':(data.incomeAccountId||'4100'), amount:total, memo:data.memo||'Bank deposit', paymentIds:selected.map(p=>p.id), linkedPaymentTotal:linkedTotal, additionalAmount:extra};
-      state.deposits.unshift(dep); selected.forEach(p=>{ p.depositId=dep.id; p.depositedToAccountId=dep.accountId; p.depositedDate=dep.date; });
-      audit(`Deposit ${dep.id} posted: ${money(total)}`); state.settings.salesTab='transactions'; saveState(); closeModal(); renderAll(); showToast(selected.length?`Deposited ${selected.length} payment${selected.length===1?'':'s'} to bank.`:'Deposit added and posted.'); return;
+      const deposit=window.SmartBooksAccounting.depositApplication(state.payments||[], paymentIds, data.amount, data.incomeAccountId||'4100');
+      if(!deposit.canDeposit){ showToast('Select payments to deposit or enter an additional deposit amount.'); return; }
+      const dep={id:uid('DEP'), date:data.date||todayISO(), accountId:data.accountId||'BA-1', incomeAccountId:deposit.incomeAccountId, clearingAccountId:deposit.clearingAccountId, amount:deposit.total, memo:data.memo||'Bank deposit', paymentIds:deposit.paymentIds, linkedPaymentTotal:deposit.linkedPaymentTotal, additionalAmount:deposit.additionalAmount};
+      state.deposits.unshift(dep); deposit.selectedPayments.forEach(p=>{ p.depositId=dep.id; p.depositedToAccountId=dep.accountId; p.depositedDate=dep.date; });
+      audit(`Deposit ${dep.id} posted: ${money(deposit.total)}`); state.settings.salesTab='transactions'; saveState(); closeModal(); renderAll(); showToast(deposit.selectedPayments.length?`Deposited ${deposit.selectedPayments.length} payment${deposit.selectedPayments.length===1?'':'s'} to bank.`:'Deposit added and posted.'); return;
     }
     return v18SubmitModalPaymentsBase(e);
   };

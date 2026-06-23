@@ -15,6 +15,20 @@ async function accountingTotals(page) {
   return page.evaluate(savedState => window.SmartBooksAccounting.totals(savedState), appState);
 }
 
+async function normalBalance(page, accountId) {
+  const appState = await state(page);
+  return page.evaluate(({ savedState, accountId: ledgerAccountId }) =>
+    window.SmartBooksAccounting.normalBalance(savedState, ledgerAccountId), { savedState:appState, accountId });
+}
+
+async function ledgerRowsFor(page, source, sourceId) {
+  const appState = await state(page);
+  return page.evaluate(({ savedState, sourceName, id }) =>
+    window.SmartBooksAccounting.ledger(savedState)
+      .filter(row => row.source === sourceName && row.sourceId === id)
+      .map(row => [row.accountId, row.debit, row.credit]), { savedState:appState, sourceName:source, id:sourceId });
+}
+
 test("core accounting workflows create and post records", async ({ page }) => {
   await openFreshApp(page);
 
@@ -193,4 +207,87 @@ test("business workflow totals update for invoices, payments, bills, and bank re
 
   await page.locator('[data-nav="reports"]').first().click();
   await expect(page.locator("#page-reports.active")).toContainText(/Profit|Loss|Trial|Balance|Reports/);
+});
+
+test("deposit workflow clears undeposited payments and separates extra deposit income", async ({ page }) => {
+  await openFreshApp(page);
+
+  await openModal(page, "payment");
+  await page.locator('[name="invoiceId"]').selectOption("INV-1001");
+  await page.locator('[name="accountId"]').selectOption("1400");
+  await page.locator('[name="amount"]').fill("123");
+  await submitModal(page);
+
+  const afterPaymentState = await state(page);
+  const payment = afterPaymentState.payments[0];
+  expect(payment.invoiceId).toBe("INV-1001");
+  expect(payment.accountId).toBe("1400");
+  expect(payment.amount).toBe(123);
+  expect(payment.depositId ?? null).toBeNull();
+  expect(await normalBalance(page, "1400")).toBeCloseTo(123, 2);
+
+  await openModal(page, "deposit");
+  await page.locator(`[name="paymentIds"][value="${payment.id}"]`).check();
+  await page.locator('[name="incomeAccountId"]').selectOption("4100");
+  await page.locator("#v18DepositExtraAmount").fill("10");
+  await submitModal(page);
+
+  const afterDepositState = await state(page);
+  const savedDeposit = afterDepositState.deposits[0];
+  const depositedPayment = afterDepositState.payments.find(item => item.id === payment.id);
+  expect(savedDeposit.amount).toBe(133);
+  expect(savedDeposit.paymentIds).toEqual([payment.id]);
+  expect(savedDeposit.linkedPaymentTotal).toBe(123);
+  expect(savedDeposit.additionalAmount).toBe(10);
+  expect(savedDeposit.incomeAccountId).toBe("4100");
+  expect(savedDeposit.clearingAccountId).toBe("1400");
+  expect(depositedPayment.depositId).toBe(savedDeposit.id);
+  expect(depositedPayment.depositedToAccountId).toBe(savedDeposit.accountId);
+  expect(await normalBalance(page, "1400")).toBeCloseTo(0, 2);
+  expect(await ledgerRowsFor(page, "Deposit", savedDeposit.id)).toEqual([
+    ["1000", 133, 0],
+    ["1400", 0, 123],
+    ["4100", 0, 10]
+  ]);
+});
+
+test("bank feed matching links invoices and bills without double posting bank feed rows", async ({ page }) => {
+  await openFreshApp(page);
+
+  const beforeState = await state(page);
+  const invoiceBefore = beforeState.invoices.find(item => item.id === "INV-1001");
+  const billBefore = beforeState.bills.find(item => item.id === "BILL-9001");
+  const invoiceOpen = invoiceBefore.subtotal + invoiceBefore.tax - invoiceBefore.paid;
+  const billOpen = billBefore.amount + billBefore.tax - billBefore.paid;
+
+  await page.locator('[data-nav="banking"]').first().click();
+  await page.locator('[data-action="match-invoice-banktx"][data-id="BFT-1001"]').first().click();
+
+  const afterInvoiceMatch = await state(page);
+  const invoiceTx = afterInvoiceMatch.bankTransactions.find(item => item.id === "BFT-1001");
+  const matchedPayment = afterInvoiceMatch.payments.find(item => item.id === invoiceTx.linkedId);
+  const invoiceAfter = afterInvoiceMatch.invoices.find(item => item.id === "INV-1001");
+  expect(invoiceTx.status).toBe("Matched");
+  expect(invoiceTx.posted).toBe(false);
+  expect(matchedPayment.invoiceId).toBe("INV-1001");
+  expect(matchedPayment.amount).toBe(invoiceOpen);
+  expect(matchedPayment.accountId).toBe(invoiceTx.bankAccountId);
+  expect(invoiceAfter.paid).toBe(invoiceBefore.subtotal + invoiceBefore.tax);
+  expect(invoiceAfter.status).toBe("Paid");
+  expect(await ledgerRowsFor(page, "Bank feed", "BFT-1001")).toEqual([]);
+
+  await page.locator('[data-action="match-bill-banktx"][data-id="BFT-1005"]').first().click();
+
+  const afterBillMatch = await state(page);
+  const billTx = afterBillMatch.bankTransactions.find(item => item.id === "BFT-1005");
+  const matchedBillPayment = afterBillMatch.billPayments.find(item => item.id === billTx.linkedId);
+  const billAfter = afterBillMatch.bills.find(item => item.id === "BILL-9001");
+  expect(billTx.status).toBe("Matched");
+  expect(billTx.posted).toBe(false);
+  expect(matchedBillPayment.billId).toBe("BILL-9001");
+  expect(matchedBillPayment.amount).toBe(billOpen);
+  expect(matchedBillPayment.accountId).toBe(billTx.bankAccountId);
+  expect(billAfter.paid).toBe(billBefore.amount + billBefore.tax);
+  expect(billAfter.status).toBe("Paid");
+  expect(await ledgerRowsFor(page, "Bank feed", "BFT-1005")).toEqual([]);
 });
