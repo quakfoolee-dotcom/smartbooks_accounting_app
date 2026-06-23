@@ -1720,3 +1720,255 @@
 
   try{ v62InstallUiStabilization(); v47InvalidateSearch?.(); renderAll(); v62InstallUiStabilization(); }catch(e){ console.warn('V62 refresh skipped', e); }
 
+  let buttonConsistencyObserver = null;
+  let buttonConsistencyTimer = null;
+
+  function scheduleButtonConsistency(){
+    clearTimeout(buttonConsistencyTimer);
+    buttonConsistencyTimer = setTimeout(() => {
+      try{ installButtonConsistency(); }catch(e){ console.warn('Button consistency refresh skipped', e); }
+    }, 0);
+  }
+
+  function startButtonConsistencyObserver(){
+    if(buttonConsistencyObserver || !document.body) return;
+    buttonConsistencyObserver = new MutationObserver(scheduleButtonConsistency);
+    buttonConsistencyObserver.observe(document.body, { childList:true, subtree:true });
+    document.addEventListener('click', scheduleButtonConsistency, true);
+    document.addEventListener('change', scheduleButtonConsistency, true);
+  }
+
+  function injectButtonConsistencyStyles(){
+    if(document.getElementById('smartbooks-button-consistency-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'smartbooks-button-consistency-styles';
+    style.textContent = `
+      body.v8-ui{
+        --sb-button-height:38px;
+        --sb-button-compact-height:34px;
+        --sb-button-icon-size:36px;
+        --sb-row-action-width:124px;
+        --sb-button-gap:8px;
+      }
+      body.v8-ui .btn,
+      body.v8-ui button.btn,
+      body.v8-ui a.btn{
+        box-sizing:border-box!important;
+        display:inline-flex!important;
+        align-items:center!important;
+        justify-content:center!important;
+        min-height:var(--sb-button-height)!important;
+        padding:8px 14px!important;
+        border-radius:999px!important;
+        line-height:1.2!important;
+        font-size:14px!important;
+        gap:7px!important;
+        text-align:center!important;
+        white-space:nowrap!important;
+      }
+      body.v8-ui .section-header > div:last-child,
+      body.v8-ui .v25-toolbar-actions,
+      body.v8-ui .sales-header-actions,
+      body.v8-ui .toolbar .left,
+      body.v8-ui .toolbar .right,
+      body.v8-ui .quick-actions,
+      body.v8-ui .gtd-hero > div:last-child{
+        display:flex!important;
+        align-items:center!important;
+        gap:var(--sb-button-gap)!important;
+        flex-wrap:wrap!important;
+      }
+      body.v8-ui .section-header .btn:not(.sb-icon-only),
+      body.v8-ui .v25-toolbar-actions .btn:not(.sb-icon-only),
+      body.v8-ui .sales-header-actions .btn:not(.sb-icon-only),
+      body.v8-ui .toolbar .btn:not(.sb-icon-only),
+      body.v8-ui .quick-actions .btn:not(.sb-icon-only),
+      body.v8-ui .gtd-hero .btn:not(.sb-icon-only),
+      body.v8-ui .modal-footer .btn:not(.sb-icon-only){
+        min-width:112px!important;
+      }
+      body.v8-ui .tabbar,
+      body.v8-ui .ops-tabbar,
+      body.v8-ui .mini-tabs,
+      body.v8-ui .gtd-tabs{
+        display:flex!important;
+        align-items:center!important;
+        gap:var(--sb-button-gap)!important;
+        flex-wrap:wrap!important;
+      }
+      body.v8-ui .tab-btn,
+      body.v8-ui .ops-tab,
+      body.v8-ui .mini-tab,
+      body.v8-ui .gtd-tab{
+        box-sizing:border-box!important;
+        display:inline-flex!important;
+        align-items:center!important;
+        justify-content:center!important;
+        min-height:var(--sb-button-height)!important;
+        padding:8px 14px!important;
+        border-radius:999px!important;
+        line-height:1.15!important;
+        font-size:14px!important;
+        text-align:center!important;
+        white-space:nowrap!important;
+      }
+      body.v8-ui .mini-tab{
+        min-height:36px!important;
+        font-size:13px!important;
+      }
+      body.v8-ui .btn.square:not(.sb-icon-only){
+        min-height:var(--sb-button-compact-height)!important;
+        padding:7px 10px!important;
+        border-radius:12px!important;
+        white-space:normal!important;
+      }
+      body.v8-ui .table-card td:last-child .sb-action-grid{
+        display:grid!important;
+        grid-template-columns:repeat(2,var(--sb-row-action-width))!important;
+        gap:6px!important;
+        align-items:start!important;
+        justify-content:start!important;
+        max-width:calc((var(--sb-row-action-width) * 2) + 6px)!important;
+        white-space:normal!important;
+      }
+      body.v8-ui .table-card td:last-child .sb-action-grid .btn:not(.sb-icon-only),
+      body.v8-ui .table-card td:last-child > .btn:not(.sb-icon-only),
+      body.v8-ui .panel-row > .btn.square:not(.sb-icon-only){
+        width:var(--sb-row-action-width)!important;
+        min-width:var(--sb-row-action-width)!important;
+        max-width:var(--sb-row-action-width)!important;
+        min-height:var(--sb-button-compact-height)!important;
+        padding:7px 8px!important;
+        font-size:12px!important;
+        line-height:1.14!important;
+        justify-content:center!important;
+        text-align:center!important;
+        white-space:normal!important;
+      }
+      body.v8-ui .invoice-actions:not(.sb-action-grid){
+        min-width:118px!important;
+        max-width:150px!important;
+      }
+      body.v8-ui .invoice-actions:not(.sb-action-grid) .invoice-more summary.btn{
+        min-height:var(--sb-button-compact-height)!important;
+        padding:7px 10px!important;
+        width:100%!important;
+      }
+      body.v8-ui .invoice-more-menu .btn,
+      body.v8-ui .invoice-more-menu button{
+        min-height:var(--sb-button-compact-height)!important;
+        padding:7px 9px!important;
+        font-size:12px!important;
+        line-height:1.15!important;
+      }
+      body.v8-ui .check-row .btn.square:not(.sb-icon-only){
+        min-width:84px!important;
+        min-height:var(--sb-button-compact-height)!important;
+        padding:7px 10px!important;
+        font-size:12px!important;
+      }
+      body.v8-ui .btn.square.sb-icon-only,
+      body.v8-ui .icon-btn,
+      body.v8-ui .hamburger,
+      body.v8-ui .theme-toggle-knob,
+      body.v8-ui .v25-layout-actions .btn.square,
+      body.v8-ui .v26-control-group .btn.square[data-action^="dashboard-widget-"],
+      body.v8-ui .v29-menu-actions button{
+        box-sizing:border-box!important;
+        display:inline-grid!important;
+        place-items:center!important;
+        width:var(--sb-button-icon-size)!important;
+        height:var(--sb-button-icon-size)!important;
+        min-width:var(--sb-button-icon-size)!important;
+        min-height:var(--sb-button-icon-size)!important;
+        max-width:var(--sb-button-icon-size)!important;
+        padding:0!important;
+        border-radius:12px!important;
+        line-height:1!important;
+        text-align:center!important;
+        flex:0 0 auto!important;
+      }
+      body.v8-ui .btn.square.sb-icon-only .sb-icon,
+      body.v8-ui .icon-btn .sb-icon,
+      body.v8-ui .hamburger .sb-icon,
+      body.v8-ui .theme-toggle-knob .sb-icon,
+      body.v8-ui .v25-layout-actions .btn.square .sb-icon,
+      body.v8-ui .v29-menu-actions button .sb-icon{
+        width:17px!important;
+        height:17px!important;
+        margin:0!important;
+      }
+      body.v8-ui .v25-widget-buttons{
+        gap:6px!important;
+      }
+      body.v8-ui .v25-widget-buttons .btn.square[data-action="dashboard-widget-hide"]{
+        min-width:72px!important;
+        min-height:var(--sb-button-compact-height)!important;
+        padding:7px 10px!important;
+        font-size:12px!important;
+      }
+      @media(max-width:760px){
+        body.v8-ui .table-card td:last-child .sb-action-grid{
+          grid-template-columns:1fr!important;
+          max-width:none!important;
+        }
+        body.v8-ui .table-card td:last-child .sb-action-grid .btn:not(.sb-icon-only),
+        body.v8-ui .table-card td:last-child > .btn:not(.sb-icon-only),
+        body.v8-ui .panel-row > .btn.square:not(.sb-icon-only){
+          width:100%!important;
+          min-width:0!important;
+          max-width:none!important;
+        }
+        body.v8-ui .section-header .btn:not(.sb-icon-only),
+        body.v8-ui .v25-toolbar-actions .btn:not(.sb-icon-only),
+        body.v8-ui .sales-header-actions .btn:not(.sb-icon-only),
+        body.v8-ui .toolbar .btn:not(.sb-icon-only),
+        body.v8-ui .quick-actions .btn:not(.sb-icon-only),
+        body.v8-ui .gtd-hero .btn:not(.sb-icon-only){
+          min-width:0!important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function installButtonConsistency(){
+    document.body?.classList?.add('v8-ui');
+    injectButtonConsistencyStyles();
+    startButtonConsistencyObserver();
+
+    const iconText = new Set(['x','×','✕','+','＋','✓','✔','↑','↓','←','→','↖','↗','↘','↙','⇱','⇲','↔','⇄','⇅','↻','★','☆']);
+    document.querySelectorAll('.btn.square').forEach(button => {
+      const text = (button.textContent || '').replace(/\s+/g, ' ').trim();
+      const isIconGroup = Boolean(button.closest('.v25-layout-actions,.v26-control-group'));
+      const isKnownIconAction = button.matches('#closeModal,.top-panel-close,#dashboardRefresh,[data-action="refresh-dashboard"],[data-action="dashboard-widget-move"],[data-action="dashboard-widget-width-cycle"]');
+      const isIconOnlyText = text.length <= 3 && iconText.has(text.toLowerCase());
+      if(isIconGroup || isKnownIconAction || isIconOnlyText){
+        if(text.length > 3){
+          const visibleIcon = text.match(/[x×✕+＋✓✔↑↓←→↖↗↘↙⇱⇲↔⇄⇅↻★☆]/i)?.[0];
+          if(visibleIcon) button.textContent = visibleIcon;
+        }
+        button.classList.add('sb-icon-only');
+        if(!button.getAttribute('aria-label')){
+          button.setAttribute('aria-label', button.getAttribute('title') || button.dataset.action?.replace(/-/g, ' ') || 'Button action');
+        }
+      }
+    });
+
+    document.querySelectorAll('.tx-actions,.row-actions,.table-actions,.estimate-actions,.v49-estimate-row-actions').forEach(group => {
+      group.classList.add('sb-action-grid');
+    });
+    document.querySelectorAll('.invoice-actions').forEach(group => {
+      if(group.querySelector('.invoice-more')) group.classList.remove('sb-action-grid');
+      else group.classList.add('sb-action-grid');
+    });
+  }
+
+  const buttonConsistencyRenderAllBase = renderAll;
+  renderAll = function(){
+    const result = buttonConsistencyRenderAllBase.apply(this, arguments);
+    installButtonConsistency();
+    return result;
+  };
+
+  try{ installButtonConsistency(); renderAll(); installButtonConsistency(); }catch(e){ console.warn('Button consistency refresh skipped', e); }
