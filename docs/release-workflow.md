@@ -34,7 +34,7 @@ The CI workflow has separate jobs for:
 
 Use `CI Result` as the required branch-protection check. It fails if any upstream CI job fails, and it stays stable if more jobs are added later.
 
-`Coverage Report` is currently informational. It uploads the service coverage artifact for review, but it is intentionally not included in the required `CI Result` gate until the project has a stable baseline.
+`Coverage Report` runs the service coverage threshold check and is included in the required `CI Result` gate. It also uploads the `coverage-report` artifact so failures can be reviewed before changing tests or thresholds.
 
 ## Local Pre-Push Gate
 

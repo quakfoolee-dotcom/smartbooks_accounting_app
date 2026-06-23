@@ -205,7 +205,7 @@ This repository uses five GitHub automation layers:
   - Runs on pushes and pull requests to `main`.
   - Splits checks into syntax, unit, service coverage, and functional browser jobs.
   - Publishes a final `CI Result` job for branch protection.
-  - Uploads a non-blocking `coverage-report` artifact from the service coverage job.
+  - Runs service coverage thresholds and uploads a `coverage-report` artifact.
   - Uploads Playwright failure artifacts when browser tests fail.
 
 - `Deploy SmartBooks Pages`

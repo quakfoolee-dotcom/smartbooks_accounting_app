@@ -62,7 +62,6 @@ jobs:
   coverage:
     name: Coverage Report
     runs-on: ubuntu-latest
-    continue-on-error: true
     timeout-minutes: 10
 
     steps:
@@ -78,15 +77,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run service coverage report
-        run: npm run coverage
+      - name: Run service coverage threshold check
+        run: npm run coverage:check
 
       - name: Upload coverage report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: coverage/
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 14
 
   functional-tests:
@@ -130,6 +130,7 @@ jobs:
     needs:
       - syntax-check
       - unit-tests
+      - coverage
       - functional-tests
     if: always()
     timeout-minutes: 5
@@ -140,12 +141,16 @@ jobs:
         run: |
           echo "syntax-check: ${{ needs.syntax-check.result }}"
           echo "unit-tests: ${{ needs.unit-tests.result }}"
+          echo "coverage: ${{ needs.coverage.result }}"
           echo "functional-tests: ${{ needs.functional-tests.result }}"
 
           if [[ "${{ needs.syntax-check.result }}" != "success" ]]; then
             exit 1
           fi
           if [[ "${{ needs.unit-tests.result }}" != "success" ]]; then
+            exit 1
+          fi
+          if [[ "${{ needs.coverage.result }}" != "success" ]]; then
             exit 1
           fi
           if [[ "${{ needs.functional-tests.result }}" != "success" ]]; then
