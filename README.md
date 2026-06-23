@@ -66,6 +66,7 @@ backend/
 docs/
   assets/
     smartbooks-logo.svg
+    user-manual/
   business-logic-test-cases.md
   codebase-health-audit.md
   release-workflow.md
@@ -73,6 +74,7 @@ docs/
   migration-notes.md
   testing-checklist.md
   testing-strategy.md
+  user-manual.md
 frontend/
   index.html
   src/
@@ -271,6 +273,12 @@ Use the manual checklist before larger releases:
 
 ```text
 docs/testing-checklist.md
+```
+
+The starter user manual provides a step-by-step invoice and payment walkthrough with screenshots:
+
+```text
+docs/user-manual.md
 ```
 
 Focus areas:
