@@ -93,6 +93,15 @@ When a change touches more than one ownership area, describe why in the PR.
 - Make mobile and desktop layouts explicit with responsive constraints.
 - When fixing visual regressions, add functional checks for computed layout or visible behavior when practical.
 
+### Button Sizing Contract
+
+- Command buttons use a shared 38px minimum height, pill radius, centered content, and consistent horizontal padding.
+- Header, toolbar, modal footer, and quick-action buttons should use the shared `.btn` class and avoid one-off inline padding or height.
+- Tab buttons (`.tab-btn`, `.ops-tab`, `.mini-tab`, `.gtd-tab`) should share the same height rhythm. Width can follow label length, but padding and vertical sizing should be consistent.
+- Table action columns should use grouped action containers (`.tx-actions`, `.row-actions`, `.table-actions`, `.invoice-actions`, `.estimate-actions`, or `.v49-estimate-row-actions`) so action buttons normalize to a predictable compact width and height.
+- Icon-only controls should be square, centered, and accessible through `aria-label` or `title`. Do not show helper words like "Close" inside icon-only controls.
+- Avoid using `.btn.square` as a catch-all. Text actions may be compact but should not become icon-size squares unless they are genuinely icon-only.
+
 ### UI Stabilization Baseline
 
 - Runtime UI rules should live in one explicit styling mode, currently `body.v8-ui`.
