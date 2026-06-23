@@ -68,6 +68,7 @@ docs/
     smartbooks-logo.svg
   business-logic-test-cases.md
   codebase-health-audit.md
+  release-workflow.md
   style-conventions.md
   migration-notes.md
   testing-checklist.md
@@ -192,18 +193,18 @@ This repository uses four GitHub automation layers:
 
 - `SmartBooks CI`
   - Runs on pushes and pull requests to `main`.
-  - Installs dependencies.
-  - Installs Playwright Chromium.
-  - Runs syntax checks, unit tests, and local Playwright functional tests.
+  - Splits checks into syntax, unit, and functional browser jobs.
+  - Publishes a final `CI Result` job for branch protection.
   - Uploads Playwright failure artifacts when browser tests fail.
 
 - `Deploy SmartBooks Pages`
   - Runs after `SmartBooks CI` succeeds on `main`.
+  - Deploys the exact commit that passed CI.
   - Publishes the `frontend/` folder to GitHub Pages.
 
 - `Live Pages Smoke`
   - Runs after Pages deployment succeeds.
-  - Can be triggered manually.
+  - Can be triggered manually with an optional target URL.
   - Also runs weekly.
   - Verifies the public deployed app loads cleanly.
 
@@ -220,11 +221,17 @@ Expected workflow:
 1. Create a feature branch.
 2. Commit changes to that branch.
 3. Open a pull request into `main`.
-4. Wait for `Check, Unit, and Functional Tests` to pass.
+4. Wait for `SmartBooks CI / CI Result` to pass.
 5. Merge the pull request.
 6. Confirm Pages deploy and Live Pages Smoke succeed on `main`.
 
 Direct pushes to `main` are blocked by design.
+
+Detailed release steps live in:
+
+```text
+docs/release-workflow.md
+```
 
 ## Deployment
 

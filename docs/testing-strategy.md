@@ -242,10 +242,16 @@ Before pushing a normal code change, run:
 npm run test:all
 ```
 
+For a fast service-only check while iterating, run:
+
+```powershell
+npm run test:unit
+```
+
 Before or after deployment-related work, also run:
 
 ```powershell
 npm run test:pages-smoke
 ```
 
-GitHub Actions will run the required PR gate, but local validation keeps feedback faster and easier to debug.
+GitHub Actions will run the required `SmartBooks CI / CI Result` PR gate, but local validation keeps feedback faster and easier to debug.

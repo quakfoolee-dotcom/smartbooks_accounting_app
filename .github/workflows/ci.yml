@@ -17,8 +17,50 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  quality:
-    name: Check, Unit, and Functional Tests
+  syntax-check:
+    name: Syntax Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check JavaScript syntax
+        run: npm run check
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm run test:unit
+
+  functional-tests:
+    name: Functional Browser Tests
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -38,12 +80,6 @@ jobs:
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 
-      - name: Check JavaScript syntax
-        run: npm run check
-
-      - name: Run unit tests
-        run: npm test
-
       - name: Run functional browser tests
         run: npm run test:functional
 
@@ -56,4 +92,32 @@ jobs:
             test-results/
             playwright-report/
           if-no-files-found: ignore
-          retention-days: 7
+          retention-days: 14
+
+  ci-result:
+    name: CI Result
+    runs-on: ubuntu-latest
+    needs:
+      - syntax-check
+      - unit-tests
+      - functional-tests
+    if: always()
+    timeout-minutes: 5
+
+    steps:
+      - name: Verify all CI jobs passed
+        shell: bash
+        run: |
+          echo "syntax-check: ${{ needs.syntax-check.result }}"
+          echo "unit-tests: ${{ needs.unit-tests.result }}"
+          echo "functional-tests: ${{ needs.functional-tests.result }}"
+
+          if [[ "${{ needs.syntax-check.result }}" != "success" ]]; then
+            exit 1
+          fi
+          if [[ "${{ needs.unit-tests.result }}" != "success" ]]; then
+            exit 1
+          fi
+          if [[ "${{ needs.functional-tests.result }}" != "success" ]]; then
+            exit 1
+          fi
