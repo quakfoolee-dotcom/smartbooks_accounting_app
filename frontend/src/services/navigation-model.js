@@ -24,7 +24,9 @@
     "taxes"
   ];
 
-  const ALWAYS_VISIBLE = new Set(["dashboard", "settings"]);
+  const ALWAYS_VISIBLE = new Set(["dashboard"]);
+  const DEFAULT_HIDDEN_MENU_ITEMS = new Set(["apps", "settings", "setup"]);
+  const MENU_VISIBILITY_DEFAULTS_VERSION = 2;
 
   const LABELS = {
     dashboard: "Dashboards",
@@ -75,6 +77,10 @@
     ];
   }
 
+  function defaultVisibleMenuItems(modules){
+    return defaultMenuOrder(modules).filter(id => !DEFAULT_HIDDEN_MENU_ITEMS.has(id));
+  }
+
   function normalizeOrder(order, modules){
     const defaults = defaultMenuOrder(modules);
     const allowed = new Set(defaults);
@@ -100,12 +106,17 @@
     return seen;
   }
 
+  function sameOrder(a, b){
+    if(!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+    return a.every((id, index) => id === b[index]);
+  }
+
   function menuRegistry(modules){
     const items = (Array.isArray(modules) ? modules : []).map(m => ({
       id: m.id,
       label: LABELS[m.id] || m.label || m.id,
       icon: m.icon,
-      locked: !!m.locked || ALWAYS_VISIBLE.has(m.id),
+      locked: (!!m.locked && !DEFAULT_HIDDEN_MENU_ITEMS.has(m.id)) || ALWAYS_VISIBLE.has(m.id),
       module: true,
       desc: DESCRIPTIONS[m.id] || "Module workspace."
     }));
@@ -139,11 +150,22 @@
     if(!Array.isArray(s.menuOrder) || !s.menuOrder.length) s.menuOrder = defaultMenuOrder(modules);
     s.menuOrder = normalizeOrder(s.menuOrder, modules);
 
-    if(Array.isArray(s.visibleMenuItems) && s.visibleMenuItems.length){
-      s.visibleMenuItems = normalizeVisible(s.visibleMenuItems, modules);
+    const rawVisibleMenuItems = Array.isArray(s.visibleMenuItems) ? s.visibleMenuItems.slice() : [];
+    const normalizedRawVisible = normalizeVisible(rawVisibleMenuItems, modules);
+    const legacyDefaultVisible = normalizeVisible(defaultMenuOrder(modules), modules);
+    const shouldUseDefaultVisible =
+      !rawVisibleMenuItems.length ||
+      (
+        s.menuVisibilityDefaultsVersion !== MENU_VISIBILITY_DEFAULTS_VERSION &&
+        sameOrder(normalizedRawVisible, legacyDefaultVisible)
+      );
+
+    if(shouldUseDefaultVisible){
+      s.visibleMenuItems = normalizeVisible(defaultVisibleMenuItems(modules), modules);
     }else{
-      s.visibleMenuItems = normalizeVisible(defaultMenuOrder(modules), modules);
+      s.visibleMenuItems = normalizedRawVisible;
     }
+    s.menuVisibilityDefaultsVersion = MENU_VISIBILITY_DEFAULTS_VERSION;
     s.visibleModules = moduleVisibilityFromMenu(s.visibleMenuItems, modules, normalizeVisibleModules);
     return s;
   }
@@ -189,6 +211,7 @@
 
   global.SmartBooksNavigation = {
     defaultMenuOrder,
+    defaultVisibleMenuItems,
     normalizeOrder,
     normalizeVisible,
     menuRegistry,

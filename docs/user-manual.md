@@ -40,7 +40,7 @@ Open SmartBooks and confirm the dashboard, sidebar, topbar, create controls, and
 Expected result:
 
 - The app loads without mojibake or broken icons.
-- The left sidebar shows Dashboard, Reports, My Apps, Settings, and Setup Checklist near the top.
+- The left sidebar shows the default work menu. My Apps, Settings, and Setup Checklist are optional shortcuts that can be added from Manage.
 - The create button and dashboard widgets are available.
 
 ### Step 2: Create The Invoice

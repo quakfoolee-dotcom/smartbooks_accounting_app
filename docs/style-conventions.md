@@ -93,6 +93,14 @@ When a change touches more than one ownership area, describe why in the PR.
 - Make mobile and desktop layouts explicit with responsive constraints.
 - When fixing visual regressions, add functional checks for computed layout or visible behavior when practical.
 
+### Table Layout Decision Rule
+
+- Do not place two direct `.table-card` sections side by side inside `.grid.two` for workflow pages. Each table creates its own horizontal scroll area and hides columns.
+- Combine tables when they answer the same user question or represent the same workflow at different statuses. Use a `Type` or `Status` column plus filters/tabs when needed.
+- Stack tables full-width when they are different object types, setup records, or parent-child data. Example: tax agencies should sit above tax codes rather than beside them.
+- Keep two-column grids for compact summary cards, metrics, comparisons, and non-table guidance panels.
+- Add a functional layout check when converting a high-risk workflow so the side-by-side table pattern does not come back quietly.
+
 ### Button Sizing Contract
 
 - Command buttons use a shared 38px minimum height, pill radius, centered content, and consistent horizontal padding.
