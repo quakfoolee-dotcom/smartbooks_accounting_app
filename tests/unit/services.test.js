@@ -14,6 +14,15 @@ function memoryStorage(initial = {}){
   };
 }
 
+function throwingStorage(message = 'storage unavailable'){
+  return {
+    getItem(){ throw new Error(message); },
+    setItem(){ throw new Error(message); },
+    removeItem(){ throw new Error(message); },
+    clear(){ throw new Error(message); }
+  };
+}
+
 function fakeElement(){
   return {
     style: {},
@@ -31,6 +40,45 @@ function fakeElement(){
   };
 }
 
+function domElement(options = {}){
+  const classes = new Set(options.classes || []);
+  const attrs = Object.assign({}, options.attrs || {});
+  const element = {
+    nodeType: options.nodeType || 1,
+    tagName: options.tagName || 'DIV',
+    id: options.id || '',
+    style: {},
+    dataset: options.dataset || {},
+    textContent: options.textContent || '',
+    innerHTML: options.innerHTML || '',
+    appended: [],
+    clicked: 0,
+    removed: 0,
+    classList: {
+      contains(name){ return classes.has(name); }
+    },
+    appendChild(child){ this.appended.push(child); child.parentElement = this; },
+    remove(){ this.removed++; },
+    click(){ this.clicked++; },
+    querySelector(selector){
+      if(selector === '.sb-icon') return options.hasIcon ? {} : null;
+      if(selector === '.notification-dot') return options.notificationDot || null;
+      return null;
+    },
+    querySelectorAll(selector){
+      if(typeof options.querySelectorAll === 'function') return options.querySelectorAll(selector);
+      return [];
+    },
+    setAttribute(name, value){ attrs[name] = value; },
+    getAttribute(name){ return attrs[name] || null; },
+    closest(selector){
+      if(typeof options.closest === 'function') return options.closest(selector);
+      return null;
+    }
+  };
+  return element;
+}
+
 function fakeDocument(){
   return {
     readyState: 'loading',
@@ -43,7 +91,19 @@ function fakeDocument(){
   };
 }
 
-function loadBrowserScript(relativePath, extras = {}){
+function textWalker(nodes){
+  let index = -1;
+  return {
+    currentNode:null,
+    nextNode(){
+      index++;
+      this.currentNode = nodes[index] || null;
+      return index < nodes.length;
+    }
+  };
+}
+
+function loadBrowserScript(relativePath, extras = {}, onLoad){
   const modulePath = path.join(root, relativePath);
   const globalKeys = [
     'Blob',
@@ -91,6 +151,7 @@ function loadBrowserScript(relativePath, extras = {}){
     Object.assign(globalThis, sandbox);
     delete require.cache[require.resolve(modulePath)];
     require(modulePath);
+    if(typeof onLoad === 'function') onLoad(sandbox);
     return { ...sandbox, window: sandbox.window };
   }finally{
     delete require.cache[require.resolve(modulePath)];
@@ -204,6 +265,103 @@ test('storage service handles invalid JSON and invokes onError', () => {
   assert.equal(window.SmartBooksPersistence.getStatus().stats.errors, 1);
 });
 
+test('storage service creates backups, session copies, and export clones', () => {
+  const localStorage = memoryStorage();
+  const sessionStorage = memoryStorage();
+  const { window } = loadBrowserScript('frontend/src/services/storage-service.js', { localStorage, sessionStorage });
+  const storage = window.SmartBooksPersistence.configure({ key:'company_state', mode:'hybrid', backendEndpoint:'/api/test-state' });
+  const state = { company:{ name:'SmartBooks' }, nested:{ count:1 } };
+
+  const backup = storage.backup(state, 'Nightly Backup!');
+  assert.equal(backup.ok, true);
+  assert.deepEqual(JSON.parse(localStorage.getItem('company_state_Nightly_Backup__backup')), state);
+  assert.equal(storage.getStatus().stats.backups, 1);
+
+  const session = storage.saveSessionCopy(state);
+  assert.equal(session.ok, true);
+  assert.deepEqual(JSON.parse(sessionStorage.getItem('company_state_unsaved_session_copy')), state);
+
+  const exported = storage.exportState(state);
+  exported.nested.count = 99;
+  assert.equal(state.nested.count, 1);
+  assert.equal(storage.mode, 'hybrid');
+  assert.equal(storage.getStatus().backendEndpoint, '/api/test-state');
+});
+
+test('storage service reports save, backup, and session copy failures', () => {
+  const { window } = loadBrowserScript('frontend/src/services/storage-service.js', {
+    localStorage:throwingStorage('local write failed'),
+    sessionStorage:throwingStorage('session write failed')
+  });
+  const storage = window.SmartBooksPersistence.configure({ key:'failing_state' });
+
+  const save = storage.save({ ok:false });
+  assert.equal(save.ok, false);
+  assert.match(save.error.message, /local write failed/);
+
+  const backup = storage.backup({ ok:false }, 'manual');
+  assert.equal(backup.ok, false);
+  assert.equal(storage.getStatus().stats.backups, 0);
+
+  const session = storage.saveSessionCopy({ ok:false });
+  assert.equal(session.ok, false);
+  assert.match(session.error.message, /session write failed/);
+  assert.equal(storage.getStatus().stats.errors, 3);
+});
+
+test('storage service downloadJson creates and cleans up a download link', () => {
+  const anchors = [];
+  const appended = [];
+  const revoked = [];
+  const blobs = [];
+  const document = {
+    readyState:'loading',
+    body:{
+      appendChild(node){ appended.push(node); }
+    },
+    createElement(tag){
+      assert.equal(tag, 'a');
+      const anchor = domElement({ tagName:'A' });
+      anchors.push(anchor);
+      return anchor;
+    }
+  };
+  class TestBlob {
+    constructor(parts, options){
+      this.parts = parts;
+      this.options = options;
+      blobs.push(this);
+    }
+  }
+  const URL = {
+    createObjectURL(blob){
+      assert.equal(blob, blobs[0]);
+      return 'blob:smartbooks-test';
+    },
+    revokeObjectURL(url){ revoked.push(url); }
+  };
+
+  loadBrowserScript('frontend/src/services/storage-service.js', {
+    document,
+    Blob:TestBlob,
+    URL,
+    localStorage:memoryStorage(),
+    sessionStorage:memoryStorage()
+  }, ({ window }) => {
+    window.SmartBooksPersistence.downloadJson({ company:{ name:'Download Test' } }, 'company.json');
+  });
+  assert.equal(blobs.length, 1);
+  assert.deepEqual(blobs[0].options, { type:'application/json' });
+  assert.match(blobs[0].parts[0], /Download Test/);
+  assert.equal(appended[0], anchors[0]);
+  assert.equal(anchors[0].href, 'blob:smartbooks-test');
+  assert.equal(anchors[0].download, 'company.json');
+  assert.equal(anchors[0].style.display, 'none');
+  assert.equal(anchors[0].clicked, 1);
+  assert.deepEqual(revoked, ['blob:smartbooks-test']);
+  assert.equal(anchors[0].removed, 1);
+});
+
 test('icon service renders safe svg and repairs mojibake text', () => {
   const { window } = loadBrowserScript('frontend/src/services/icon-service.js');
   const icons = window.SmartBooksIcons;
@@ -235,6 +393,82 @@ test('icon service infers icons from navigation and button text', () => {
     closest(selector){ return selector === 'button' ? this : null; }
   };
   assert.equal(icons.infer(buttonEl), 'download');
+});
+
+test('icon service fixes sidebar symbols, legacy button labels, headings, and workflow arrows', () => {
+  const existing = domElement({ classes:['nav-chevron'], hasIcon:true, innerHTML:'existing icon' });
+  const chevron = domElement({ classes:['nav-chevron'], textContent:'>' });
+  const button = domElement({ tagName:'BUTTON', textContent:'âœ“ Done' });
+  const heading = domElement({ tagName:'H2', textContent:'⚙ Settings' });
+  const workflowArrow = domElement({ classes:['workflow-arrow'], textContent:'›' });
+  const root = domElement({
+    querySelectorAll(selector){
+      if(selector.includes('.nav-chevron')) return [existing, chevron];
+      if(selector === 'button,.btn') return [button];
+      if(selector.includes('h1,h2,h3,h4')) return [heading];
+      if(selector.includes('.workflow-arrow')) return [workflowArrow];
+      return [];
+    }
+  });
+  const document = {
+    readyState:'complete',
+    body:root,
+    addEventListener(){},
+    createTreeWalker(){ return textWalker([]); },
+    querySelectorAll(selector){ return root.querySelectorAll(selector); }
+  };
+
+  loadBrowserScript('frontend/src/services/icon-service.js', { document });
+
+  assert.equal(existing.innerHTML, 'existing icon');
+  assert.equal(chevron.dataset.icon, 'arrowRight');
+  assert.match(chevron.innerHTML, /sb-icon/);
+  assert.equal(button.dataset.icon, 'check');
+  assert.match(button.innerHTML, /<span>Done<\/span>/);
+  assert.equal(heading.dataset.icon, 'settings');
+  assert.match(heading.innerHTML, /<span>Settings<\/span>/);
+  assert.equal(workflowArrow.dataset.icon, 'arrowRight');
+});
+
+test('icon service observer repairs changed text and added symbol nodes', () => {
+  const changedText = {
+    nodeType:3,
+    nodeValue:'A\u00a0B',
+    parentElement:{ tagName:'DIV' }
+  };
+  const addedArrow = domElement({ classes:['workflow-arrow'], textContent:'→' });
+  const addedNode = domElement({
+    nodeType:1,
+    querySelectorAll(selector){
+      return selector.includes('.workflow-arrow') ? [addedArrow] : [];
+    }
+  });
+  const body = domElement();
+  const document = {
+    readyState:'complete',
+    body,
+    createTreeWalker(root){ return textWalker(root.__textNodes || []); },
+    querySelectorAll(){ return []; }
+  };
+  class TestMutationObserver {
+    constructor(callback){ this.callback = callback; }
+    observe(){
+      this.callback([
+        { type:'characterData', target:changedText, addedNodes:[] },
+        { type:'childList', target:body, addedNodes:[addedNode] }
+      ]);
+    }
+    disconnect(){}
+  }
+
+  loadBrowserScript('frontend/src/services/icon-service.js', {
+    document,
+    MutationObserver:TestMutationObserver
+  });
+
+  assert.equal(changedText.nodeValue, 'A B');
+  assert.equal(addedArrow.dataset.icon, 'arrowRight');
+  assert.match(addedArrow.innerHTML, /sb-icon/);
 });
 
 console.log('All unit tests passed.');
