@@ -103,6 +103,7 @@ Before replacing `localStorage`, write a short design document covering:
 ## Near-Term Backlog
 
 - Add a persistence design document before backend storage work.
+- Use `docs/persistence-contract.md` as the implementation gate for backend storage work.
 - Add unit tests around accounting totals and posting helpers where pure helpers exist.
 - Identify top repeated HTML fragments and extract one small group as a pattern.
 - Add screenshots or visual checks for the most fragile icon/sidebar/dashboard surfaces.

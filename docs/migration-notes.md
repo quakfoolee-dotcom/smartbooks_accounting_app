@@ -26,6 +26,8 @@ The current app still saves data through the frontend storage adapter, which def
 
 Next, add an asynchronous backend mode to `frontend/src/services/storage-service.js`, then switch that adapter to call `/api/state`.
 
+Before implementing that switch, use `docs/persistence-contract.md` as the working contract for the backend state envelope, migration behavior, error handling, validation, and test plan.
+
 ## Next Refactor Targets
 
 - Continue splitting the feature modules by domain: customers, vendors, invoices, banking, reports, settings, and dashboard.
