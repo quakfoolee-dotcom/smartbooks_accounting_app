@@ -31,6 +31,15 @@ async function requestJson(baseUrl, pathname, options = {}){
   return { status:response.status, body:await response.json() };
 }
 
+async function requestRaw(baseUrl, pathname, options = {}){
+  const response = await fetch(`${baseUrl}${pathname}`, {
+    method: options.method || "GET",
+    headers: options.headers,
+    body: options.body
+  });
+  return { status:response.status, body:await response.json() };
+}
+
 async function test(name, fn){
   try{
     await fn();
@@ -104,6 +113,29 @@ async function test(name, fn){
       });
       assert.equal(badVersion.status, 400);
       assert.match(badVersion.body.error, /Unsupported state schemaVersion/);
+
+      const invalidJson = await requestRaw(baseUrl, "/api/state", {
+        method:"PUT",
+        headers:{ "Content-Type":"application/json" },
+        body:"{bad json"
+      });
+      assert.equal(invalidJson.status, 400);
+      assert.match(invalidJson.body.error, /valid JSON/);
+    });
+  });
+
+  await test("state API rejects oversized payloads before saving", async () => {
+    await withServer(async ({ baseUrl, stateFile }) => {
+      const oversized = JSON.stringify({ state:{ blob:"x".repeat(5 * 1024 * 1024 + 1) } });
+      const result = await requestRaw(baseUrl, "/api/state", {
+        method:"PUT",
+        headers:{ "Content-Type":"application/json" },
+        body:oversized
+      });
+
+      assert.equal(result.status, 413);
+      assert.match(result.body.error, /too large/);
+      assert.equal(fs.existsSync(stateFile), false);
     });
   });
 

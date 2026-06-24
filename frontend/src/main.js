@@ -158,6 +158,9 @@
     backendLoadState:'not-started',
     lastLoadError:null,
     lastSaveError:null,
+    lastMigrationError:null,
+    migrationState:'not-started',
+    migrationBackupKey:null,
     lastSavePromise:Promise.resolve(),
     usesBackend(){
       const mode=window.SmartBooksPersistence?.mode || this.config.mode;
@@ -166,6 +169,13 @@
     startupFallback(){
       if((window.SmartBooksPersistence?.mode || this.config.mode)==='hybrid') return loadLocalState();
       return ensureState(structuredClone(initialState));
+    },
+    hasLocalState(){
+      try{ return Boolean(localStorage.getItem(STORE_KEY)); }
+      catch(e){ return false; }
+    },
+    localState(){
+      return loadLocalState();
     },
     saveBeforeBackendReady(nextState){
       const persistence=window.SmartBooksPersistence;
@@ -231,6 +241,10 @@
         try{ renderDashboard(); }catch(e){}
         return false;
       }
+      if((persistence.mode || persistenceRuntime.config.mode)==='hybrid' && afterStatus.stats?.lastBackendStateEmpty && persistenceRuntime.hasLocalState()){
+        const migrated = await migrateLocalStateToBackend();
+        if(migrated) return true;
+      }
       state=ensureState(loaded);
       persistenceRuntime.backendLoaded=true;
       persistenceRuntime.backendLoadFailed=false;
@@ -248,6 +262,63 @@
     }
   }
   persistenceRuntime.bootstrap = loadStateAsync;
+  async function migrateLocalStateToBackend(){
+    const persistence=window.SmartBooksPersistence;
+    if(!persistence || typeof persistence.saveBackend!=='function') return false;
+    const localState=ensureState(persistenceRuntime.localState());
+    const approved = typeof window.confirm === 'function'
+      ? window.confirm('Backend storage is empty. Migrate this browser data to the backend now? A local backup will be created first.')
+      : false;
+    if(!approved){
+      persistenceRuntime.migrationState='declined';
+      try{ showToast('Backend migration skipped. Local browser data was left unchanged.'); }catch(e){}
+      return false;
+    }
+    persistenceRuntime.migrationState='backing-up';
+    const backupKey = `${STORE_KEY}_pre_backend_migration_backup`;
+    try{
+      const backup = persistence.backup(localState, 'pre_backend_migration', { key:STORE_KEY, backupKey });
+      if(!backup.ok) throw backup.error || new Error('Local migration backup failed.');
+      persistenceRuntime.migrationBackupKey=backupKey;
+    }catch(error){
+      persistenceRuntime.lastMigrationError=error;
+      persistenceRuntime.migrationState='backup-failed';
+      window.SmartBooksPersistence?.configure?.({ mode:'local' });
+      persistenceRuntime.config.mode='local';
+      state=localState;
+      renderAll();
+      try{ showToast('Migration stopped because the local backup could not be created.'); }catch(e){}
+      return true;
+    }
+    persistenceRuntime.migrationState='saving';
+    const result = await persistence.saveBackend(localState, {
+      key:STORE_KEY,
+      source:'migration',
+      onError:error => {
+        persistenceRuntime.lastMigrationError=error;
+        console.warn('Backend migration save failed', error);
+      }
+    });
+    if(!result.ok){
+      persistenceRuntime.lastMigrationError=result.error;
+      persistenceRuntime.migrationState='save-failed';
+      persistenceRuntime.backendLoadFailed=true;
+      window.SmartBooksPersistence?.configure?.({ mode:'local' });
+      persistenceRuntime.config.mode='local';
+      state=localState;
+      renderAll();
+      try{ showToast('Migration failed. Local mode remains active and your local data was kept.'); }catch(e){}
+      return true;
+    }
+    state=localState;
+    persistenceRuntime.backendLoaded=true;
+    persistenceRuntime.backendLoadFailed=false;
+    persistenceRuntime.backendLoadState='loaded';
+    persistenceRuntime.migrationState='completed';
+    renderAll();
+    try{ showToast('Local data migrated to backend storage. Local backup kept.'); }catch(e){}
+    return true;
+  }
   function ensureState(s){
     s.company ||= structuredClone(initialState.company);
     s.settings ||= {visibleModules: menuModules.map(m=>m.id)};

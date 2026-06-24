@@ -160,8 +160,8 @@ Minimum tests before enabling backend mode:
 
 - Unit tests for storage-service local, backend, and hybrid modes.
 - Backend API tests for `GET /api/state` and `PUT /api/state`.
-- Migration test from localStorage to backend envelope.
-- Failure tests for invalid JSON, network errors, oversized payloads, and backend `500`.
+- Migration test from localStorage to backend envelope. **Covered for approve, decline, and save-failure paths.**
+- Failure tests for invalid JSON, network errors, oversized payloads, and backend `500`. **Covered across storage, backend API, and functional tests.**
 - Functional test that reloads the app and verifies saved backend state is restored.
 - Manual QA for export, reset, backup, and reload.
 
@@ -170,6 +170,6 @@ Minimum tests before enabling backend mode:
 1. Add backend envelope read/write while preserving legacy raw-state compatibility. **Completed in the first backend persistence slice.**
 2. Add async backend methods to `storage-service.js`. **Completed as an opt-in bridge; localStorage remains the default.**
 3. Wire the app runtime to opt-in async backend and hybrid load/save modes. **Completed behind explicit runtime configuration; localStorage remains the default.**
-4. Add hybrid migration behavior behind an explicit setting or dev flag.
-5. Add tests for backend save/load and migration failure behavior.
+4. Add hybrid migration behavior behind an explicit setting or dev flag. **Completed with a confirmation prompt, pre-migration backup, `source: "migration"` writes, and local-mode fallback on migration save failure.**
+5. Add tests for backend save/load and migration failure behavior. **Completed for invalid JSON, invalid envelopes, backend `500`, oversized payloads, migration approval, migration decline, and migration save failure.**
 6. Only then consider making backend mode the default.

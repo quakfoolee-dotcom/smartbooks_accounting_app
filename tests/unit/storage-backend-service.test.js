@@ -51,6 +51,14 @@ function response(ok, status, body){
   };
 }
 
+function invalidJsonResponse(ok = true, status = 200){
+  return {
+    ok,
+    status,
+    async json(){ throw new Error("invalid json"); }
+  };
+}
+
 async function test(name, fn){
   try{
     await fn();
@@ -103,6 +111,7 @@ async function test(name, fn){
     assert.deepEqual(JSON.parse(calls[0].options.body), {
       schemaVersion:1,
       companyId:"company-1",
+      source:"backend",
       state
     });
     assert.equal(storage.getStatus().stats.backendWrites, 1);
@@ -113,7 +122,7 @@ async function test(name, fn){
     const storage = loadStorageService({
       fetch:async (url, options) => {
         methods.push(options.method);
-        if(options.method === "GET") return response(true, 200, { ok:true, data:{ state:{ from:"backend" } } });
+        if(options.method === "GET") return response(true, 200, { ok:true, data:{ schemaVersion:1, state:{ from:"backend" } } });
         return response(true, 200, { ok:true, savedAt:"2026-06-23T00:00:00.000Z" });
       }
     }).configure({ mode:"backend", backendEndpoint:"/api/backend-mode" });
@@ -153,6 +162,50 @@ async function test(name, fn){
     assert.deepEqual(loaded, { fallback:true });
     assert.deepEqual(JSON.parse(localStorage.getItem("safe")), { local:true });
     assert.equal(storage.getStatus().stats.errors, 1);
+  });
+
+  await test("backend load rejects invalid JSON and invalid envelopes", async () => {
+    const invalidJson = loadStorageService({
+      fetch:async () => invalidJsonResponse()
+    }).configure({ mode:"backend" });
+
+    let jsonError = "";
+    const jsonLoaded = await invalidJson.loadAsync({
+      fallback:() => ({ fallback:true }),
+      onError(error){ jsonError = error.message; }
+    });
+    assert.deepEqual(jsonLoaded, { fallback:true });
+    assert.match(jsonError, /not valid JSON/);
+    assert.equal(invalidJson.getStatus().stats.errors, 1);
+
+    const invalidEnvelope = loadStorageService({
+      fetch:async () => response(true, 200, { ok:true, data:{ state:[] } })
+    }).configure({ mode:"backend" });
+
+    let envelopeError = "";
+    const envelopeLoaded = await invalidEnvelope.loadAsync({
+      fallback:() => ({ fallback:true }),
+      onError(error){ envelopeError = error.message; }
+    });
+    assert.deepEqual(envelopeLoaded, { fallback:true });
+    assert.match(envelopeError, /object state/);
+    assert.equal(invalidEnvelope.getStatus().stats.errors, 1);
+  });
+
+  await test("backend save supports migration source envelopes", async () => {
+    let body = null;
+    const storage = loadStorageService({
+      fetch:async (url, options) => {
+        body = JSON.parse(options.body);
+        return response(true, 200, { ok:true, savedAt:"2026-06-23T00:00:00.000Z" });
+      }
+    }).configure({ backendEndpoint:"/api/state-test" });
+
+    const result = await storage.saveBackend({ company:{ name:"Migrated Co" } }, { source:"migration" });
+
+    assert.equal(result.ok, true);
+    assert.equal(body.source, "migration");
+    assert.deepEqual(body.state, { company:{ name:"Migrated Co" } });
   });
 
   console.log("All storage backend service tests passed.");

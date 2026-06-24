@@ -85,3 +85,130 @@ test("backend load failure does not save fallback state to backend", async ({ pa
 
   expect(writes, "backend mode must not write fallback/demo state after a failed load").toBe(0);
 });
+
+test("hybrid mode migrates local state to empty backend after confirmation", async ({ page }) => {
+  const writes = [];
+  await page.addInitScript(() => {
+    window.confirm = () => true;
+  });
+  await page.route("**/api/state", async route => {
+    const request = route.request();
+    if(request.method() === "GET") {
+      await route.fulfill({
+        status:200,
+        contentType:"application/json",
+        body:JSON.stringify({
+          ok:true,
+          data:{
+            schemaVersion:1,
+            savedAt:"2026-06-24T04:40:00.000Z",
+            source:"backend",
+            companyId:"demo-company",
+            state:{}
+          }
+        })
+      });
+      return;
+    }
+    if(request.method() === "PUT") {
+      writes.push(JSON.parse(request.postData() || "{}"));
+      await route.fulfill({
+        status:200,
+        contentType:"application/json",
+        body:JSON.stringify({ ok:true, savedAt:"2026-06-24T04:41:00.000Z" })
+      });
+      return;
+    }
+    await route.continue();
+  });
+
+  await openFreshApp(page, {
+    path:"/?sb_persistence=hybrid",
+    localState:{ company:{ name:"Local Books" }, settings:{ visibleModules:["dashboard"] } }
+  });
+
+  await expect(page.locator("#topCompanyName")).toContainText("Local Books");
+  await expect.poll(() => writes.length).toBeGreaterThan(0);
+  expect(writes[0].source).toBe("migration");
+  expect(writes[0].state.company.name).toBe("Local Books");
+  const backup = await page.evaluate(key => localStorage.getItem(`${key}_pre_backend_migration_backup`), "smartbooks_v71_state");
+  expect(JSON.parse(backup).company.name).toBe("Local Books");
+});
+
+test("hybrid migration can be declined without backend writes", async ({ page }) => {
+  let writes = 0;
+  await page.addInitScript(() => {
+    window.confirm = () => false;
+  });
+  await page.route("**/api/state", async route => {
+    const request = route.request();
+    if(request.method() === "GET") {
+      await route.fulfill({
+        status:200,
+        contentType:"application/json",
+        body:JSON.stringify({
+          ok:true,
+          data:{ schemaVersion:1, source:"backend", companyId:"demo-company", state:{} }
+        })
+      });
+      return;
+    }
+    if(request.method() === "PUT") {
+      writes++;
+      await route.fulfill({ status:200, contentType:"application/json", body:JSON.stringify({ ok:true }) });
+      return;
+    }
+    await route.continue();
+  });
+
+  await openFreshApp(page, {
+    path:"/?sb_persistence=hybrid",
+    localState:{ company:{ name:"Declined Local" }, settings:{ visibleModules:["dashboard"] } }
+  });
+  await page.waitForTimeout(250);
+
+  expect(writes).toBe(0);
+  await expect(page.locator(".v30-persistence-panel")).toContainText("Backend persistence connected");
+});
+
+test("hybrid migration save failure keeps local mode active", async ({ page }) => {
+  let writes = 0;
+  await page.addInitScript(() => {
+    window.confirm = () => true;
+  });
+  await page.route("**/api/state", async route => {
+    const request = route.request();
+    if(request.method() === "GET") {
+      await route.fulfill({
+        status:200,
+        contentType:"application/json",
+        body:JSON.stringify({
+          ok:true,
+          data:{ schemaVersion:1, source:"backend", companyId:"demo-company", state:{} }
+        })
+      });
+      return;
+    }
+    if(request.method() === "PUT") {
+      writes++;
+      await route.fulfill({
+        status:500,
+        contentType:"application/json",
+        body:JSON.stringify({ ok:false, error:"migration save failed" })
+      });
+      return;
+    }
+    await route.continue();
+  });
+
+  await openFreshApp(page, {
+    path:"/?sb_persistence=hybrid",
+    localState:{ company:{ name:"Local After Failure" }, settings:{ visibleModules:["dashboard"] } },
+    ignoredConsole:[/api\/state.*500|500.*api\/state|status of 500/i]
+  });
+
+  await expect(page.locator("#topCompanyName")).toContainText("Local After Failure");
+  await expect.poll(() => writes).toBe(1);
+  const mode = await page.evaluate(() => window.SmartBooksPersistence.mode);
+  expect(mode).toBe("local");
+});
