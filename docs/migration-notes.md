@@ -34,6 +34,12 @@ Backend progress:
 - `PUT /api/state` and `POST /api/state` write the envelope form and preserve legacy raw-state compatibility.
 - Backend state API behavior is covered by `tests/unit/backend-state-api.test.js`.
 
+Frontend progress:
+
+- `frontend/src/services/storage-service.js` now exposes async backend persistence methods.
+- The app still defaults to localStorage mode.
+- Backend and hybrid save/load behavior is covered by `tests/unit/storage-backend-service.test.js`.
+
 ## Next Refactor Targets
 
 - Continue splitting the feature modules by domain: customers, vendors, invoices, banking, reports, settings, and dashboard.

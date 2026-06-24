@@ -11,9 +11,13 @@
   const stats = {
     reads: 0,
     writes: 0,
+    backendReads: 0,
+    backendWrites: 0,
     backups: 0,
     errors: 0,
     lastSavedAt: null,
+    lastLoadedAt: null,
+    lastBackendSavedAt: null,
     lastError: null
   };
 
@@ -36,6 +40,100 @@
     const normalizer = typeof normalize === 'function' ? normalize : x => x;
     if(value === undefined || value === null) return normalizer(clone(fallback()));
     return normalizer(value);
+  }
+
+  function fetchClient(options){
+    const fn = options?.fetch || global.fetch;
+    if(typeof fn !== 'function') throw new Error('Backend persistence requires fetch support.');
+    return fn.bind(global);
+  }
+
+  function backendEndpoint(options){
+    return options?.backendEndpoint || config.backendEndpoint;
+  }
+
+  function companyId(options){
+    return options?.companyId || 'demo-company';
+  }
+
+  function unwrapBackendState(payload){
+    const data = payload?.data || payload;
+    if(data && typeof data === 'object' && data.state && typeof data.state === 'object' && !Array.isArray(data.state)) return data.state;
+    if(data && typeof data === 'object' && !Array.isArray(data)) return data;
+    return {};
+  }
+
+  async function readResponseJson(response){
+    try{ return await response.json(); }
+    catch(error){ return {}; }
+  }
+
+  async function loadBackend(options){
+    const opts = options || {};
+    stats.reads++;
+    stats.backendReads++;
+    try{
+      const response = await fetchClient(opts)(backendEndpoint(opts), {
+        method:'GET',
+        headers:{ 'Accept':'application/json' }
+      });
+      const payload = await readResponseJson(response);
+      if(!response.ok) throw new Error(payload.error || `Backend load failed with HTTP ${response.status}.`);
+      const loaded = normalizeLoaded(unwrapBackendState(payload), opts.fallback, opts.normalize);
+      stats.lastLoadedAt = Date.now();
+      stats.lastError = null;
+      return loaded;
+    }catch(error){
+      stats.errors++;
+      stats.lastError = error;
+      if(typeof opts.onError === 'function') opts.onError(error);
+      else console.warn('SmartBooks backend storage load failed', error);
+      return normalizeLoaded(null, opts.fallback, opts.normalize);
+    }
+  }
+
+  async function saveBackend(state, options){
+    const opts = options || {};
+    stats.writes++;
+    stats.backendWrites++;
+    try{
+      const envelope = {
+        schemaVersion:1,
+        companyId:companyId(opts),
+        state:clone(state || {})
+      };
+      const response = await fetchClient(opts)(backendEndpoint(opts), {
+        method:opts.method || 'PUT',
+        headers:{ 'Content-Type':'application/json', 'Accept':'application/json' },
+        body:JSON.stringify(envelope)
+      });
+      const payload = await readResponseJson(response);
+      if(!response.ok) throw new Error(payload.error || `Backend save failed with HTTP ${response.status}.`);
+      stats.lastSavedAt = Date.now();
+      stats.lastBackendSavedAt = payload.savedAt || null;
+      stats.lastError = null;
+      return { ok:true, savedAt:payload.savedAt || null, payload };
+    }catch(error){
+      stats.errors++;
+      stats.lastError = error;
+      if(typeof opts.onError === 'function') opts.onError(error);
+      return { ok:false, error };
+    }
+  }
+
+  async function loadAsync(options){
+    if(config.mode === 'backend' || config.mode === 'hybrid') return loadBackend(options);
+    return load(options);
+  }
+
+  async function saveAsync(state, options){
+    if(config.mode === 'backend') return saveBackend(state, options);
+    if(config.mode === 'hybrid'){
+      const localResult = save(state, options);
+      const backendResult = await saveBackend(state, options);
+      return backendResult.ok ? backendResult : { ...backendResult, local:localResult };
+    }
+    return save(state, options);
   }
 
   function load(options){
@@ -127,6 +225,10 @@
     configure,
     load,
     save,
+    loadAsync,
+    saveAsync,
+    loadBackend,
+    saveBackend,
     backup,
     saveSessionCopy,
     exportState,

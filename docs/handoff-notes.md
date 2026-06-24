@@ -25,6 +25,7 @@ Current unit coverage:
 
 - Navigation order, visibility, settings sync, and bookmark mapping.
 - Storage fallback, save, backup, invalid JSON handling, and status counters.
+- Storage backend bridge methods for opt-in backend and hybrid save/load behavior.
 - Icon SVG rendering, fallback behavior, mojibake repair, and icon inference.
 - Accounting totals, aging buckets, ledger balance, payment application, deposits, and bank-feed posting helpers.
 - Dashboard operations summary, attention counts, due-soon logic, and dashboard money/work buckets.
