@@ -1971,4 +1971,79 @@
     return result;
   };
 
+  // ---------- V63: async backend persistence runtime bridge ----------
+  function v63CloneState(value){
+    try{ return structuredClone ? structuredClone(value) : JSON.parse(JSON.stringify(value)); }
+    catch(e){ return JSON.parse(JSON.stringify(value)); }
+  }
+
+  function v63InstallAsyncPersistence(){
+    const runtime=window.SmartBooksRuntimePersistence;
+    const persistence=window.SmartBooksPersistence;
+    if(!runtime || !persistence || runtime.v63Installed) return;
+    runtime.v63Installed=true;
+    const v63SaveStateBase=saveState;
+    const usesBackend=()=> typeof runtime.usesBackend==='function' ? runtime.usesBackend() : ['backend','hybrid'].includes(persistence.mode);
+
+    function queueAsyncSave(snapshot){
+      runtime.lastSavePromise = (runtime.lastSavePromise || Promise.resolve()).then(async()=>{
+        const result = await persistence.saveAsync(snapshot, {
+          key:STORE_KEY,
+          backupKey:STORE_KEY+'_v59_last_good',
+          onError:error => {
+            runtime.lastSaveError=error;
+            console.warn('V63 backend persistence save failed', error);
+          }
+        });
+        if(!result || !result.ok){
+          runtime.lastSaveError=result?.error || new Error('Backend persistence save failed.');
+          try{ persistence.saveSessionCopy(snapshot, { key:STORE_KEY+'_v63_unsaved_session_copy' }); }catch(e){}
+          try{ showToast('Save warning: backend persistence did not accept the latest update.'); }catch(e){}
+          return false;
+        }
+        runtime.lastSaveError=null;
+        try{
+          if(typeof v59Runtime==='object'){
+            v59Runtime.lastSavedAt=Date.now();
+            v59Runtime.lastSaveError=null;
+          }
+        }catch(e){}
+        return true;
+      }).catch(error=>{
+        runtime.lastSaveError=error;
+        console.warn('V63 backend persistence save failed', error);
+        try{ persistence.saveSessionCopy(snapshot, { key:STORE_KEY+'_v63_unsaved_session_copy' }); }catch(e){}
+        try{ showToast('Save warning: backend persistence did not accept the latest update.'); }catch(e){}
+        return false;
+      });
+      return runtime.lastSavePromise;
+    }
+
+    saveState = function(){
+      if(!usesBackend()) return v63SaveStateBase.apply(this, arguments);
+      if(!runtime.backendLoaded){
+        return typeof runtime.saveBeforeBackendReady==='function' ? runtime.saveBeforeBackendReady(state) : false;
+      }
+      try{
+        if(typeof v58ReconcileData==='function') v58ReconcileData(true);
+        if(typeof v59Runtime==='object') v59Runtime.dirty=false;
+      }catch(error){ console.warn('V63 reconciliation before async save skipped', error); }
+      queueAsyncSave(v63CloneState(state));
+      return true;
+    };
+
+    window.SmartBooksRuntimePersistence.flushSaves = function(){
+      return runtime.lastSavePromise || Promise.resolve(true);
+    };
+    window.SmartBooksRuntimePersistence.saveStateAsync = function(){
+      if(!usesBackend()) return Promise.resolve(v63SaveStateBase());
+      if(!runtime.backendLoaded) return Promise.resolve(typeof runtime.saveBeforeBackendReady==='function' ? runtime.saveBeforeBackendReady(state) : false);
+      queueAsyncSave(v63CloneState(state));
+      return runtime.lastSavePromise;
+    };
+    if(typeof runtime.bootstrap==='function') runtime.bootstrap();
+  }
+
+  v63InstallAsyncPersistence();
+
   try{ installButtonConsistency(); renderAll(); installButtonConsistency(); }catch(e){ console.warn('Button consistency refresh skipped', e); }

@@ -5,10 +5,14 @@ const MOJIBAKE_PATTERN = /(?:Ã¢|Ã¯|Ã°Å¸|Ãƒ|Ã‚)/;
 
 let pageProblems = [];
 
-async function openFreshApp(page) {
+async function openFreshApp(page, options = {}) {
+  const path = typeof options === "string" ? options : (options.path || "/");
+  const ignoredConsole = typeof options === "string" ? [] : (options.ignoredConsole || []);
   pageProblems = [];
   page.on("console", message => {
-    if(message.type() === "error" && !/favicon/i.test(message.text())) {
+    const text = message.text();
+    const ignored = ignoredConsole.some(pattern => pattern instanceof RegExp ? pattern.test(text) : String(text).includes(String(pattern)));
+    if(message.type() === "error" && !/favicon/i.test(text) && !ignored) {
       pageProblems.push(`console error: ${message.text()}`);
     }
   });
@@ -17,7 +21,7 @@ async function openFreshApp(page) {
     localStorage.removeItem(key);
     sessionStorage.clear();
   }, STORE_KEY);
-  await page.goto("/");
+  await page.goto(path);
   await expect(page.locator(".app")).toBeVisible();
   await expect(page.locator("#page-dashboard.active")).toBeVisible();
   await page.evaluate(() => window.SmartBooksIcons?.fix(document));
