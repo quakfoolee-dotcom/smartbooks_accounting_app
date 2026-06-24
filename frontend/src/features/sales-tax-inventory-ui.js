@@ -1582,31 +1582,36 @@ var v816DefaultCategories = v816FeedCategories.map(c=>c.id);
     return true;
   }
   function moduleHiddenMessage(id){ return `${moduleLabel(id)} is hidden. Restore it from Settings → Customize menu.`; }
+  function setModuleActionVisible(el, visible){
+    if(!el) return;
+    if(visible) el.style.removeProperty('display');
+    else el.style.setProperty('display','none','important');
+  }
   function applyCreateMenuVisibility(){
     const menu = document.getElementById('createMenu'); if(!menu) return;
     menu.querySelectorAll('[data-modal]').forEach(btn=>{
       const type = btn.dataset.modal;
-      btn.style.display = isModalAllowed(type) ? '' : 'none';
+      setModuleActionVisible(btn, isModalAllowed(type));
     });
     menu.querySelectorAll('.create-col').forEach(col=>{
       const visibleButtons = Array.from(col.querySelectorAll('[data-modal]')).some(b=>b.style.display !== 'none');
-      col.style.display = visibleButtons ? '' : 'none';
+      setModuleActionVisible(col, visibleButtons);
     });
   }
   function applyQuickActionVisibility(root=document){
     root.querySelectorAll('[data-modal]').forEach(btn=>{
       const type=btn.dataset.modal;
       if(!type || btn.closest('#createMenu') || btn.closest('#modalBackdrop')) return;
-      btn.style.display = isModalAllowed(type) ? '' : 'none';
+      setModuleActionVisible(btn, isModalAllowed(type));
     });
     root.querySelectorAll('[data-nav]').forEach(btn=>{
       const nav=btn.dataset.nav;
       if(!nav || nav==='dashboard' || nav==='settings') return;
-      if(masterModuleIds.includes(nav)) btn.style.display = isModuleVisible(nav) ? '' : 'none';
+      if(masterModuleIds.includes(nav)) setModuleActionVisible(btn, isModuleVisible(nav));
     });
     document.querySelectorAll('.rail [data-nav]').forEach(btn=>{
       const nav=btn.dataset.nav;
-      btn.style.display = canNavigate(nav) ? '' : 'none';
+      setModuleActionVisible(btn, canNavigate(nav));
     });
     const resetBtn=document.getElementById('resetDemo'); if(resetBtn) resetBtn.innerHTML='<span class="dot">↺</span>Reset company data';
     const sideSpan = document.querySelector('.company h1 + span'); if(sideSpan) sideSpan.textContent='Accounting App';
@@ -1715,6 +1720,7 @@ var v816DefaultCategories = v816FeedCategories.map(c=>c.id);
       if(!canNavigate(currentPage)) currentPage='dashboard';
       audit('Menu visibility updated');
       saveState(); closeModal(); renderAll();
+      applyQuickActionVisibility(document);
       showToast('Menu updated. Hidden modules will stay hidden until restored from Settings.');
       return;
     }
@@ -6074,6 +6080,44 @@ var v816DefaultCategories = v816FeedCategories.map(c=>c.id);
   const renderDashboardBeforeV824 = renderDashboard;
   renderDashboard = function(){ injectV824DashboardStyles(); renderDashboardBeforeV824(); renderCashFlowHero(); renderInvoiceSummaryCard(); renderExpensesCard(); };
   injectV824DashboardStyles();
+
+  // ---------- V8.25: hidden-module action visibility audit ----------
+  // Topbar panels are rendered after the normal page pass, so reapply the same
+  // hidden-module rules there to avoid visible shortcuts that route nowhere.
+  function applyV825HiddenModuleActions(root=document){
+    try{ applyQuickActionVisibility?.(root); }catch(e){ console.warn('V825 hidden-module visibility skipped', e); }
+  }
+  if(typeof renderDashboard === 'function'){
+    const renderDashboardBeforeV825 = renderDashboard;
+    renderDashboard = function(){
+      const result = renderDashboardBeforeV825.apply(this, arguments);
+      applyV825HiddenModuleActions(document.getElementById('page-dashboard') || document);
+      return result;
+    };
+  }
+  if(typeof openTopbarPanel === 'function'){
+    const openTopbarPanelBeforeV825 = openTopbarPanel;
+    openTopbarPanel = function(){
+      const result = openTopbarPanelBeforeV825.apply(this, arguments);
+      applyV825HiddenModuleActions(document.getElementById('topbarPopover') || document);
+      return result;
+    };
+  }
+  if(typeof renderHelpPanel === 'function'){
+    const renderHelpPanelBeforeV825 = renderHelpPanel;
+    renderHelpPanel = function(){
+      const html = renderHelpPanelBeforeV825.apply(this, arguments);
+      setTimeout(()=>applyV825HiddenModuleActions(document.getElementById('topbarPopover') || document),0);
+      return html;
+    };
+  }
+  document.addEventListener('click', function(e){
+    const close=e.target.closest?.('.top-panel-close');
+    if(!close || !document.getElementById('topbarPopover')?.contains(close)) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    if(typeof closeTopbarPanel === 'function') closeTopbarPanel();
+  }, true);
 
 
 

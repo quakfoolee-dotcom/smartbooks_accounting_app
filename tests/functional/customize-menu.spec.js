@@ -10,6 +10,24 @@ const {
 
 installSmartBooksChecks();
 
+async function visibleHiddenNavLeaks(page, hiddenModules, rootSelector = "body") {
+  return page.locator(rootSelector).evaluate((root, navs) => {
+    const hidden = new Set(navs);
+    const visible = element => {
+      const style = getComputedStyle(element);
+      const box = element.getBoundingClientRect();
+      return style.display !== "none" && style.visibility !== "hidden" && style.opacity !== "0" && (box.width > 0 || box.height > 0);
+    };
+    return Array.from(root.querySelectorAll("[data-nav]"))
+      .filter(element => hidden.has(element.dataset.nav) && visible(element))
+      .map(element => ({
+        nav: element.dataset.nav,
+        text: element.textContent.trim().replace(/\s+/g, " "),
+        tag: element.tagName.toLowerCase()
+      }));
+  }, hiddenModules);
+}
+
 test("customize menu saves bookmarks and cancels unsaved changes", async ({ page }) => {
   await openFreshApp(page);
 
@@ -62,4 +80,59 @@ test("customize menu prevents duplicate bookmarks", async ({ page }) => {
   const saved = await state(page);
   expect(saved.settings.bookmarks.filter(id => id === "banking")).toHaveLength(1);
   await expect(page.locator(".bookmark-row", { hasText: "Banking" })).toHaveCount(1);
+});
+
+test("hidden modules do not leave visible navigation actions", async ({ page }) => {
+  await openFreshApp(page);
+
+  const hiddenModules = [
+    "apps",
+    "setup",
+    "banking",
+    "transactions",
+    "accounting",
+    "sales",
+    "customers",
+    "expenses",
+    "vendors",
+    "inventory",
+    "projects",
+    "time",
+    "payroll",
+    "taxes"
+  ];
+
+  await page.locator("#railCustomize").click();
+  for(const nav of hiddenModules) {
+    const checkbox = page.locator(`.v29-menu-row[data-menu-id="${nav}"] input[name="menuItem"]`);
+    if(await checkbox.count() && await checkbox.isChecked()) await checkbox.uncheck();
+  }
+  await submitModal(page);
+
+  await expect.poll(() => visibleHiddenNavLeaks(page, hiddenModules), {
+    message: "hidden modules should not leak onto visible app chrome"
+  }).toEqual([]);
+
+  await expect(page.locator('[data-action="open-setup-checklist"]')).toBeVisible();
+  await page.locator('[data-action="open-setup-checklist"]').click();
+  await expect(page.locator("#page-setup.active")).toContainText("Setup Checklist");
+  await expect.poll(() => visibleHiddenNavLeaks(page, hiddenModules.filter(nav => nav !== "setup"), "#page-setup"), {
+    message: "hidden modules should not leak into setup tasks"
+  }).toEqual([]);
+
+  await page.locator('#menuList [data-nav="getthingsdone"]').click();
+  await expect(page.locator("#page-getthingsdone.active")).toContainText("Get Things Done");
+  await expect.poll(() => visibleHiddenNavLeaks(page, hiddenModules, "#page-getthingsdone"), {
+    message: "hidden modules should not leak into Get Things Done"
+  }).toEqual([]);
+
+  for(const panelButton of ["insightsBtn", "helpBtn", "settingsBtn", "notificationsBtn", "profileBtn"]) {
+    await page.locator(`#${panelButton}`).click();
+    await expect(page.locator("#topbarPopover.open")).toBeVisible();
+    await expect.poll(() => visibleHiddenNavLeaks(page, hiddenModules, "#topbarPopover"), {
+      message: `hidden modules should not leak into ${panelButton}`
+    }).toEqual([]);
+    await page.locator(".top-panel-close").click();
+    await expect(page.locator("#topbarPopover")).not.toHaveClass(/open/);
+  }
 });
