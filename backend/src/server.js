@@ -10,6 +10,7 @@ const DEFAULT_DATA_DIR = path.join(ROOT_DIR, "backend", "data");
 const PORT = Number(process.env.PORT || DEFAULT_PORT);
 const STATE_SCHEMA_VERSION = 1;
 const DEFAULT_COMPANY_ID = "demo-company";
+const MAX_REQUEST_BODY_BYTES = 5 * 1024 * 1024;
 
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -52,6 +53,12 @@ function validationError(message) {
   return error;
 }
 
+function httpError(statusCode, message) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+}
+
 function normalizeStatePayload(payload, options = {}) {
   if (!isPlainObject(payload)) throw validationError("State payload must be a JSON object.");
 
@@ -87,15 +94,23 @@ function writeStateEnvelope(stateFile, envelope) {
 function readRequestBody(req) {
   return new Promise((resolve, reject) => {
     let body = "";
+    let rejected = false;
     req.on("data", chunk => {
+      if (rejected) return;
       body += chunk;
-      if (body.length > 5 * 1024 * 1024) {
-        reject(new Error("Request body too large."));
-        req.destroy();
+      if (Buffer.byteLength(body, "utf8") > MAX_REQUEST_BODY_BYTES) {
+        rejected = true;
+        reject(httpError(413, "Request body too large."));
+        req.removeAllListeners("data");
+        req.resume();
       }
     });
-    req.on("end", () => resolve(body));
-    req.on("error", reject);
+    req.on("end", () => {
+      if (!rejected) resolve(body);
+    });
+    req.on("error", error => {
+      if (!rejected) reject(error);
+    });
   });
 }
 
@@ -112,7 +127,12 @@ async function handleApi(req, res, pathname, options = {}) {
 
   if (pathname === `${API_PREFIX}/state` && (req.method === "POST" || req.method === "PUT")) {
     const body = await readRequestBody(req);
-    const payload = body ? JSON.parse(body) : {};
+    let payload = {};
+    try {
+      payload = body ? JSON.parse(body) : {};
+    } catch (error) {
+      throw validationError("Request body must be valid JSON.");
+    }
     const envelope = normalizeStatePayload(payload);
     const saved = stateEnvelope(envelope.state, {
       source: envelope.source,

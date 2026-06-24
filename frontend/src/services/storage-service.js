@@ -18,6 +18,9 @@
     lastSavedAt: null,
     lastLoadedAt: null,
     lastBackendSavedAt: null,
+    lastBackendSource: null,
+    lastBackendCompanyId: null,
+    lastBackendStateEmpty: false,
     lastError: null
   };
 
@@ -56,16 +59,25 @@
     return options?.companyId || 'demo-company';
   }
 
-  function unwrapBackendState(payload){
+  function isPlainObject(value){
+    return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+  }
+
+  function backendEnvelope(payload){
     const data = payload?.data || payload;
-    if(data && typeof data === 'object' && data.state && typeof data.state === 'object' && !Array.isArray(data.state)) return data.state;
-    if(data && typeof data === 'object' && !Array.isArray(data)) return data;
-    return {};
+    if(!isPlainObject(data) || !Object.prototype.hasOwnProperty.call(data, 'state')){
+      throw new Error('Backend response must include a state envelope.');
+    }
+    if(!isPlainObject(data.state)) throw new Error('Backend state envelope must include an object state.');
+    if(data.schemaVersion !== undefined && Number(data.schemaVersion) !== 1){
+      throw new Error(`Unsupported backend state schemaVersion: ${data.schemaVersion}.`);
+    }
+    return data;
   }
 
   async function readResponseJson(response){
     try{ return await response.json(); }
-    catch(error){ return {}; }
+    catch(error){ throw new Error('Backend response was not valid JSON.'); }
   }
 
   async function loadBackend(options){
@@ -79,8 +91,14 @@
       });
       const payload = await readResponseJson(response);
       if(!response.ok) throw new Error(payload.error || `Backend load failed with HTTP ${response.status}.`);
-      const loaded = normalizeLoaded(unwrapBackendState(payload), opts.fallback, opts.normalize);
+      if(payload && payload.ok === false) throw new Error(payload.error || 'Backend load failed.');
+      const envelope = backendEnvelope(payload);
+      const backendStateEmpty = Object.keys(envelope.state).length === 0;
+      const loaded = normalizeLoaded(envelope.state, opts.fallback, opts.normalize);
       stats.lastLoadedAt = Date.now();
+      stats.lastBackendSource = envelope.source || null;
+      stats.lastBackendCompanyId = envelope.companyId || null;
+      stats.lastBackendStateEmpty = backendStateEmpty;
       stats.lastError = null;
       return loaded;
     }catch(error){
@@ -100,6 +118,7 @@
       const envelope = {
         schemaVersion:1,
         companyId:companyId(opts),
+        source:opts.source || 'backend',
         state:clone(state || {})
       };
       const response = await fetchClient(opts)(backendEndpoint(opts), {
@@ -109,6 +128,7 @@
       });
       const payload = await readResponseJson(response);
       if(!response.ok) throw new Error(payload.error || `Backend save failed with HTTP ${response.status}.`);
+      if(payload && payload.ok === false) throw new Error(payload.error || 'Backend save failed.');
       stats.lastSavedAt = Date.now();
       stats.lastBackendSavedAt = payload.savedAt || null;
       stats.lastError = null;

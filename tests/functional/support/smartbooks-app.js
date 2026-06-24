@@ -21,6 +21,11 @@ async function openFreshApp(page, options = {}) {
     localStorage.removeItem(key);
     sessionStorage.clear();
   }, STORE_KEY);
+  if(typeof options === "object" && options.localState) {
+    await page.addInitScript(({ key, state }) => {
+      localStorage.setItem(key, JSON.stringify(state));
+    }, { key:STORE_KEY, state:options.localState });
+  }
   await page.goto(path);
   await expect(page.locator(".app")).toBeVisible();
   await expect(page.locator("#page-dashboard.active")).toBeVisible();
