@@ -169,6 +169,7 @@ Minimum tests before enabling backend mode:
 
 1. Add backend envelope read/write while preserving legacy raw-state compatibility. **Completed in the first backend persistence slice.**
 2. Add async backend methods to `storage-service.js`. **Completed as an opt-in bridge; localStorage remains the default.**
-3. Add hybrid migration behavior behind an explicit setting or dev flag.
-4. Add tests for backend save/load and migration failure behavior.
-5. Only then consider making backend mode the default.
+3. Wire the app runtime to opt-in async backend and hybrid load/save modes. **Completed behind explicit runtime configuration; localStorage remains the default.**
+4. Add hybrid migration behavior behind an explicit setting or dev flag.
+5. Add tests for backend save/load and migration failure behavior.
+6. Only then consider making backend mode the default.

@@ -14,7 +14,18 @@
     };
   }
   const STORE_KEY = 'smartbooks_v71_state';
-  window.SmartBooksPersistence?.configure({ key: STORE_KEY, mode: 'local', backendEndpoint: '/api/state' });
+  function smartBooksPersistenceConfig(){
+    const params = (()=>{ try{ return new URLSearchParams(window.location.search); }catch(e){ return null; } })();
+    const mode = String(window.SMARTBOOKS_PERSISTENCE_MODE || params?.get('sb_persistence') || params?.get('persistence') || 'local').toLowerCase();
+    const backendEndpoint = String(window.SMARTBOOKS_BACKEND_ENDPOINT || params?.get('sb_backend_endpoint') || params?.get('backendEndpoint') || '/api/state');
+    return {
+      key: STORE_KEY,
+      mode: ['local','backend','hybrid'].includes(mode) ? mode : 'local',
+      backendEndpoint
+    };
+  }
+  const persistenceConfig = smartBooksPersistenceConfig();
+  window.SmartBooksPersistence?.configure(persistenceConfig);
   const todayISO = () => new Date().toISOString().slice(0,10);
   const addDaysISO = (days) => { const d = new Date(); d.setDate(d.getDate()+days); return d.toISOString().slice(0,10); };
   const uid = (prefix) => prefix + '-' + Math.random().toString(36).slice(2,7).toUpperCase();
@@ -140,11 +151,49 @@
     auditTrail:[{date:'2026-05-01', user:'System', action:'Opening records initialized with company setup, sales workflow, dashboard customization, banking review, reconciliation, and accrual posting logic'}]
   };
 
-  let state = loadState();
+  const persistenceRuntime = {
+    config:persistenceConfig,
+    backendLoaded:false,
+    backendLoadFailed:false,
+    backendLoadState:'not-started',
+    lastLoadError:null,
+    lastSaveError:null,
+    lastSavePromise:Promise.resolve(),
+    usesBackend(){
+      const mode=window.SmartBooksPersistence?.mode || this.config.mode;
+      return mode==='backend' || mode==='hybrid';
+    },
+    startupFallback(){
+      if((window.SmartBooksPersistence?.mode || this.config.mode)==='hybrid') return loadLocalState();
+      return ensureState(structuredClone(initialState));
+    },
+    saveBeforeBackendReady(nextState){
+      const persistence=window.SmartBooksPersistence;
+      if(!persistence) return false;
+      const mode=persistence.mode || this.config.mode;
+      if(mode==='hybrid'){
+        const result=persistence.save(nextState, { key:STORE_KEY, backupKey:STORE_KEY+'_v59_last_good' });
+        if(!result.ok) this.lastSaveError=result.error;
+        return !!result.ok;
+      }
+      try{ persistence.saveSessionCopy(nextState, { key:STORE_KEY+'_pending_backend_load_session_copy' }); }catch(e){}
+      return false;
+    }
+  };
+  window.SmartBooksRuntimePersistence = persistenceRuntime;
+
+  let state = persistenceRuntime.usesBackend() ? persistenceRuntime.startupFallback() : loadState();
   let currentPage = 'dashboard';
   let currentModal = null;
   let lastModalFocus = null;
 
+  function loadLocalState(){
+    try{
+      const saved = localStorage.getItem(STORE_KEY);
+      if(saved) return ensureState(JSON.parse(saved));
+    }catch(e){ console.warn('Unable to load saved SmartBooks data', e); }
+    return ensureState(structuredClone(initialState));
+  }
   function loadState(){
     if(window.SmartBooksPersistence){
       return window.SmartBooksPersistence.load({
@@ -154,9 +203,51 @@
         onError: e => console.warn('Unable to load saved SmartBooks data', e)
       });
     }
-    try{ const saved = localStorage.getItem(STORE_KEY); if(saved) return ensureState(JSON.parse(saved)); }catch(e){ console.warn('Unable to load saved SmartBooks data', e); }
-    return ensureState(structuredClone(initialState));
+    return loadLocalState();
   }
+  async function loadStateAsync(){
+    const persistence=window.SmartBooksPersistence;
+    if(!persistence || !persistenceRuntime.usesBackend() || typeof persistence.loadAsync!=='function') return false;
+    if(persistenceRuntime.backendLoadState==='loading' || persistenceRuntime.backendLoaded) return false;
+    const beforeErrors=Number(persistence.getStatus?.().stats?.errors) || 0;
+    persistenceRuntime.backendLoadState='loading';
+    persistenceRuntime.lastLoadError=null;
+    try{
+      const loaded = await persistence.loadAsync({
+        key: STORE_KEY,
+        fallback: () => persistenceRuntime.startupFallback(),
+        normalize: ensureState,
+        onError: error => {
+          persistenceRuntime.lastLoadError=error;
+          console.warn('Unable to load SmartBooks backend data', error);
+        }
+      });
+      const afterStatus=persistence.getStatus?.() || {};
+      const afterErrors=Number(afterStatus.stats?.errors) || 0;
+      if(persistenceRuntime.lastLoadError || afterErrors>beforeErrors){
+        persistenceRuntime.backendLoadState='failed';
+        persistenceRuntime.backendLoadFailed=true;
+        try{ showToast('Backend load failed. Local state was not written back to the backend.'); }catch(e){}
+        try{ renderDashboard(); }catch(e){}
+        return false;
+      }
+      state=ensureState(loaded);
+      persistenceRuntime.backendLoaded=true;
+      persistenceRuntime.backendLoadFailed=false;
+      persistenceRuntime.backendLoadState='loaded';
+      renderAll();
+      return true;
+    }catch(error){
+      persistenceRuntime.lastLoadError=error;
+      persistenceRuntime.backendLoadFailed=true;
+      persistenceRuntime.backendLoadState='failed';
+      console.warn('Unable to load SmartBooks backend data', error);
+      try{ showToast('Backend load failed. Local state was not written back to the backend.'); }catch(e){}
+      try{ renderDashboard(); }catch(e){}
+      return false;
+    }
+  }
+  persistenceRuntime.bootstrap = loadStateAsync;
   function ensureState(s){
     s.company ||= structuredClone(initialState.company);
     s.settings ||= {visibleModules: menuModules.map(m=>m.id)};
@@ -181,6 +272,9 @@
   }
   function saveState(){
     if(window.SmartBooksPersistence){
+      if(persistenceRuntime.usesBackend() && !persistenceRuntime.backendLoaded){
+        return persistenceRuntime.saveBeforeBackendReady(state);
+      }
       const result = window.SmartBooksPersistence.save(state, { key: STORE_KEY });
       if(!result.ok) throw result.error;
       return true;
