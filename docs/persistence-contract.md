@@ -154,6 +154,8 @@ Before production, backend persistence must add:
 - Audit logging for save/reset/import actions
 - Encryption and backup policy for sensitive accounting data
 
+Use `docs/production-persistence-hardening.md` as the detailed readiness plan before backend mode becomes the default or database-backed storage is introduced.
+
 ## Test Plan
 
 Minimum tests before enabling backend mode:
@@ -173,4 +175,5 @@ Minimum tests before enabling backend mode:
 3. Wire the app runtime to opt-in async backend and hybrid load/save modes. **Completed behind explicit runtime configuration; localStorage remains the default.**
 4. Add hybrid migration behavior behind an explicit setting or dev flag. **Completed with a confirmation prompt, pre-migration backup, `source: "migration"` writes, and local-mode fallback on migration save failure.**
 5. Add tests for backend save/load and migration failure behavior. **Completed for invalid JSON, invalid envelopes, backend `500`, oversized payloads, migration approval, migration decline, migration save failure, and backend reload restoration.**
-6. Only then consider making backend mode the default.
+6. Plan production persistence hardening before database work. **Completed with a readiness gate plan for identity, company scoping, audit logging, revision conflicts, backups, validation, observability, and performance.**
+7. Only then consider making backend mode the default.
