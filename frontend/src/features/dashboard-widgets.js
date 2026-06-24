@@ -123,11 +123,6 @@
     const order=v25SanitizeList(state.settings.dashboardLayout, v25DefaultOrder());
     return order.filter(id=>visible.has(id)).map(v25WidgetHtml).join('') || `<div class="empty v25-empty-dashboard">No dashboard cards are visible. Open Customize dashboard and restore the default layout.</div>`;
   }
-  function v25DateWithin(date, days){
-    const value=String(date||'');
-    if(!value) return false;
-    return value <= addDaysISO(days);
-  }
   function v25StatusLabel(level){
     if(level==='warn') return 'Needs review';
     if(level==='good') return 'On track';
@@ -142,34 +137,28 @@
     </div>`;
   }
   function v25RenderOperationsConsole(){
-    const t=totals();
-    const openInvoices=(state.invoices||[]).filter(i=>openAmount(i)>0.005);
-    const overdueInvoices=openInvoices.filter(i=>{
-      const status=typeof invoiceDisplayStatus==='function' ? invoiceDisplayStatus(i) : i.status;
-      return status==='Overdue' || (i.dueDate && i.dueDate < todayISO());
+    const service=window.SmartBooksDashboardOperations;
+    const summary=service?.operationsSummary ? service.operationsSummary(state, {
+      today:todayISO(),
+      openAmount,
+      billOpenAmount,
+      invoiceStatus:(invoice)=> typeof invoiceDisplayStatus==='function' ? invoiceDisplayStatus(invoice) : invoice.status,
+      totals:()=>totals(),
+      cashSummary:typeof calculateCashSummary==='function' ? () => calculateCashSummary() : null
+    }) : {headline:'No urgent exceptions', metrics:[]};
+    const metrics=(summary.metrics||[]).map(metric=>{
+      const value=metric.moneyValue!==undefined ? money(metric.moneyValue) : String(metric.value ?? '');
+      const detail=metric.moneyDetailValue!==undefined ? `${metric.detail} ${money(metric.moneyDetailValue)}` : metric.detail;
+      return v25OpsMetric(metric.title,value,detail,metric.actionLabel,metric.actionAttr,metric.level);
     });
-    const openBills=(state.bills||[]).filter(b=>billOpenAmount(b)>0.005);
-    const dueBills=openBills.filter(b=>v25DateWithin(b.dueDate,7));
-    const bankReview=(state.bankTransactions||[]).filter(tx=>!['Reviewed','Matched'].includes(String(tx.status||''))).length;
-    const setupTasks=(state.setupTasks||[]).filter(task=>!task.hidden);
-    const openSetup=setupTasks.filter(task=>!task.done).length;
-    const cash=typeof calculateCashSummary==='function' ? calculateCashSummary() : null;
-    const cashBalance=num(cash?.operatingBalance ?? t.bank);
-    const taxNet=num(t.tax?.net);
-    const attentionCount=overdueInvoices.length+dueBills.length+bankReview+(taxNet>0?1:0);
-    const topAction=attentionCount ? `${attentionCount} item${attentionCount===1?'':'s'} need attention` : 'No urgent exceptions';
     return `<section class="v25-ops-console" aria-label="Dashboard operations summary">
       <div class="v25-ops-lead">
         <span>Operations console</span>
-        <h3>${escapeHTML(topAction)}</h3>
+        <h3>${escapeHTML(summary.headline)}</h3>
         <p>Receivables, payables, cash, banking, and setup health for today's review.</p>
       </div>
       <div class="v25-ops-grid">
-        ${v25OpsMetric('Attention needed',String(attentionCount),`${overdueInvoices.length} overdue invoices, ${dueBills.length} bills due soon, ${bankReview} bank items`, 'Open work queue', 'data-nav="getthingsdone"', attentionCount?'warn':'good')}
-        ${v25OpsMetric('Money in',money(openInvoices.reduce((s,i)=>s+openAmount(i),0)),`${overdueInvoices.length} overdue invoice${overdueInvoices.length===1?'':'s'}`, 'Receive payment', 'data-modal="payment"', overdueInvoices.length?'warn':'neutral')}
-        ${v25OpsMetric('Money out',money(openBills.reduce((s,b)=>s+billOpenAmount(b),0)),`${dueBills.length} bill${dueBills.length===1?'':'s'} due in the next 7 days`, 'Pay bill', 'data-modal="payBill"', dueBills.length?'warn':'neutral')}
-        ${v25OpsMetric('Cash position',money(cashBalance),`Net tax ${taxNet>=0?'payable':'credit'} ${money(Math.abs(taxNet))}`, 'Review cash', 'data-nav="banking"', cashBalance>=0?'good':'warn')}
-        ${v25OpsMetric('Open work',String(bankReview+openSetup),`${bankReview} bank review, ${openSetup} setup task${openSetup===1?'':'s'}`, 'Review setup', 'data-nav="setup"', bankReview||openSetup?'neutral':'good')}
+        ${metrics.join('')}
       </div>
     </section>`;
   }

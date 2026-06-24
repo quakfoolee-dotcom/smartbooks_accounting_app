@@ -10,6 +10,7 @@ Last updated: 2026-06-23
 - Menu customization is owned by `frontend/src/features/menu-customization.js`.
 - Global search is owned by `frontend/src/features/navigation-search.js`.
 - `frontend/src/features/dashboard-widgets.js` is smaller, but still contains dashboard work plus some later sales/invoice UI fixes.
+- Dashboard operations summary calculations are owned by `frontend/src/services/dashboard-operations-service.js`.
 
 ## Verification
 
@@ -26,6 +27,7 @@ Current unit coverage:
 - Storage fallback, save, backup, invalid JSON handling, and status counters.
 - Icon SVG rendering, fallback behavior, mojibake repair, and icon inference.
 - Accounting totals, aging buckets, ledger balance, payment application, deposits, and bank-feed posting helpers.
+- Dashboard operations summary, attention counts, due-soon logic, and dashboard money/work buckets.
 
 Current functional coverage:
 
@@ -44,5 +46,5 @@ Current functional coverage:
 1. Keep dashboard stabilization focused on the operations-console model before adding pixel-level visual snapshots.
 2. Continue shrinking `dashboard-widgets.js` by moving invoice/sales UI fixes into a dedicated sales feature module when touching those flows.
 3. Add unit tests around `SmartBooksNavigation.menuIdsToBookmarkIds` whenever bookmark behavior changes.
-4. Design the backend persistence contract before switching the storage adapter away from localStorage.
+4. Use `docs/persistence-contract.md` as the gate before switching the storage adapter away from localStorage.
 5. Consider replacing the ad hoc unit runner with Node's built-in test runner once test count grows.
