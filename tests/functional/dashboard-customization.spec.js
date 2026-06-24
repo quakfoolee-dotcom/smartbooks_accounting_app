@@ -46,6 +46,18 @@ test("dashboard operations console summarizes attention, money, cash, and work",
   await expect(console.locator(".v25-ops-item").nth(3)).toContainText("Cash position");
   await expect(console.locator(".v25-ops-item").nth(4)).toContainText("Open work");
 
+  const persistence = console.locator(".v30-persistence-panel");
+  await expect(persistence).toBeVisible();
+  await expect(persistence).toContainText("Persistence");
+  await expect(persistence).toContainText("Local browser persistence");
+  await expect(persistence).toContainText("Mode");
+  await expect(persistence).toContainText("local");
+  await expect(persistence).toContainText("Endpoint");
+  await expect(persistence).toContainText("/api/state");
+  await expect(persistence).toContainText("Backend reads");
+  await expect(persistence).toContainText("Backend writes");
+  await expect(persistence).toContainText("Errors");
+
   await expect(console.locator('[data-modal="payment"]')).toBeVisible();
   await expect(console.locator('[data-modal="payBill"]')).toBeVisible();
   await expect(console.locator('[data-nav="banking"]')).toBeVisible();
