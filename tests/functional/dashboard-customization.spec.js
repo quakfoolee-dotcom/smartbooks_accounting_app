@@ -61,4 +61,8 @@ test("dashboard operations console summarizes attention, money, cash, and work",
   await expect(console.locator('[data-modal="payment"]')).toBeVisible();
   await expect(console.locator('[data-modal="payBill"]')).toBeVisible();
   await expect(console.locator('[data-nav="banking"]')).toBeVisible();
+  await expect(console.locator('[data-action="open-setup-checklist"]')).toBeVisible();
+  await console.locator('[data-action="open-setup-checklist"]').click();
+  await expect(page.locator("#page-setup.active")).toContainText("Setup Checklist");
+  await expect(page.locator("#page-setup.active")).toContainText("Progress");
 });

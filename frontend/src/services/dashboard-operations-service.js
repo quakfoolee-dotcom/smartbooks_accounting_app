@@ -159,7 +159,7 @@
           value: String(bankReview + openSetup),
           detail: `${bankReview} bank review, ${plural(openSetup, "setup task")}`,
           actionLabel: "Review setup",
-          actionAttr: "data-nav=\"setup\"",
+          actionAttr: "data-action=\"open-setup-checklist\"",
           level: bankReview || openSetup ? "neutral" : "good"
         }
       ],

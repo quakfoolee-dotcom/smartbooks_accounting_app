@@ -190,6 +190,7 @@ var v816DefaultCategories = v816FeedCategories.map(c=>c.id);
   handleAction = function(action,id){
     if(action==='set-sales-tab'){ state.settings.salesTab = id || 'overview'; saveState(); renderSales(); return; }
     if(action==='toggle-privacy'){ state.settings.privacyMode = !state.settings.privacyMode; saveState(); document.body.classList.toggle('privacy-mode', state.settings.privacyMode); showToast(`Privacy mode ${state.settings.privacyMode?'on':'off'}.`); renderAll(); return; }
+    if(action==='open-setup-checklist'){ openSetupChecklistFromDashboard(); showToast('Setup checklist opened.'); return; }
     if(action==='complete-setup-task'){ const t=state.setupTasks.find(x=>x.id===id); if(t){ t.done=!t.done; audit(`Setup task ${t.title} marked ${t.done?'done':'not done'}`); saveState(); renderAll(); if(currentPage==='setup') renderSetupPage(); showToast(t.done?'Setup task completed.':'Setup task reopened.'); } return; }
     if(action==='hide-setup-task'){ const t=state.setupTasks.find(x=>x.id===id); if(t){ t.hidden=!t.hidden; audit(`Setup task ${t.title} ${t.hidden?'hidden':'shown'}`); saveState(); renderAll(); if(currentPage==='setup') renderSetupPage(); showToast(t.hidden?'Task hidden.':'Task shown.'); } return; }
     v3HandleAction(action,id);
@@ -1669,6 +1670,15 @@ var v816DefaultCategories = v816FeedCategories.map(c=>c.id);
       (groups.length ? groups.map(g=>`<div class="card" style="margin-bottom:16px"><h3>${escapeHTML(g)}</h3><div class="checklist">${tasks.filter(t=>t.group===g).map(t=>`<div class="check-row ${t.done?'done':''} ${t.hidden?'hidden-task':''}"><span class="check-dot">${t.done?'✓':'○'}</span><div><strong>${escapeHTML(t.title)}</strong><div class="muted small">${t.hidden?'Hidden from dashboard':'Visible task'}</div></div><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="btn square" data-nav="${t.nav}">Open</button><button class="btn square" data-action="complete-setup-task" data-id="${t.id}">${t.done?'Undo':'Done'}</button><button class="btn square" data-action="hide-setup-task" data-id="${t.id}">${t.hidden?'Show':'Hide'}</button></div></div>`).join('')}</div></div>`).join('') : '<div class="empty">No setup tasks are available for the currently visible modules.</div>');
     applyQuickActionVisibility(el);
   };
+  function openSetupChecklistFromDashboard(){
+    ensureV74State();
+    renderSetupPage();
+    renderMenu();
+    applyQuickActionVisibility(document);
+    currentPage='setup';
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById('page-setup')?.classList.add('active');
+  }
   renderApps = function(){
     ensureV74State();
     const el=document.getElementById('page-apps'); if(!el) return;
