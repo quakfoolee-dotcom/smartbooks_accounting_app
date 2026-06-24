@@ -2,6 +2,8 @@ const {
   expect,
   installSmartBooksChecks,
   openFreshApp,
+  openModal,
+  submitModal,
   test
 } = require("./support/smartbooks-app");
 
@@ -49,6 +51,60 @@ test("backend mode loads startup state and saves through async persistence", asy
 
   expect(writes.length, "backend mode should write through PUT after a user save").toBeGreaterThan(0);
   expect(writes.at(-1).state.settings.privacyMode).toBe(true);
+});
+
+test("backend mode restores saved state after reload without localStorage", async ({ page }) => {
+  let backendState = { company:{ name:"Backend Start" }, settings:{} };
+  const writes = [];
+  await page.route("**/api/state", async route => {
+    const request = route.request();
+    if(request.method() === "GET") {
+      await route.fulfill({
+        status:200,
+        contentType:"application/json",
+        body:JSON.stringify({
+          ok:true,
+          data:{
+            schemaVersion:1,
+            savedAt:"2026-06-24T04:50:00.000Z",
+            source:"backend",
+            companyId:"demo-company",
+            state:backendState
+          }
+        })
+      });
+      return;
+    }
+    if(request.method() === "PUT") {
+      const payload = JSON.parse(request.postData() || "{}");
+      backendState = payload.state;
+      writes.push(payload);
+      await route.fulfill({
+        status:200,
+        contentType:"application/json",
+        body:JSON.stringify({ ok:true, savedAt:"2026-06-24T04:51:00.000Z" })
+      });
+      return;
+    }
+    await route.continue();
+  });
+
+  await openFreshApp(page, "/?sb_persistence=backend");
+  await expect(page.locator("#topCompanyName")).toContainText("Backend Start");
+
+  await openModal(page, "company");
+  await page.locator('#modalBody input[name="name"]').fill("Backend Restored Co");
+  await submitModal(page);
+  await page.evaluate(() => window.SmartBooksRuntimePersistence?.flushSaves?.());
+
+  await expect.poll(() => writes.length, { message:"company settings save should write to backend" }).toBeGreaterThan(0);
+  expect(writes.at(-1).state.company.name).toBe("Backend Restored Co");
+  await expect(page.locator("#topCompanyName")).toContainText("Backend Restored Co");
+
+  await page.reload();
+  await expect(page.locator(".app")).toBeVisible();
+  await expect(page.locator("#topCompanyName")).toContainText("Backend Restored Co");
+  await expect.poll(() => page.evaluate(() => window.SmartBooks?.getState?.().company?.name)).toBe("Backend Restored Co");
 });
 
 test("backend load failure does not save fallback state to backend", async ({ page }) => {
