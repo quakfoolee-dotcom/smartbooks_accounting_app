@@ -3,13 +3,18 @@ const fs = require("fs");
 const path = require("path");
 const { URL } = require("url");
 const { API_PREFIX, DEFAULT_PORT } = require("../../shared/constants");
+const {
+  DEFAULT_COMPANY_ID,
+  STATE_SCHEMA_VERSION,
+  createFileStatePersistenceAdapter,
+  normalizeStatePayload,
+  stateEnvelope
+} = require("./persistence-adapter");
 
 const ROOT_DIR = path.resolve(__dirname, "../..");
 const FRONTEND_DIR = path.join(ROOT_DIR, "frontend");
 const DEFAULT_DATA_DIR = path.join(ROOT_DIR, "backend", "data");
 const PORT = Number(process.env.PORT || DEFAULT_PORT);
-const STATE_SCHEMA_VERSION = 1;
-const DEFAULT_COMPANY_ID = "demo-company";
 const MAX_REQUEST_BODY_BYTES = 5 * 1024 * 1024;
 
 const MIME_TYPES = {
@@ -29,24 +34,6 @@ function sendJson(res, statusCode, payload) {
   res.end(JSON.stringify(payload, null, 2));
 }
 
-function nowISO() {
-  return new Date().toISOString();
-}
-
-function isPlainObject(value) {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
-function stateEnvelope(state = {}, options = {}) {
-  return {
-    schemaVersion: STATE_SCHEMA_VERSION,
-    savedAt: options.savedAt || nowISO(),
-    source: options.source || "backend",
-    companyId: options.companyId || DEFAULT_COMPANY_ID,
-    state: isPlainObject(state) ? state : {}
-  };
-}
-
 function validationError(message) {
   const error = new Error(message);
   error.statusCode = 400;
@@ -57,38 +44,6 @@ function httpError(statusCode, message) {
   const error = new Error(message);
   error.statusCode = statusCode;
   return error;
-}
-
-function normalizeStatePayload(payload, options = {}) {
-  if (!isPlainObject(payload)) throw validationError("State payload must be a JSON object.");
-
-  if (Object.prototype.hasOwnProperty.call(payload, "state")) {
-    if (payload.schemaVersion !== undefined && Number(payload.schemaVersion) !== STATE_SCHEMA_VERSION) {
-      throw validationError(`Unsupported state schemaVersion: ${payload.schemaVersion}.`);
-    }
-    if (!isPlainObject(payload.state)) throw validationError("State envelope must include an object state.");
-    return stateEnvelope(payload.state, {
-      savedAt: payload.savedAt || options.savedAt,
-      source: payload.source || options.source || "backend",
-      companyId: payload.companyId || options.companyId || DEFAULT_COMPANY_ID
-    });
-  }
-
-  return stateEnvelope(payload, {
-    source: options.source || "migration",
-    companyId: options.companyId || DEFAULT_COMPANY_ID
-  });
-}
-
-function readStateEnvelope(stateFile) {
-  if (!fs.existsSync(stateFile)) return stateEnvelope({}, { source: "backend" });
-  const saved = JSON.parse(fs.readFileSync(stateFile, "utf8"));
-  return normalizeStatePayload(saved, { source: "backend" });
-}
-
-function writeStateEnvelope(stateFile, envelope) {
-  fs.mkdirSync(path.dirname(stateFile), { recursive: true });
-  fs.writeFileSync(stateFile, JSON.stringify(envelope, null, 2));
 }
 
 function readRequestBody(req) {
@@ -114,15 +69,21 @@ function readRequestBody(req) {
   });
 }
 
-async function handleApi(req, res, pathname, options = {}) {
+function createPersistenceAdapter(options = {}) {
+  if (options.persistenceAdapter) return options.persistenceAdapter;
   const stateFile = options.stateFile || path.join(process.env.SMARTBOOKS_DATA_DIR || DEFAULT_DATA_DIR, "smartbooks-state.json");
+  return createFileStatePersistenceAdapter({ stateFile });
+}
+
+async function handleApi(req, res, pathname, options = {}) {
+  const persistenceAdapter = createPersistenceAdapter(options);
 
   if (pathname === `${API_PREFIX}/health` && req.method === "GET") {
     return sendJson(res, 200, { ok: true, service: "smartbooks-backend" });
   }
 
   if (pathname === `${API_PREFIX}/state` && req.method === "GET") {
-    return sendJson(res, 200, { ok: true, data: readStateEnvelope(stateFile) });
+    return sendJson(res, 200, { ok: true, data: await persistenceAdapter.read() });
   }
 
   if (pathname === `${API_PREFIX}/state` && (req.method === "POST" || req.method === "PUT")) {
@@ -134,11 +95,7 @@ async function handleApi(req, res, pathname, options = {}) {
       throw validationError("Request body must be valid JSON.");
     }
     const envelope = normalizeStatePayload(payload);
-    const saved = stateEnvelope(envelope.state, {
-      source: envelope.source,
-      companyId: envelope.companyId
-    });
-    writeStateEnvelope(stateFile, saved);
+    const saved = await persistenceAdapter.write(envelope);
     return sendJson(res, 200, { ok: true, savedAt: saved.savedAt });
   }
 
@@ -192,8 +149,9 @@ if (require.main === module) {
 
 module.exports = {
   createSmartBooksServer,
+  createPersistenceAdapter,
   normalizeStatePayload,
-  readStateEnvelope,
   stateEnvelope,
+  DEFAULT_COMPANY_ID,
   STATE_SCHEMA_VERSION
 };

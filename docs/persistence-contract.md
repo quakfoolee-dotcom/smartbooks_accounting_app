@@ -176,4 +176,5 @@ Minimum tests before enabling backend mode:
 4. Add hybrid migration behavior behind an explicit setting or dev flag. **Completed with a confirmation prompt, pre-migration backup, `source: "migration"` writes, and local-mode fallback on migration save failure.**
 5. Add tests for backend save/load and migration failure behavior. **Completed for invalid JSON, invalid envelopes, backend `500`, oversized payloads, migration approval, migration decline, migration save failure, and backend reload restoration.**
 6. Plan production persistence hardening before database work. **Completed with a readiness gate plan for identity, company scoping, audit logging, revision conflicts, backups, validation, observability, and performance.**
-7. Only then consider making backend mode the default.
+7. Add a backend persistence adapter contract. **Completed for file-backed read, write, and backup behavior so a future database adapter can share one server contract.**
+8. Only then consider making backend mode the default.

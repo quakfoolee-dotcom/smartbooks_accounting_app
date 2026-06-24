@@ -33,9 +33,9 @@ Do not enable backend persistence by default until each gate has an owner, imple
 ## Recommended Implementation Order
 
 1. Introduce a persistence adapter boundary on the backend.
-   - Keep the current file adapter as the default.
-   - Add contract tests for read, write, backup, and revision behavior.
-   - Make the future database adapter plug into the same interface.
+   - Keep the current file adapter as the default. **Completed for read/write/backup.**
+   - Add contract tests for read, write, backup, and revision behavior. **Completed for read/write/backup; revision conflict handling remains a separate P1 issue.**
+   - Make the future database adapter plug into the same interface. **Started with the file adapter contract.**
 
 2. Add request context and company scoping.
    - Parse a temporary development identity header only in non-production mode.
@@ -118,7 +118,7 @@ Expected conflict response:
 
 | Priority | Issue | Reason |
 |---|---|---|
-| P1 | Add backend persistence adapter contract | Lets file and database storage share one tested interface. |
+| P1 | Add backend persistence adapter contract | Completed for file-backed read/write/backup; extend the same contract when the database adapter is introduced. |
 | P1 | Add request identity and company scoping guard | Prevents cross-company access before real data is stored. |
 | P1 | Add revision conflict protection | Prevents silent data loss from stale saves. |
 | P2 | Add audit logging for state mutations | Creates operational and compliance traceability. |

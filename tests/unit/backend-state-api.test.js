@@ -5,12 +5,12 @@ const path = require("node:path");
 const { once } = require("node:events");
 
 const root = path.resolve(__dirname, "../..");
-const { createSmartBooksServer, normalizeStatePayload } = require(path.join(root, "backend/src/server.js"));
+const { createSmartBooksServer, normalizeStatePayload, stateEnvelope } = require(path.join(root, "backend/src/server.js"));
 
-async function withServer(fn){
+async function withServer(fn, options = {}){
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "smartbooks-state-api-"));
   const stateFile = path.join(tempDir, "smartbooks-state.json");
-  const server = createSmartBooksServer({ stateFile });
+  const server = createSmartBooksServer({ stateFile, ...options });
   server.listen(0, "127.0.0.1");
   await once(server, "listening");
   const { port } = server.address();
@@ -84,6 +84,43 @@ async function test(name, fn){
       assert.equal(loaded.body.data.source, "backend");
       assert.deepEqual(loaded.body.data.state, payload.state);
     });
+  });
+
+  await test("state API can use an injected persistence adapter", async () => {
+    const writes = [];
+    let stored = stateEnvelope({ company:{ name:"Injected Adapter Co" } }, { source:"backend" });
+    const persistenceAdapter = {
+      async read(){
+        return stored;
+      },
+      async write(envelope){
+        writes.push(envelope);
+        stored = stateEnvelope(envelope.state, {
+          source:envelope.source,
+          companyId:envelope.companyId,
+          savedAt:"2026-06-24T07:00:00.000Z"
+        });
+        return stored;
+      }
+    };
+
+    await withServer(async ({ baseUrl, stateFile }) => {
+      const loaded = await requestJson(baseUrl, "/api/state");
+      assert.equal(loaded.status, 200);
+      assert.equal(loaded.body.data.state.company.name, "Injected Adapter Co");
+      assert.equal(fs.existsSync(stateFile), false);
+
+      const saved = await requestJson(baseUrl, "/api/state", {
+        method:"PUT",
+        body:{ schemaVersion:1, companyId:"demo-company", state:{ company:{ name:"Injected Saved Co" } } }
+      });
+
+      assert.equal(saved.status, 200);
+      assert.equal(saved.body.savedAt, "2026-06-24T07:00:00.000Z");
+      assert.equal(writes.length, 1);
+      assert.equal(writes[0].state.company.name, "Injected Saved Co");
+      assert.equal(fs.existsSync(stateFile), false);
+    }, { persistenceAdapter });
   });
 
   await test("state API wraps legacy raw state as migration-compatible state", async () => {
