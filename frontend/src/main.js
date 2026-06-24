@@ -18,10 +18,12 @@
     const params = (()=>{ try{ return new URLSearchParams(window.location.search); }catch(e){ return null; } })();
     const mode = String(window.SMARTBOOKS_PERSISTENCE_MODE || params?.get('sb_persistence') || params?.get('persistence') || 'local').toLowerCase();
     const backendEndpoint = String(window.SMARTBOOKS_BACKEND_ENDPOINT || params?.get('sb_backend_endpoint') || params?.get('backendEndpoint') || '/api/state');
+    const companyId = String(window.SMARTBOOKS_COMPANY_ID || params?.get('sb_company_id') || params?.get('companyId') || 'demo-company');
     return {
       key: STORE_KEY,
       mode: ['local','backend','hybrid'].includes(mode) ? mode : 'local',
-      backendEndpoint
+      backendEndpoint,
+      companyId
     };
   }
   const persistenceConfig = smartBooksPersistenceConfig();

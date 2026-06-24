@@ -16,6 +16,9 @@ const FRONTEND_DIR = path.join(ROOT_DIR, "frontend");
 const DEFAULT_DATA_DIR = path.join(ROOT_DIR, "backend", "data");
 const PORT = Number(process.env.PORT || DEFAULT_PORT);
 const MAX_REQUEST_BODY_BYTES = 5 * 1024 * 1024;
+const COMPANY_ID_HEADER = "x-smartbooks-company-id";
+const REQUEST_ID_HEADER = "x-smartbooks-request-id";
+const COMPANY_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{1,63}$/;
 
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -44,6 +47,28 @@ function httpError(statusCode, message) {
   const error = new Error(message);
   error.statusCode = statusCode;
   return error;
+}
+
+function scopedRequest(req) {
+  const companyId = String(req.headers[COMPANY_ID_HEADER] || "").trim();
+  if (!companyId) throw httpError(400, "X-SmartBooks-Company-Id header is required.");
+  if (!COMPANY_ID_PATTERN.test(companyId)) {
+    throw httpError(400, "X-SmartBooks-Company-Id must be 2-64 characters using letters, numbers, dots, underscores, colons, or hyphens.");
+  }
+
+  const requestId = String(req.headers[REQUEST_ID_HEADER] || "").trim();
+  return {
+    companyId,
+    requestId: requestId || `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+  };
+}
+
+function enforceCompanyScope(envelope, scope, action) {
+  const existingCompanyId = envelope?.companyId || DEFAULT_COMPANY_ID;
+  const hasState = envelope?.state && Object.keys(envelope.state).length > 0;
+  if (existingCompanyId !== scope.companyId && hasState) {
+    throw httpError(403, `Company scope mismatch for ${action}.`);
+  }
 }
 
 function readRequestBody(req) {
@@ -83,10 +108,14 @@ async function handleApi(req, res, pathname, options = {}) {
   }
 
   if (pathname === `${API_PREFIX}/state` && req.method === "GET") {
-    return sendJson(res, 200, { ok: true, data: await persistenceAdapter.read() });
+    const scope = scopedRequest(req);
+    const envelope = await persistenceAdapter.read();
+    enforceCompanyScope(envelope, scope, "state read");
+    return sendJson(res, 200, { ok: true, requestId: scope.requestId, data: envelope });
   }
 
   if (pathname === `${API_PREFIX}/state` && (req.method === "POST" || req.method === "PUT")) {
+    const scope = scopedRequest(req);
     const body = await readRequestBody(req);
     let payload = {};
     try {
@@ -94,9 +123,14 @@ async function handleApi(req, res, pathname, options = {}) {
     } catch (error) {
       throw validationError("Request body must be valid JSON.");
     }
-    const envelope = normalizeStatePayload(payload);
+    if (payload && payload.companyId && payload.companyId !== scope.companyId) {
+      throw httpError(403, "State payload companyId does not match request company scope.");
+    }
+    const current = await persistenceAdapter.read();
+    enforceCompanyScope(current, scope, "state write");
+    const envelope = normalizeStatePayload(payload, { companyId: scope.companyId });
     const saved = await persistenceAdapter.write(envelope);
-    return sendJson(res, 200, { ok: true, savedAt: saved.savedAt });
+    return sendJson(res, 200, { ok: true, requestId: scope.requestId, savedAt: saved.savedAt, companyId: saved.companyId });
   }
 
   return sendJson(res, 404, { error: "API route not found." });
@@ -152,6 +186,8 @@ module.exports = {
   createPersistenceAdapter,
   normalizeStatePayload,
   stateEnvelope,
+  COMPANY_ID_HEADER,
+  REQUEST_ID_HEADER,
   DEFAULT_COMPANY_ID,
   STATE_SCHEMA_VERSION
 };

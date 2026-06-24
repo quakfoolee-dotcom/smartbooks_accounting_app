@@ -87,6 +87,8 @@ async function test(name, fn){
     assert.deepEqual(loaded, { company:{ name:"Backend Co" } });
     assert.equal(calls[0].url, "/api/state-test");
     assert.equal(calls[0].options.method, "GET");
+    assert.equal(calls[0].options.headers["X-SmartBooks-Company-Id"], "demo-company");
+    assert.match(calls[0].options.headers["X-SmartBooks-Request-Id"], /.+/);
     assert.equal(storage.getStatus().stats.backendReads, 1);
   });
 
@@ -108,6 +110,8 @@ async function test(name, fn){
     assert.equal(result.savedAt, "2026-06-23T00:00:00.000Z");
     assert.equal(localStorage.getItem("unit_state"), null);
     assert.equal(calls[0].options.method, "PUT");
+    assert.equal(calls[0].options.headers["X-SmartBooks-Company-Id"], "company-1");
+    assert.match(calls[0].options.headers["X-SmartBooks-Request-Id"], /.+/);
     assert.deepEqual(JSON.parse(calls[0].options.body), {
       schemaVersion:1,
       companyId:"company-1",
@@ -190,6 +194,19 @@ async function test(name, fn){
     assert.deepEqual(envelopeLoaded, { fallback:true });
     assert.match(envelopeError, /object state/);
     assert.equal(invalidEnvelope.getStatus().stats.errors, 1);
+
+    const wrongCompany = loadStorageService({
+      fetch:async () => response(true, 200, { ok:true, data:{ schemaVersion:1, companyId:"wrong-company", state:{} } })
+    }).configure({ mode:"backend", companyId:"requested-company" });
+
+    let companyError = "";
+    const companyLoaded = await wrongCompany.loadAsync({
+      fallback:() => ({ fallback:true }),
+      onError(error){ companyError = error.message; }
+    });
+    assert.deepEqual(companyLoaded, { fallback:true });
+    assert.match(companyError, /companyId did not match/);
+    assert.equal(wrongCompany.getStatus().stats.errors, 1);
   });
 
   await test("backend save supports migration source envelopes", async () => {
@@ -206,6 +223,25 @@ async function test(name, fn){
     assert.equal(result.ok, true);
     assert.equal(body.source, "migration");
     assert.deepEqual(body.state, { company:{ name:"Migrated Co" } });
+  });
+
+  await test("backend requests use configured company identity by default", async () => {
+    const calls = [];
+    const storage = loadStorageService({
+      fetch:async (url, options) => {
+        calls.push({ url, options });
+        if(options.method === "GET") return response(true, 200, { ok:true, data:{ schemaVersion:1, companyId:"company-config", state:{} } });
+        return response(true, 200, { ok:true, savedAt:"2026-06-23T00:00:00.000Z" });
+      }
+    }).configure({ mode:"backend", companyId:"company-config" });
+
+    await storage.loadAsync();
+    await storage.saveAsync({ company:{ name:"Configured Co" } });
+
+    assert.equal(calls[0].options.headers["X-SmartBooks-Company-Id"], "company-config");
+    assert.equal(calls[1].options.headers["X-SmartBooks-Company-Id"], "company-config");
+    assert.equal(JSON.parse(calls[1].options.body).companyId, "company-config");
+    assert.equal(storage.getStatus().companyId, "company-config");
   });
 
   console.log("All storage backend service tests passed.");

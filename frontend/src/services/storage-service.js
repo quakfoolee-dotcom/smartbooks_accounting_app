@@ -6,7 +6,8 @@
   const config = {
     key: DEFAULT_KEY,
     mode: 'local',
-    backendEndpoint: DEFAULT_ENDPOINT
+    backendEndpoint: DEFAULT_ENDPOINT,
+    companyId: 'demo-company'
   };
   const stats = {
     reads: 0,
@@ -34,6 +35,7 @@
     if(!options || typeof options !== 'object') return api;
     if(options.key) config.key = String(options.key);
     if(options.backendEndpoint) config.backendEndpoint = String(options.backendEndpoint);
+    if(options.companyId) config.companyId = String(options.companyId);
     if(['local','backend','hybrid'].includes(String(options.mode))) config.mode = String(options.mode);
     return api;
   }
@@ -56,14 +58,28 @@
   }
 
   function companyId(options){
-    return options?.companyId || 'demo-company';
+    return options?.companyId || config.companyId || 'demo-company';
+  }
+
+  function requestId(){
+    if(global.crypto?.randomUUID) return global.crypto.randomUUID();
+    return `sb-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  }
+
+  function backendHeaders(options, extra = {}){
+    return {
+      'Accept':'application/json',
+      'X-SmartBooks-Company-Id':companyId(options),
+      'X-SmartBooks-Request-Id':requestId(),
+      ...extra
+    };
   }
 
   function isPlainObject(value){
     return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
   }
 
-  function backendEnvelope(payload){
+  function backendEnvelope(payload, expectedCompanyId){
     const data = payload?.data || payload;
     if(!isPlainObject(data) || !Object.prototype.hasOwnProperty.call(data, 'state')){
       throw new Error('Backend response must include a state envelope.');
@@ -71,6 +87,9 @@
     if(!isPlainObject(data.state)) throw new Error('Backend state envelope must include an object state.');
     if(data.schemaVersion !== undefined && Number(data.schemaVersion) !== 1){
       throw new Error(`Unsupported backend state schemaVersion: ${data.schemaVersion}.`);
+    }
+    if(data.companyId && expectedCompanyId && data.companyId !== expectedCompanyId){
+      throw new Error('Backend response companyId did not match the requested company scope.');
     }
     return data;
   }
@@ -87,12 +106,12 @@
     try{
       const response = await fetchClient(opts)(backendEndpoint(opts), {
         method:'GET',
-        headers:{ 'Accept':'application/json' }
+        headers:backendHeaders(opts)
       });
       const payload = await readResponseJson(response);
       if(!response.ok) throw new Error(payload.error || `Backend load failed with HTTP ${response.status}.`);
       if(payload && payload.ok === false) throw new Error(payload.error || 'Backend load failed.');
-      const envelope = backendEnvelope(payload);
+      const envelope = backendEnvelope(payload, companyId(opts));
       const backendStateEmpty = Object.keys(envelope.state).length === 0;
       const loaded = normalizeLoaded(envelope.state, opts.fallback, opts.normalize);
       stats.lastLoadedAt = Date.now();
@@ -123,7 +142,7 @@
       };
       const response = await fetchClient(opts)(backendEndpoint(opts), {
         method:opts.method || 'PUT',
-        headers:{ 'Content-Type':'application/json', 'Accept':'application/json' },
+        headers:backendHeaders(opts, { 'Content-Type':'application/json' }),
         body:JSON.stringify(envelope)
       });
       const payload = await readResponseJson(response);
@@ -237,6 +256,7 @@
       key: config.key,
       mode: config.mode,
       backendEndpoint: config.backendEndpoint,
+      companyId: config.companyId,
       stats: Object.assign({}, stats)
     };
   }
