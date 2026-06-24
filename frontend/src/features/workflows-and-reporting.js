@@ -882,6 +882,21 @@
   injectV13GetThingsDoneStyles();
 
 
+  // ---------- V13.1: Hidden-module action audit for Get Things Done ----------
+  function applyGetThingsDoneVisibility(){
+    const page=document.getElementById('page-getthingsdone');
+    if(!page || typeof applyQuickActionVisibility!=='function') return;
+    try{ applyQuickActionVisibility(page); }
+    catch(e){ console.warn('Get Things Done visibility audit skipped', e); }
+  }
+  const renderGetThingsDoneBeforeV131 = renderGetThingsDone;
+  renderGetThingsDone=function(){
+    const result=renderGetThingsDoneBeforeV131.apply(this, arguments);
+    applyGetThingsDoneVisibility();
+    return result;
+  };
+
+
 
 
   // User-facing language cleanup
