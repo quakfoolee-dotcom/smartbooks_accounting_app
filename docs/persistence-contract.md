@@ -48,6 +48,15 @@ The backend may accept legacy raw state during migration, but it should respond 
 
 ## API Contract
 
+All `/api/state` requests must include request scope headers:
+
+```http
+X-SmartBooks-Company-Id: demo-company
+X-SmartBooks-Request-Id: sb-optional-trace-id
+```
+
+`X-SmartBooks-Company-Id` is required for reads and writes. The backend rejects missing, malformed, or cross-company requests instead of silently falling back to `demo-company`. `X-SmartBooks-Request-Id` is echoed in API responses when supplied, or generated server-side when omitted.
+
 ### `GET /api/state`
 
 Returns the current persisted state envelope.
@@ -57,6 +66,7 @@ Response:
 ```json
 {
   "ok": true,
+  "requestId": "sb-optional-trace-id",
   "data": {
     "schemaVersion": 1,
     "savedAt": "2026-06-23T00:00:00.000Z",
@@ -88,6 +98,8 @@ Response:
 ```json
 {
   "ok": true,
+  "requestId": "sb-optional-trace-id",
+  "companyId": "demo-company",
   "savedAt": "2026-06-23T00:00:00.000Z"
 }
 ```
@@ -126,7 +138,9 @@ Backend request validation should reject:
 - Payloads larger than the configured limit
 - Missing `state`
 - Unsupported `schemaVersion`
-- Unknown `companyId` once company scoping exists
+- Missing or malformed `X-SmartBooks-Company-Id`
+- Payload `companyId` that does not match the request company scope
+- Reads or writes that would cross an existing persisted company scope
 
 Frontend validation should normalize:
 
@@ -177,4 +191,5 @@ Minimum tests before enabling backend mode:
 5. Add tests for backend save/load and migration failure behavior. **Completed for invalid JSON, invalid envelopes, backend `500`, oversized payloads, migration approval, migration decline, migration save failure, and backend reload restoration.**
 6. Plan production persistence hardening before database work. **Completed with a readiness gate plan for identity, company scoping, audit logging, revision conflicts, backups, validation, observability, and performance.**
 7. Add a backend persistence adapter contract. **Completed for file-backed read, write, and backup behavior so a future database adapter can share one server contract.**
-8. Only then consider making backend mode the default.
+8. Add request identity and company scoping guard. **Completed for required company scope headers, request IDs, cross-company read/write rejection, and frontend backend/hybrid header propagation.**
+9. Only then consider making backend mode the default.

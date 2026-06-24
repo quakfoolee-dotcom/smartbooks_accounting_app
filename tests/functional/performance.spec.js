@@ -125,7 +125,12 @@ test("backend read endpoints stay within baseline API budget", async ({ request 
   expect(health.ok()).toBe(true);
 
   const stateStarted = now();
-  const state = await request.get("/api/state");
+  const state = await request.get("/api/state", {
+    headers:{
+      "X-SmartBooks-Company-Id":"demo-company",
+      "X-SmartBooks-Request-Id":"performance-api-read"
+    }
+  });
   const stateMs = now() - stateStarted;
   expect(state.ok()).toBe(true);
   const body = await state.json();

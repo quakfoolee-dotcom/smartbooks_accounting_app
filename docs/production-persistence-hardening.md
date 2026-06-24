@@ -7,8 +7,8 @@ This plan turns backend persistence from a prototype file-backed state store int
 | Area | Current State | Production Gap |
 |---|---|---|
 | Storage | One JSON state document in `backend/data/smartbooks-state.json`. | Needs database-backed storage, backups, recovery, and revision control. |
-| Identity | No real signed-in user or company identity. | Needs authenticated user identity and explicit company membership. |
-| Authorization | All callers can read/write the demo state endpoint. | Needs company-scoped read/write rules before real data. |
+| Identity | Backend state requests now require a company scope header and carry a request ID. | Needs authenticated user identity and explicit company membership. |
+| Authorization | Company-scoped reads/writes are guarded for the file-backed state document. | Needs role-aware permissions before real data. |
 | Validation | Request size, JSON shape, schema version, and envelope validation are covered. | Needs deeper server-side domain validation and unknown-field policy. |
 | Migration | Hybrid local-to-backend migration is guarded and backed up locally. | Needs production backup, rollback, and audit trail. |
 | Observability | Functional and performance tests cover baseline behavior. | Needs request IDs, structured logs, audit events, and operational alerts. |
@@ -38,9 +38,9 @@ Do not enable backend persistence by default until each gate has an owner, imple
    - Make the future database adapter plug into the same interface. **Started with the file adapter contract.**
 
 2. Add request context and company scoping.
-   - Parse a temporary development identity header only in non-production mode.
-   - Require `companyId` on state reads and writes.
-   - Reject unknown company IDs instead of silently falling back to `demo-company`.
+   - Parse a temporary development identity header only in non-production mode. **Partially completed with required company scope headers and generated/requested request IDs.**
+   - Require `companyId` on state reads and writes. **Completed through `X-SmartBooks-Company-Id`.**
+   - Reject unknown company IDs instead of silently falling back to `demo-company`. **Completed for cross-company access against the current persisted file-backed state.**
 
 3. Add audit events for state mutations.
    - Record `state.save`, `state.migration`, `state.backup`, `state.restore`, and `state.reset`.
@@ -107,7 +107,7 @@ Expected conflict response:
 | Test Area | Coverage |
 |---|---|
 | Adapter contract | File adapter and future database adapter pass the same read/write/backup/revision tests. |
-| Company scoping | Allowed company can read/write; unauthorized company gets `403`. |
+| Company scoping | Allowed company can read/write; unauthorized company gets `403`. **Covered for backend state API.** |
 | Anonymous access | Anonymous write attempts fail in production mode. |
 | Audit events | Mutating endpoints create audit records with user/company/action/result. |
 | Revision conflicts | Stale writes return `409` and do not overwrite newer state. |
@@ -119,7 +119,7 @@ Expected conflict response:
 | Priority | Issue | Reason |
 |---|---|---|
 | P1 | Add backend persistence adapter contract | Completed for file-backed read/write/backup; extend the same contract when the database adapter is introduced. |
-| P1 | Add request identity and company scoping guard | Prevents cross-company access before real data is stored. |
+| P1 | Add request identity and company scoping guard | Completed for request headers, frontend propagation, and cross-company read/write rejection. |
 | P1 | Add revision conflict protection | Prevents silent data loss from stale saves. |
 | P2 | Add audit logging for state mutations | Creates operational and compliance traceability. |
 | P2 | Add server-side backup and restore endpoints | Gives recovery path before database migration. |

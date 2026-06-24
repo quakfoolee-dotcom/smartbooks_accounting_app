@@ -5,7 +5,7 @@ const path = require("node:path");
 const { once } = require("node:events");
 
 const root = path.resolve(__dirname, "../..");
-const { createSmartBooksServer, normalizeStatePayload, stateEnvelope } = require(path.join(root, "backend/src/server.js"));
+const { COMPANY_ID_HEADER, createSmartBooksServer, normalizeStatePayload, stateEnvelope } = require(path.join(root, "backend/src/server.js"));
 
 async function withServer(fn, options = {}){
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "smartbooks-state-api-"));
@@ -23,18 +23,29 @@ async function withServer(fn, options = {}){
 }
 
 async function requestJson(baseUrl, pathname, options = {}){
+  const headers = {
+    [COMPANY_ID_HEADER]: options.companyId || "demo-company",
+    ...(options.body === undefined ? {} : { "Content-Type":"application/json" }),
+    ...(options.headers || {})
+  };
+  if(options.companyId === null) delete headers[COMPANY_ID_HEADER];
   const response = await fetch(`${baseUrl}${pathname}`, {
     method: options.method || "GET",
-    headers: options.body === undefined ? undefined : { "Content-Type":"application/json" },
+    headers,
     body: options.body === undefined ? undefined : JSON.stringify(options.body)
   });
   return { status:response.status, body:await response.json() };
 }
 
 async function requestRaw(baseUrl, pathname, options = {}){
+  const headers = {
+    [COMPANY_ID_HEADER]: options.companyId || "demo-company",
+    ...(options.headers || {})
+  };
+  if(options.companyId === null) delete headers[COMPANY_ID_HEADER];
   const response = await fetch(`${baseUrl}${pathname}`, {
     method: options.method || "GET",
-    headers: options.headers,
+    headers,
     body: options.body
   });
   return { status:response.status, body:await response.json() };
@@ -63,6 +74,22 @@ async function test(name, fn){
     });
   });
 
+  await test("state API requires a request company scope", async () => {
+    await withServer(async ({ baseUrl }) => {
+      const missingRead = await requestJson(baseUrl, "/api/state", { companyId:null });
+      assert.equal(missingRead.status, 400);
+      assert.match(missingRead.body.error, /Company-Id header is required/);
+
+      const missingWrite = await requestJson(baseUrl, "/api/state", {
+        method:"PUT",
+        companyId:null,
+        body:{ schemaVersion:1, state:{} }
+      });
+      assert.equal(missingWrite.status, 400);
+      assert.match(missingWrite.body.error, /Company-Id header is required/);
+    });
+  });
+
   await test("state API stores and returns contract envelopes", async () => {
     await withServer(async ({ baseUrl, stateFile }) => {
       const payload = {
@@ -74,6 +101,8 @@ async function test(name, fn){
       const saved = await requestJson(baseUrl, "/api/state", { method:"PUT", body:payload });
       assert.equal(saved.status, 200);
       assert.equal(saved.body.ok, true);
+      assert.equal(saved.body.companyId, "demo-company");
+      assert.ok(saved.body.requestId);
       assert.ok(saved.body.savedAt);
       assert.equal(fs.existsSync(stateFile), true);
 
@@ -83,6 +112,42 @@ async function test(name, fn){
       assert.equal(loaded.body.data.companyId, "demo-company");
       assert.equal(loaded.body.data.source, "backend");
       assert.deepEqual(loaded.body.data.state, payload.state);
+    });
+  });
+
+  await test("state API rejects payloads outside the request company scope", async () => {
+    await withServer(async ({ baseUrl }) => {
+      const result = await requestJson(baseUrl, "/api/state", {
+        method:"PUT",
+        companyId:"company-a",
+        body:{ schemaVersion:1, companyId:"company-b", state:{ company:{ name:"Wrong Scope" } } }
+      });
+
+      assert.equal(result.status, 403);
+      assert.match(result.body.error, /does not match request company scope/);
+    });
+  });
+
+  await test("state API prevents cross-company read and overwrite", async () => {
+    await withServer(async ({ baseUrl }) => {
+      const saved = await requestJson(baseUrl, "/api/state", {
+        method:"PUT",
+        companyId:"company-a",
+        body:{ schemaVersion:1, companyId:"company-a", state:{ company:{ name:"Company A" } } }
+      });
+      assert.equal(saved.status, 200);
+
+      const blockedRead = await requestJson(baseUrl, "/api/state", { companyId:"company-b" });
+      assert.equal(blockedRead.status, 403);
+      assert.match(blockedRead.body.error, /Company scope mismatch/);
+
+      const blockedWrite = await requestJson(baseUrl, "/api/state", {
+        method:"PUT",
+        companyId:"company-b",
+        body:{ schemaVersion:1, companyId:"company-b", state:{ company:{ name:"Company B" } } }
+      });
+      assert.equal(blockedWrite.status, 403);
+      assert.match(blockedWrite.body.error, /Company scope mismatch/);
     });
   });
 
