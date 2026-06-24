@@ -6,9 +6,10 @@ const { API_PREFIX, DEFAULT_PORT } = require("../../shared/constants");
 
 const ROOT_DIR = path.resolve(__dirname, "../..");
 const FRONTEND_DIR = path.join(ROOT_DIR, "frontend");
-const DATA_DIR = path.join(ROOT_DIR, "backend", "data");
-const STATE_FILE = path.join(DATA_DIR, "smartbooks-state.json");
+const DEFAULT_DATA_DIR = path.join(ROOT_DIR, "backend", "data");
 const PORT = Number(process.env.PORT || DEFAULT_PORT);
+const STATE_SCHEMA_VERSION = 1;
+const DEFAULT_COMPANY_ID = "demo-company";
 
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -27,6 +28,62 @@ function sendJson(res, statusCode, payload) {
   res.end(JSON.stringify(payload, null, 2));
 }
 
+function nowISO() {
+  return new Date().toISOString();
+}
+
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function stateEnvelope(state = {}, options = {}) {
+  return {
+    schemaVersion: STATE_SCHEMA_VERSION,
+    savedAt: options.savedAt || nowISO(),
+    source: options.source || "backend",
+    companyId: options.companyId || DEFAULT_COMPANY_ID,
+    state: isPlainObject(state) ? state : {}
+  };
+}
+
+function validationError(message) {
+  const error = new Error(message);
+  error.statusCode = 400;
+  return error;
+}
+
+function normalizeStatePayload(payload, options = {}) {
+  if (!isPlainObject(payload)) throw validationError("State payload must be a JSON object.");
+
+  if (Object.prototype.hasOwnProperty.call(payload, "state")) {
+    if (payload.schemaVersion !== undefined && Number(payload.schemaVersion) !== STATE_SCHEMA_VERSION) {
+      throw validationError(`Unsupported state schemaVersion: ${payload.schemaVersion}.`);
+    }
+    if (!isPlainObject(payload.state)) throw validationError("State envelope must include an object state.");
+    return stateEnvelope(payload.state, {
+      savedAt: payload.savedAt || options.savedAt,
+      source: payload.source || options.source || "backend",
+      companyId: payload.companyId || options.companyId || DEFAULT_COMPANY_ID
+    });
+  }
+
+  return stateEnvelope(payload, {
+    source: options.source || "migration",
+    companyId: options.companyId || DEFAULT_COMPANY_ID
+  });
+}
+
+function readStateEnvelope(stateFile) {
+  if (!fs.existsSync(stateFile)) return stateEnvelope({}, { source: "backend" });
+  const saved = JSON.parse(fs.readFileSync(stateFile, "utf8"));
+  return normalizeStatePayload(saved, { source: "backend" });
+}
+
+function writeStateEnvelope(stateFile, envelope) {
+  fs.mkdirSync(path.dirname(stateFile), { recursive: true });
+  fs.writeFileSync(stateFile, JSON.stringify(envelope, null, 2));
+}
+
 function readRequestBody(req) {
   return new Promise((resolve, reject) => {
     let body = "";
@@ -42,24 +99,27 @@ function readRequestBody(req) {
   });
 }
 
-async function handleApi(req, res, pathname) {
+async function handleApi(req, res, pathname, options = {}) {
+  const stateFile = options.stateFile || path.join(process.env.SMARTBOOKS_DATA_DIR || DEFAULT_DATA_DIR, "smartbooks-state.json");
+
   if (pathname === `${API_PREFIX}/health` && req.method === "GET") {
     return sendJson(res, 200, { ok: true, service: "smartbooks-backend" });
   }
 
-  // Backend handoff point: the frontend can later replace localStorage calls with this state endpoint.
   if (pathname === `${API_PREFIX}/state` && req.method === "GET") {
-    if (!fs.existsSync(STATE_FILE)) return sendJson(res, 200, {});
-    const state = JSON.parse(fs.readFileSync(STATE_FILE, "utf8"));
-    return sendJson(res, 200, state);
+    return sendJson(res, 200, { ok: true, data: readStateEnvelope(stateFile) });
   }
 
   if (pathname === `${API_PREFIX}/state` && (req.method === "POST" || req.method === "PUT")) {
     const body = await readRequestBody(req);
-    const state = body ? JSON.parse(body) : {};
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-    fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
-    return sendJson(res, 200, { ok: true });
+    const payload = body ? JSON.parse(body) : {};
+    const envelope = normalizeStatePayload(payload);
+    const saved = stateEnvelope(envelope.state, {
+      source: envelope.source,
+      companyId: envelope.companyId
+    });
+    writeStateEnvelope(stateFile, saved);
+    return sendJson(res, 200, { ok: true, savedAt: saved.savedAt });
   }
 
   return sendJson(res, 404, { error: "API route not found." });
@@ -87,20 +147,33 @@ function serveStatic(req, res, pathname) {
   });
 }
 
-const server = http.createServer(async (req, res) => {
-  try {
-    const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
+function createSmartBooksServer(options = {}) {
+  return http.createServer(async (req, res) => {
+    try {
+      const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
 
-    if (url.pathname.startsWith(API_PREFIX)) {
-      return await handleApi(req, res, url.pathname);
+      if (url.pathname.startsWith(API_PREFIX)) {
+        return await handleApi(req, res, url.pathname, options);
+      }
+
+      return serveStatic(req, res, url.pathname);
+    } catch (error) {
+      return sendJson(res, error.statusCode || 500, { ok: false, error: error.message || "Unexpected server error." });
     }
+  });
+}
 
-    return serveStatic(req, res, url.pathname);
-  } catch (error) {
-    return sendJson(res, 500, { error: error.message || "Unexpected server error." });
-  }
-});
+if (require.main === module) {
+  const server = createSmartBooksServer();
+  server.listen(PORT, () => {
+    console.log(`SmartBooks app running at http://localhost:${PORT}`);
+  });
+}
 
-server.listen(PORT, () => {
-  console.log(`SmartBooks app running at http://localhost:${PORT}`);
-});
+module.exports = {
+  createSmartBooksServer,
+  normalizeStatePayload,
+  readStateEnvelope,
+  stateEnvelope,
+  STATE_SCHEMA_VERSION
+};

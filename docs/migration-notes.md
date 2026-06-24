@@ -28,6 +28,12 @@ Next, add an asynchronous backend mode to `frontend/src/services/storage-service
 
 Before implementing that switch, use `docs/persistence-contract.md` as the working contract for the backend state envelope, migration behavior, error handling, validation, and test plan.
 
+Backend progress:
+
+- `/api/state` now returns `{ ok, data }` with a versioned state envelope.
+- `PUT /api/state` and `POST /api/state` write the envelope form and preserve legacy raw-state compatibility.
+- Backend state API behavior is covered by `tests/unit/backend-state-api.test.js`.
+
 ## Next Refactor Targets
 
 - Continue splitting the feature modules by domain: customers, vendors, invoices, banking, reports, settings, and dashboard.
