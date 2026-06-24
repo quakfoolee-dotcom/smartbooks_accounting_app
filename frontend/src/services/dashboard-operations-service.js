@@ -26,6 +26,53 @@
     return `${count} ${count === 1 ? singular : (pluralValue || `${singular}s`)}`;
   }
 
+  function compactError(error){
+    if(!error) return "";
+    if(typeof error === "string") return error;
+    if(error && typeof error.message === "string") return error.message;
+    return String(error);
+  }
+
+  function timestampLabel(value){
+    if(!value) return "Not saved yet";
+    if(typeof value === "string") return value;
+    const date = new Date(value);
+    if(Number.isNaN(date.getTime())) return String(value);
+    return date.toISOString();
+  }
+
+  function persistenceSummary(status = {}){
+    const mode = ["local", "backend", "hybrid"].includes(String(status.mode)) ? String(status.mode) : "local";
+    const stats = status.stats || {};
+    const endpoint = status.backendEndpoint || "/api/state";
+    const backendEnabled = mode === "backend" || mode === "hybrid";
+    const lastError = compactError(stats.lastError);
+    const level = lastError ? "warn" : (backendEnabled ? "good" : "neutral");
+    const headline = lastError
+      ? "Persistence needs review"
+      : (backendEnabled ? "Backend persistence connected" : "Local browser persistence");
+    const detail = lastError
+      ? lastError
+      : (backendEnabled
+          ? "Backend save/load is available for this session."
+          : "Local storage remains the default until migration safeguards are complete.");
+
+    return {
+      mode,
+      endpoint,
+      level,
+      headline,
+      detail,
+      backendEnabled,
+      lastBackendSavedAt: timestampLabel(stats.lastBackendSavedAt),
+      counters: {
+        reads: num(stats.backendReads),
+        writes: num(stats.backendWrites),
+        errors: num(stats.errors)
+      }
+    };
+  }
+
   function fallbackOpenAmount(invoice){
     return Math.max(0, num(invoice?.subtotal) + num(invoice?.tax) - num(invoice?.paid));
   }
@@ -133,6 +180,7 @@
 
   global.SmartBooksDashboardOperations = {
     operationsSummary,
+    persistenceSummary,
     dateWithin,
     addDaysISO
   };

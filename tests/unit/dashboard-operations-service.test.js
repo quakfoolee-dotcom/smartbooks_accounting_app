@@ -105,4 +105,61 @@ test("dashboard operations date helper treats overdue and next seven days as due
   assert.equal(service.dateWithin("", "2026-06-23", 7), false);
 });
 
+test("persistence summary reports local mode defaults", () => {
+  const service = loadDashboardOperationsService();
+  const summary = service.persistenceSummary({
+    mode:"local",
+    backendEndpoint:"/api/state",
+    stats:{}
+  });
+
+  assert.equal(summary.mode, "local");
+  assert.equal(summary.endpoint, "/api/state");
+  assert.equal(summary.level, "neutral");
+  assert.equal(summary.headline, "Local browser persistence");
+  assert.equal(summary.backendEnabled, false);
+  assert.deepEqual(summary.counters, { reads:0, writes:0, errors:0 });
+});
+
+test("persistence summary reports healthy backend diagnostics", () => {
+  const service = loadDashboardOperationsService();
+  const summary = service.persistenceSummary({
+    mode:"hybrid",
+    backendEndpoint:"/api/state-test",
+    stats:{
+      backendReads:2,
+      backendWrites:3,
+      errors:0,
+      lastBackendSavedAt:"2026-06-24T04:15:00.000Z"
+    }
+  });
+
+  assert.equal(summary.mode, "hybrid");
+  assert.equal(summary.endpoint, "/api/state-test");
+  assert.equal(summary.level, "good");
+  assert.equal(summary.headline, "Backend persistence connected");
+  assert.equal(summary.backendEnabled, true);
+  assert.equal(summary.lastBackendSavedAt, "2026-06-24T04:15:00.000Z");
+  assert.deepEqual(summary.counters, { reads:2, writes:3, errors:0 });
+});
+
+test("persistence summary surfaces backend errors for review", () => {
+  const service = loadDashboardOperationsService();
+  const summary = service.persistenceSummary({
+    mode:"backend",
+    backendEndpoint:"/api/state",
+    stats:{
+      backendReads:1,
+      backendWrites:1,
+      errors:2,
+      lastError:new Error("Backend save failed with HTTP 500.")
+    }
+  });
+
+  assert.equal(summary.level, "warn");
+  assert.equal(summary.headline, "Persistence needs review");
+  assert.equal(summary.detail, "Backend save failed with HTTP 500.");
+  assert.deepEqual(summary.counters, { reads:1, writes:1, errors:2 });
+});
+
 console.log("All dashboard operations service tests passed.");
