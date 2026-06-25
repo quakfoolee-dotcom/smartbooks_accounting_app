@@ -275,15 +275,26 @@ test("documented money-out manual flows preserve expense, A/P, and cash impact",
   const beforeBillTotals = await accountingTotals(page);
   const beforeBillOperatingChecking = await normalBalance(page, "1000");
 
-  await openModal(page, "bill");
-  await page.locator('[name="vendorId"]').selectOption("V-2002");
-  await page.locator('[name="expenseAccountId"]').selectOption("6100");
-  await page.locator('[name="status"]').selectOption({ label:"Open" });
-  await page.locator('[name="amount"]').fill("360");
-  await submitModal(page);
+  await page.evaluate(() => {
+    window.__smartBooksOriginalRandom = Math.random;
+    Math.random = () => ({ toString: () => "0.v0vaz" });
+  });
+  try {
+    await openModal(page, "bill");
+    await page.locator('[name="vendorId"]').selectOption("V-2002");
+    await page.locator('[name="expenseAccountId"]').selectOption("6100");
+    await page.locator('[name="status"]').selectOption({ label:"Open" });
+    await page.locator('[name="amount"]').fill("360");
+    await submitModal(page);
+  } finally {
+    await page.evaluate(() => {
+      if(window.__smartBooksOriginalRandom) Math.random = window.__smartBooksOriginalRandom;
+    });
+  }
 
   const afterBillState = await state(page);
   const bill = afterBillState.bills[0];
+  expect(bill.id).toBe("BILL-V0VAZ");
   expect(bill.amount).toBe(360);
   expect(bill.tax).toBe(18);
   expect(bill.paid).toBe(0);
