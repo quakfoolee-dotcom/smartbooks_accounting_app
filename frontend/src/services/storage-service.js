@@ -21,6 +21,7 @@
     lastBackendSavedAt: null,
     lastBackendSource: null,
     lastBackendCompanyId: null,
+    lastBackendRevision: null,
     lastBackendStateEmpty: false,
     lastError: null
   };
@@ -75,6 +76,10 @@
     };
   }
 
+  function revisionHeader(revision){
+    return revision ? { 'X-SmartBooks-State-Revision':String(revision) } : {};
+  }
+
   function isPlainObject(value){
     return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
   }
@@ -99,6 +104,14 @@
     catch(error){ throw new Error('Backend response was not valid JSON.'); }
   }
 
+  function backendError(payload, fallback){
+    const error = new Error(payload?.error || fallback);
+    if(payload?.code) error.code = payload.code;
+    if(payload?.expectedRevision !== undefined) error.expectedRevision = payload.expectedRevision;
+    if(payload?.currentRevision !== undefined) error.currentRevision = payload.currentRevision;
+    return error;
+  }
+
   async function loadBackend(options){
     const opts = options || {};
     stats.reads++;
@@ -109,14 +122,15 @@
         headers:backendHeaders(opts)
       });
       const payload = await readResponseJson(response);
-      if(!response.ok) throw new Error(payload.error || `Backend load failed with HTTP ${response.status}.`);
-      if(payload && payload.ok === false) throw new Error(payload.error || 'Backend load failed.');
+      if(!response.ok) throw backendError(payload, `Backend load failed with HTTP ${response.status}.`);
+      if(payload && payload.ok === false) throw backendError(payload, 'Backend load failed.');
       const envelope = backendEnvelope(payload, companyId(opts));
       const backendStateEmpty = Object.keys(envelope.state).length === 0;
       const loaded = normalizeLoaded(envelope.state, opts.fallback, opts.normalize);
       stats.lastLoadedAt = Date.now();
       stats.lastBackendSource = envelope.source || null;
       stats.lastBackendCompanyId = envelope.companyId || null;
+      stats.lastBackendRevision = envelope.revision || null;
       stats.lastBackendStateEmpty = backendStateEmpty;
       stats.lastError = null;
       return loaded;
@@ -134,22 +148,25 @@
     stats.writes++;
     stats.backendWrites++;
     try{
+      const revision = opts.revision || stats.lastBackendRevision || null;
       const envelope = {
         schemaVersion:1,
         companyId:companyId(opts),
         source:opts.source || 'backend',
+        ...(revision ? { revision } : {}),
         state:clone(state || {})
       };
       const response = await fetchClient(opts)(backendEndpoint(opts), {
         method:opts.method || 'PUT',
-        headers:backendHeaders(opts, { 'Content-Type':'application/json' }),
+        headers:backendHeaders(opts, { 'Content-Type':'application/json', ...revisionHeader(revision) }),
         body:JSON.stringify(envelope)
       });
       const payload = await readResponseJson(response);
-      if(!response.ok) throw new Error(payload.error || `Backend save failed with HTTP ${response.status}.`);
-      if(payload && payload.ok === false) throw new Error(payload.error || 'Backend save failed.');
+      if(!response.ok) throw backendError(payload, `Backend save failed with HTTP ${response.status}.`);
+      if(payload && payload.ok === false) throw backendError(payload, 'Backend save failed.');
       stats.lastSavedAt = Date.now();
       stats.lastBackendSavedAt = payload.savedAt || null;
+      stats.lastBackendRevision = payload.revision || stats.lastBackendRevision || null;
       stats.lastError = null;
       return { ok:true, savedAt:payload.savedAt || null, payload };
     }catch(error){

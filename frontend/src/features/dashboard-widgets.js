@@ -145,6 +145,7 @@
       level:'neutral',
       headline:'Local browser persistence',
       detail:'Local storage remains the default until migration safeguards are complete.',
+      revision:'Not loaded',
       lastBackendSavedAt:'Not saved yet',
       counters:{reads:0,writes:0,errors:0}
     };
@@ -158,6 +159,7 @@
       <div class="v30-persistence-grid">
         <div><span>Mode</span><strong>${escapeHTML(info.mode)}</strong></div>
         <div><span>Endpoint</span><strong title="${escapeHTML(info.endpoint)}">${escapeHTML(info.endpoint)}</strong></div>
+        <div><span>Revision</span><strong>${escapeHTML(info.revision || 'Not loaded')}</strong></div>
         <div><span>Last backend save</span><strong>${escapeHTML(info.lastBackendSavedAt)}</strong></div>
         <div><span>Backend reads</span><strong>${Number(counters.reads)||0}</strong></div>
         <div><span>Backend writes</span><strong>${Number(counters.writes)||0}</strong></div>
@@ -232,7 +234,7 @@
       body.v8-ui .v30-persistence-panel{grid-column:1/-1;display:grid;grid-template-columns:minmax(220px,.72fr) minmax(0,2.4fr);gap:14px;align-items:center;border:1px solid #d8e2ea;border-radius:16px;background:#fbfcfd;padding:13px 14px}
       body.v8-ui .v30-persistence-panel.warn{border-color:#fed7aa;background:#fffaf2}.v30-persistence-panel.good{border-color:#bbf7d0;background:#f6fff8}
       body.v8-ui .v30-persistence-copy span{display:block;font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#1d6f8f}.v30-persistence-copy strong{display:block;margin:4px 0 3px;font-size:16px;color:#061b37}.v30-persistence-copy p{margin:0;color:var(--muted,#667085);line-height:1.4}
-      body.v8-ui .v30-persistence-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+      body.v8-ui .v30-persistence-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
       body.v8-ui .v30-persistence-grid div{min-width:0;border:1px solid #e2e8ef;border-radius:12px;background:#fff;padding:9px 10px}.v30-persistence-grid span{display:block;font-size:11px;font-weight:900;color:#667085;text-transform:uppercase;letter-spacing:.04em}.v30-persistence-grid strong{display:block;margin-top:4px;color:#061b37;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
       body.v8-ui .v25-dashboard-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px;align-items:start}
       body.v8-ui .v25-widget{grid-column:span 4;min-width:0;position:relative}

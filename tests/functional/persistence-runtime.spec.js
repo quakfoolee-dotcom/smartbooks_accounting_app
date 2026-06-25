@@ -24,6 +24,7 @@ test("backend mode loads startup state and saves through async persistence", asy
             savedAt:"2026-06-24T04:30:00.000Z",
             source:"backend",
             companyId:"demo-company",
+            revision:"rev_000030",
             state:{ company:{ name:"Backend Books" }, settings:{} }
           }
         })
@@ -35,7 +36,7 @@ test("backend mode loads startup state and saves through async persistence", asy
       await route.fulfill({
         status:200,
         contentType:"application/json",
-        body:JSON.stringify({ ok:true, savedAt:"2026-06-24T04:31:00.000Z" })
+        body:JSON.stringify({ ok:true, savedAt:"2026-06-24T04:31:00.000Z", revision:"rev_000031" })
       });
       return;
     }
@@ -50,6 +51,7 @@ test("backend mode loads startup state and saves through async persistence", asy
   await page.evaluate(() => window.SmartBooksRuntimePersistence?.flushSaves?.());
 
   expect(writes.length, "backend mode should write through PUT after a user save").toBeGreaterThan(0);
+  expect(writes.at(-1).revision).toBe("rev_000030");
   expect(writes.at(-1).state.settings.privacyMode).toBe(true);
 });
 
@@ -69,6 +71,7 @@ test("backend mode restores saved state after reload without localStorage", asyn
             savedAt:"2026-06-24T04:50:00.000Z",
             source:"backend",
             companyId:"demo-company",
+            revision:"rev_000040",
             state:backendState
           }
         })
@@ -82,7 +85,7 @@ test("backend mode restores saved state after reload without localStorage", asyn
       await route.fulfill({
         status:200,
         contentType:"application/json",
-        body:JSON.stringify({ ok:true, savedAt:"2026-06-24T04:51:00.000Z" })
+        body:JSON.stringify({ ok:true, savedAt:"2026-06-24T04:51:00.000Z", revision:"rev_000041" })
       });
       return;
     }
@@ -160,6 +163,7 @@ test("hybrid mode migrates local state to empty backend after confirmation", asy
             savedAt:"2026-06-24T04:40:00.000Z",
             source:"backend",
             companyId:"demo-company",
+            revision:"rev_000050",
             state:{}
           }
         })
@@ -171,7 +175,7 @@ test("hybrid mode migrates local state to empty backend after confirmation", asy
       await route.fulfill({
         status:200,
         contentType:"application/json",
-        body:JSON.stringify({ ok:true, savedAt:"2026-06-24T04:41:00.000Z" })
+        body:JSON.stringify({ ok:true, savedAt:"2026-06-24T04:41:00.000Z", revision:"rev_000051" })
       });
       return;
     }
@@ -186,6 +190,7 @@ test("hybrid mode migrates local state to empty backend after confirmation", asy
   await expect(page.locator("#topCompanyName")).toContainText("Local Books");
   await expect.poll(() => writes.length).toBeGreaterThan(0);
   expect(writes[0].source).toBe("migration");
+  expect(writes[0].revision).toBe("rev_000050");
   expect(writes[0].state.company.name).toBe("Local Books");
   const backup = await page.evaluate(key => localStorage.getItem(`${key}_pre_backend_migration_backup`), "smartbooks_v71_state");
   expect(JSON.parse(backup).company.name).toBe("Local Books");
@@ -204,14 +209,14 @@ test("hybrid migration can be declined without backend writes", async ({ page })
         contentType:"application/json",
         body:JSON.stringify({
           ok:true,
-          data:{ schemaVersion:1, source:"backend", companyId:"demo-company", state:{} }
+          data:{ schemaVersion:1, source:"backend", companyId:"demo-company", revision:"rev_000060", state:{} }
         })
       });
       return;
     }
     if(request.method() === "PUT") {
       writes++;
-      await route.fulfill({ status:200, contentType:"application/json", body:JSON.stringify({ ok:true }) });
+      await route.fulfill({ status:200, contentType:"application/json", body:JSON.stringify({ ok:true, revision:"rev_000061" }) });
       return;
     }
     await route.continue();
@@ -240,7 +245,7 @@ test("hybrid migration save failure keeps local mode active", async ({ page }) =
         contentType:"application/json",
         body:JSON.stringify({
           ok:true,
-          data:{ schemaVersion:1, source:"backend", companyId:"demo-company", state:{} }
+          data:{ schemaVersion:1, source:"backend", companyId:"demo-company", revision:"rev_000070", state:{} }
         })
       });
       return;
@@ -267,4 +272,67 @@ test("hybrid migration save failure keeps local mode active", async ({ page }) =
   await expect.poll(() => writes).toBe(1);
   const mode = await page.evaluate(() => window.SmartBooksPersistence.mode);
   expect(mode).toBe("local");
+});
+
+test("backend revision conflict surfaces reload guidance without overwriting state", async ({ page }) => {
+  const writes = [];
+  await page.route("**/api/state", async route => {
+    const request = route.request();
+    if(request.method() === "GET") {
+      await route.fulfill({
+        status:200,
+        contentType:"application/json",
+        body:JSON.stringify({
+          ok:true,
+          data:{
+            schemaVersion:1,
+            savedAt:"2026-06-24T05:10:00.000Z",
+            source:"backend",
+            companyId:"demo-company",
+            revision:"rev_000080",
+            state:{ company:{ name:"Conflict Start" }, settings:{} }
+          }
+        })
+      });
+      return;
+    }
+    if(request.method() === "PUT") {
+      const payload = JSON.parse(request.postData() || "{}");
+      writes.push({
+        revision:payload.revision,
+        headerRevision:request.headers()["x-smartbooks-state-revision"],
+        company:payload.state?.company?.name || null
+      });
+      await route.fulfill({
+        status:409,
+        contentType:"application/json",
+        body:JSON.stringify({
+          ok:false,
+          error:"State revision conflict.",
+          code:"STATE_REVISION_CONFLICT",
+          expectedRevision:"rev_000080",
+          currentRevision:"rev_000081"
+        })
+      });
+      return;
+    }
+    await route.continue();
+  });
+
+  await openFreshApp(page, {
+    path:"/?sb_persistence=backend",
+    ignoredConsole:[/api\/state.*409|409.*api\/state|409 \(Conflict\)|State revision conflict/i]
+  });
+  await expect(page.locator("#topCompanyName")).toContainText("Conflict Start");
+
+  await openModal(page, "company");
+  await page.locator('#modalBody input[name="name"]').fill("Stale Local Edit");
+  await submitModal(page);
+  await page.evaluate(() => window.SmartBooksRuntimePersistence?.flushSaves?.());
+
+  await expect.poll(() => writes.length, { message:"save attempt should reach backend before conflict" }).toBeGreaterThan(0);
+  expect(writes.at(-1).revision).toBe("rev_000080");
+  expect(writes.at(-1).headerRevision).toBe("rev_000080");
+  await expect(page.locator(".v30-persistence-panel")).toContainText("Persistence conflict detected");
+  await expect(page.locator(".v30-persistence-panel")).toContainText("Reload latest company data");
 });

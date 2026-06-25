@@ -6,7 +6,9 @@ const path = require("node:path");
 const root = path.resolve(__dirname, "../..");
 const {
   createFileStatePersistenceAdapter,
+  INITIAL_REVISION,
   normalizeStatePayload,
+  nextRevision,
   stateEnvelope
 } = require(path.join(root, "backend/src/persistence-adapter.js"));
 
@@ -39,6 +41,7 @@ async function test(name, fn){
       assert.equal(envelope.schemaVersion, 1);
       assert.equal(envelope.source, "backend");
       assert.equal(envelope.companyId, "demo-company");
+      assert.equal(envelope.revision, INITIAL_REVISION);
       assert.deepEqual(envelope.state, {});
     });
   });
@@ -53,13 +56,43 @@ async function test(name, fn){
       });
 
       assert.ok(saved.savedAt);
+      assert.equal(saved.revision, nextRevision(INITIAL_REVISION));
       assert.equal(fs.existsSync(stateFile), true);
 
       const envelope = await adapter.read();
       assert.equal(envelope.schemaVersion, 1);
       assert.equal(envelope.companyId, "demo-company");
       assert.equal(envelope.source, "backend");
+      assert.equal(envelope.revision, saved.revision);
       assert.deepEqual(envelope.state, { company:{ name:"Adapter Co" }, invoices:[{ id:"INV-1" }] });
+    });
+  });
+
+  await test("file adapter rejects stale revisions without overwriting current state", async () => {
+    await withAdapter(async ({ adapter }) => {
+      const first = await adapter.write(stateEnvelope({ company:{ name:"Current Co" } }, { source:"backend" }));
+      const second = await adapter.write(
+        stateEnvelope({ company:{ name:"Updated Co" } }, { source:"backend", revision:first.revision }),
+        { expectedRevision:first.revision }
+      );
+
+      await assert.rejects(
+        () => adapter.write(
+          stateEnvelope({ company:{ name:"Stale Co" } }, { source:"backend", revision:first.revision }),
+          { expectedRevision:first.revision }
+        ),
+        error => {
+          assert.equal(error.statusCode, 409);
+          assert.equal(error.code, "STATE_REVISION_CONFLICT");
+          assert.equal(error.expectedRevision, first.revision);
+          assert.equal(error.currentRevision, second.revision);
+          return true;
+        }
+      );
+
+      const envelope = await adapter.read();
+      assert.equal(envelope.revision, second.revision);
+      assert.deepEqual(envelope.state, { company:{ name:"Updated Co" } });
     });
   });
 

@@ -1984,6 +1984,10 @@
     runtime.v63Installed=true;
     const v63SaveStateBase=saveState;
     const usesBackend=()=> typeof runtime.usesBackend==='function' ? runtime.usesBackend() : ['backend','hybrid'].includes(persistence.mode);
+    function refreshPersistenceDiagnostics(){
+      try{ if(typeof renderAll === 'function') renderAll(); }
+      catch(error){ console.warn('V63 persistence diagnostics refresh skipped', error); }
+    }
 
     function queueAsyncSave(snapshot){
       runtime.lastSavePromise = (runtime.lastSavePromise || Promise.resolve()).then(async()=>{
@@ -1999,6 +2003,7 @@
           runtime.lastSaveError=result?.error || new Error('Backend persistence save failed.');
           try{ persistence.saveSessionCopy(snapshot, { key:STORE_KEY+'_v63_unsaved_session_copy' }); }catch(e){}
           try{ showToast('Save warning: backend persistence did not accept the latest update.'); }catch(e){}
+          refreshPersistenceDiagnostics();
           return false;
         }
         runtime.lastSaveError=null;
@@ -2014,6 +2019,7 @@
         console.warn('V63 backend persistence save failed', error);
         try{ persistence.saveSessionCopy(snapshot, { key:STORE_KEY+'_v63_unsaved_session_copy' }); }catch(e){}
         try{ showToast('Save warning: backend persistence did not accept the latest update.'); }catch(e){}
+        refreshPersistenceDiagnostics();
         return false;
       });
       return runtime.lastSavePromise;

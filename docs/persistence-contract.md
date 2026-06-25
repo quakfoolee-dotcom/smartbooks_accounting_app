@@ -72,6 +72,7 @@ Response:
     "savedAt": "2026-06-23T00:00:00.000Z",
     "source": "backend",
     "companyId": "demo-company",
+    "revision": "rev_000001",
     "state": {}
   }
 }
@@ -89,9 +90,18 @@ Request:
 {
   "schemaVersion": 1,
   "companyId": "demo-company",
+  "revision": "rev_000001",
   "state": {}
 }
 ```
+
+The current revision may also be sent as a request header:
+
+```http
+X-SmartBooks-State-Revision: rev_000001
+```
+
+When backend state already exists, the write must include the latest revision from `GET /api/state`. First writes into an empty backend are allowed without a revision so migration can initialize storage safely.
 
 Response:
 
@@ -100,7 +110,20 @@ Response:
   "ok": true,
   "requestId": "sb-optional-trace-id",
   "companyId": "demo-company",
-  "savedAt": "2026-06-23T00:00:00.000Z"
+  "savedAt": "2026-06-23T00:00:00.000Z",
+  "revision": "rev_000002"
+}
+```
+
+Stale or missing revisions against an existing backend document return `409 Conflict` and leave the newer backend state intact:
+
+```json
+{
+  "ok": false,
+  "error": "State revision conflict.",
+  "code": "STATE_REVISION_CONFLICT",
+  "expectedRevision": "rev_000001",
+  "currentRevision": "rev_000002"
 }
 ```
 
@@ -141,6 +164,7 @@ Backend request validation should reject:
 - Missing or malformed `X-SmartBooks-Company-Id`
 - Payload `companyId` that does not match the request company scope
 - Reads or writes that would cross an existing persisted company scope
+- Stale or missing revisions when an existing backend state document is being overwritten
 
 Frontend validation should normalize:
 
@@ -154,7 +178,7 @@ Frontend validation should normalize:
 - Backend unavailable: show a non-destructive warning and keep local data available.
 - Save failure: keep the in-memory state, record the error in persistence status, and offer export/backup.
 - Load failure: do not reset state automatically.
-- Conflict: future work should add revision IDs before multi-user editing.
+- Conflict: keep an unsaved session copy, show reload guidance in persistence diagnostics, and do not overwrite the newer backend state.
 
 ## Security Notes
 
