@@ -5,7 +5,13 @@ const path = require("node:path");
 const { once } = require("node:events");
 
 const root = path.resolve(__dirname, "../..");
-const { COMPANY_ID_HEADER, createSmartBooksServer, normalizeStatePayload, stateEnvelope } = require(path.join(root, "backend/src/server.js"));
+const {
+  COMPANY_ID_HEADER,
+  REVISION_HEADER,
+  createSmartBooksServer,
+  normalizeStatePayload,
+  stateEnvelope
+} = require(path.join(root, "backend/src/server.js"));
 
 async function withServer(fn, options = {}){
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "smartbooks-state-api-"));
@@ -69,6 +75,7 @@ async function test(name, fn){
       assert.equal(result.body.ok, true);
       assert.equal(result.body.data.schemaVersion, 1);
       assert.equal(result.body.data.companyId, "demo-company");
+      assert.equal(result.body.data.revision, "rev_000001");
       assert.deepEqual(result.body.data.state, {});
       assert.equal(result.body.data.source, "backend");
     });
@@ -104,6 +111,7 @@ async function test(name, fn){
       assert.equal(saved.body.companyId, "demo-company");
       assert.ok(saved.body.requestId);
       assert.ok(saved.body.savedAt);
+      assert.equal(saved.body.revision, "rev_000002");
       assert.equal(fs.existsSync(stateFile), true);
 
       const loaded = await requestJson(baseUrl, "/api/state");
@@ -111,7 +119,46 @@ async function test(name, fn){
       assert.equal(loaded.body.data.schemaVersion, 1);
       assert.equal(loaded.body.data.companyId, "demo-company");
       assert.equal(loaded.body.data.source, "backend");
+      assert.equal(loaded.body.data.revision, saved.body.revision);
       assert.deepEqual(loaded.body.data.state, payload.state);
+    });
+  });
+
+  await test("state API rejects stale revisions without overwriting backend state", async () => {
+    await withServer(async ({ baseUrl }) => {
+      const first = await requestJson(baseUrl, "/api/state", {
+        method:"PUT",
+        body:{ schemaVersion:1, companyId:"demo-company", state:{ company:{ name:"First Co" } } }
+      });
+      assert.equal(first.status, 200);
+
+      const second = await requestJson(baseUrl, "/api/state", {
+        method:"PUT",
+        headers:{ [REVISION_HEADER]:first.body.revision },
+        body:{ schemaVersion:1, companyId:"demo-company", revision:first.body.revision, state:{ company:{ name:"Second Co" } } }
+      });
+      assert.equal(second.status, 200);
+
+      const stale = await requestJson(baseUrl, "/api/state", {
+        method:"PUT",
+        headers:{ [REVISION_HEADER]:first.body.revision },
+        body:{ schemaVersion:1, companyId:"demo-company", revision:first.body.revision, state:{ company:{ name:"Stale Co" } } }
+      });
+      assert.equal(stale.status, 409);
+      assert.equal(stale.body.code, "STATE_REVISION_CONFLICT");
+      assert.equal(stale.body.expectedRevision, first.body.revision);
+      assert.equal(stale.body.currentRevision, second.body.revision);
+
+      const missingRevision = await requestJson(baseUrl, "/api/state", {
+        method:"PUT",
+        body:{ schemaVersion:1, companyId:"demo-company", state:{ company:{ name:"No Revision Co" } } }
+      });
+      assert.equal(missingRevision.status, 409);
+      assert.equal(missingRevision.body.currentRevision, second.body.revision);
+
+      const loaded = await requestJson(baseUrl, "/api/state");
+      assert.equal(loaded.body.data.revision, second.body.revision);
+      assert.equal(loaded.body.data.state.company.name, "Second Co");
     });
   });
 
@@ -177,7 +224,13 @@ async function test(name, fn){
 
       const saved = await requestJson(baseUrl, "/api/state", {
         method:"PUT",
-        body:{ schemaVersion:1, companyId:"demo-company", state:{ company:{ name:"Injected Saved Co" } } }
+        headers:{ [REVISION_HEADER]:loaded.body.data.revision },
+        body:{
+          schemaVersion:1,
+          companyId:"demo-company",
+          revision:loaded.body.data.revision,
+          state:{ company:{ name:"Injected Saved Co" } }
+        }
       });
 
       assert.equal(saved.status, 200);

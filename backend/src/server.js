@@ -7,6 +7,7 @@ const {
   DEFAULT_COMPANY_ID,
   STATE_SCHEMA_VERSION,
   createFileStatePersistenceAdapter,
+  enforceExpectedRevision,
   normalizeStatePayload,
   stateEnvelope
 } = require("./persistence-adapter");
@@ -18,6 +19,7 @@ const PORT = Number(process.env.PORT || DEFAULT_PORT);
 const MAX_REQUEST_BODY_BYTES = 5 * 1024 * 1024;
 const COMPANY_ID_HEADER = "x-smartbooks-company-id";
 const REQUEST_ID_HEADER = "x-smartbooks-request-id";
+const REVISION_HEADER = "x-smartbooks-state-revision";
 const COMPANY_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{1,63}$/;
 
 const MIME_TYPES = {
@@ -69,6 +71,11 @@ function enforceCompanyScope(envelope, scope, action) {
   if (existingCompanyId !== scope.companyId && hasState) {
     throw httpError(403, `Company scope mismatch for ${action}.`);
   }
+}
+
+function expectedRevision(req, payload) {
+  const headerRevision = String(req.headers[REVISION_HEADER] || "").trim();
+  return headerRevision || payload?.expectedRevision || payload?.revision || null;
 }
 
 function readRequestBody(req) {
@@ -128,9 +135,17 @@ async function handleApi(req, res, pathname, options = {}) {
     }
     const current = await persistenceAdapter.read();
     enforceCompanyScope(current, scope, "state write");
+    const expected = expectedRevision(req, payload);
+    enforceExpectedRevision(current, expected);
     const envelope = normalizeStatePayload(payload, { companyId: scope.companyId });
-    const saved = await persistenceAdapter.write(envelope);
-    return sendJson(res, 200, { ok: true, requestId: scope.requestId, savedAt: saved.savedAt, companyId: saved.companyId });
+    const saved = await persistenceAdapter.write(envelope, { expectedRevision: expected });
+    return sendJson(res, 200, {
+      ok: true,
+      requestId: scope.requestId,
+      savedAt: saved.savedAt,
+      companyId: saved.companyId,
+      revision: saved.revision
+    });
   }
 
   return sendJson(res, 404, { error: "API route not found." });
@@ -169,7 +184,11 @@ function createSmartBooksServer(options = {}) {
 
       return serveStatic(req, res, url.pathname);
     } catch (error) {
-      return sendJson(res, error.statusCode || 500, { ok: false, error: error.message || "Unexpected server error." });
+      const payload = { ok: false, error: error.message || "Unexpected server error." };
+      if (error.code) payload.code = error.code;
+      if (error.expectedRevision !== undefined) payload.expectedRevision = error.expectedRevision;
+      if (error.currentRevision !== undefined) payload.currentRevision = error.currentRevision;
+      return sendJson(res, error.statusCode || 500, payload);
     }
   });
 }
@@ -188,6 +207,7 @@ module.exports = {
   stateEnvelope,
   COMPANY_ID_HEADER,
   REQUEST_ID_HEADER,
+  REVISION_HEADER,
   DEFAULT_COMPANY_ID,
   STATE_SCHEMA_VERSION
 };

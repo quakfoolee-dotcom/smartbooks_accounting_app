@@ -48,9 +48,9 @@ Do not enable backend persistence by default until each gate has an owner, imple
    - Include request ID, user ID, company ID, source, result, and timestamp.
 
 4. Add revision IDs and conflict handling.
-   - Include a revision or ETag in `GET /api/state`.
-   - Require the latest revision on `PUT /api/state`.
-   - Return `409 Conflict` for stale writes and keep the newer backend state intact.
+   - Include a revision or ETag in `GET /api/state`. **Completed for the file-backed adapter.**
+   - Require the latest revision on `PUT /api/state`. **Completed for existing backend documents.**
+   - Return `409 Conflict` for stale writes and keep the newer backend state intact. **Covered by adapter, API, storage, and browser tests.**
 
 5. Add server-side backups and restore workflow.
    - Implement `POST /api/state/backup`.
@@ -88,7 +88,7 @@ The existing persistence envelope remains valid, but production mode should add 
 `PUT /api/state` should eventually require:
 
 - `companyId`
-- current `revision`
+- current `revision` **Completed for the current backend persistence contract.**
 - authenticated user context
 - valid state envelope
 
@@ -98,7 +98,9 @@ Expected conflict response:
 {
   "ok": false,
   "error": "State revision conflict.",
-  "code": "STATE_REVISION_CONFLICT"
+  "code": "STATE_REVISION_CONFLICT",
+  "expectedRevision": "rev_000001",
+  "currentRevision": "rev_000002"
 }
 ```
 
@@ -110,7 +112,7 @@ Expected conflict response:
 | Company scoping | Allowed company can read/write; unauthorized company gets `403`. **Covered for backend state API.** |
 | Anonymous access | Anonymous write attempts fail in production mode. |
 | Audit events | Mutating endpoints create audit records with user/company/action/result. |
-| Revision conflicts | Stale writes return `409` and do not overwrite newer state. |
+| Revision conflicts | Stale writes return `409` and do not overwrite newer state. **Covered for the current file-backed backend.** |
 | Backup/restore | Backup, restore, and rollback paths work and preserve prior data. |
 | Performance | Larger state fixture stays within accepted startup and save budgets. |
 
@@ -120,7 +122,7 @@ Expected conflict response:
 |---|---|---|
 | P1 | Add backend persistence adapter contract | Completed for file-backed read/write/backup; extend the same contract when the database adapter is introduced. |
 | P1 | Add request identity and company scoping guard | Completed for request headers, frontend propagation, and cross-company read/write rejection. |
-| P1 | Add revision conflict protection | Prevents silent data loss from stale saves. |
+| P1 | Add revision conflict protection | Completed for the current file-backed backend; revisit when the database adapter lands. |
 | P2 | Add audit logging for state mutations | Creates operational and compliance traceability. |
 | P2 | Add server-side backup and restore endpoints | Gives recovery path before database migration. |
 | P2 | Add large-state performance fixture | Measures database-readiness with realistic data volume. |

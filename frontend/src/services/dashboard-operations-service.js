@@ -33,6 +33,10 @@
     return String(error);
   }
 
+  function errorCode(error){
+    return error && typeof error === "object" ? error.code : "";
+  }
+
   function timestampLabel(value){
     if(!value) return "Not saved yet";
     if(typeof value === "string") return value;
@@ -47,11 +51,16 @@
     const endpoint = status.backendEndpoint || "/api/state";
     const backendEnabled = mode === "backend" || mode === "hybrid";
     const lastError = compactError(stats.lastError);
+    const conflict = errorCode(stats.lastError) === "STATE_REVISION_CONFLICT";
     const level = lastError ? "warn" : (backendEnabled ? "good" : "neutral");
-    const headline = lastError
+    const headline = conflict
+      ? "Persistence conflict detected"
+      : lastError
       ? "Persistence needs review"
       : (backendEnabled ? "Backend persistence connected" : "Local browser persistence");
-    const detail = lastError
+    const detail = conflict
+      ? "Backend data changed in another session. Reload latest company data before saving again."
+      : lastError
       ? lastError
       : (backendEnabled
           ? "Backend save/load is available for this session."
@@ -64,6 +73,7 @@
       headline,
       detail,
       backendEnabled,
+      revision: stats.lastBackendRevision || "Not loaded",
       lastBackendSavedAt: timestampLabel(stats.lastBackendSavedAt),
       counters: {
         reads: num(stats.backendReads),

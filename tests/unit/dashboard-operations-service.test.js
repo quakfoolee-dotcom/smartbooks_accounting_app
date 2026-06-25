@@ -130,6 +130,7 @@ test("persistence summary reports healthy backend diagnostics", () => {
       backendReads:2,
       backendWrites:3,
       errors:0,
+      lastBackendRevision:"rev_000009",
       lastBackendSavedAt:"2026-06-24T04:15:00.000Z"
     }
   });
@@ -139,6 +140,7 @@ test("persistence summary reports healthy backend diagnostics", () => {
   assert.equal(summary.level, "good");
   assert.equal(summary.headline, "Backend persistence connected");
   assert.equal(summary.backendEnabled, true);
+  assert.equal(summary.revision, "rev_000009");
   assert.equal(summary.lastBackendSavedAt, "2026-06-24T04:15:00.000Z");
   assert.deepEqual(summary.counters, { reads:2, writes:3, errors:0 });
 });
@@ -160,6 +162,28 @@ test("persistence summary surfaces backend errors for review", () => {
   assert.equal(summary.headline, "Persistence needs review");
   assert.equal(summary.detail, "Backend save failed with HTTP 500.");
   assert.deepEqual(summary.counters, { reads:1, writes:1, errors:2 });
+});
+
+test("persistence summary surfaces revision conflicts with reload guidance", () => {
+  const service = loadDashboardOperationsService();
+  const error = new Error("State revision conflict.");
+  error.code = "STATE_REVISION_CONFLICT";
+  const summary = service.persistenceSummary({
+    mode:"backend",
+    backendEndpoint:"/api/state",
+    stats:{
+      backendReads:1,
+      backendWrites:1,
+      errors:1,
+      lastBackendRevision:"rev_000020",
+      lastError:error
+    }
+  });
+
+  assert.equal(summary.level, "warn");
+  assert.equal(summary.headline, "Persistence conflict detected");
+  assert.match(summary.detail, /Reload latest company data/);
+  assert.equal(summary.revision, "rev_000020");
 });
 
 console.log("All dashboard operations service tests passed.");

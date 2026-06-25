@@ -77,7 +77,7 @@ async function test(name, fn){
         calls.push({ url, options });
         return response(true, 200, {
           ok:true,
-          data:{ schemaVersion:1, state:{ company:{ name:"Backend Co" } } }
+          data:{ schemaVersion:1, revision:"rev_000010", state:{ company:{ name:"Backend Co" } } }
         });
       }
     }).configure({ backendEndpoint:"/api/state-test" });
@@ -89,6 +89,7 @@ async function test(name, fn){
     assert.equal(calls[0].options.method, "GET");
     assert.equal(calls[0].options.headers["X-SmartBooks-Company-Id"], "demo-company");
     assert.match(calls[0].options.headers["X-SmartBooks-Request-Id"], /.+/);
+    assert.equal(storage.getStatus().stats.lastBackendRevision, "rev_000010");
     assert.equal(storage.getStatus().stats.backendReads, 1);
   });
 
@@ -119,6 +120,69 @@ async function test(name, fn){
       state
     });
     assert.equal(storage.getStatus().stats.backendWrites, 1);
+  });
+
+  await test("backend storage sends the last loaded revision on save", async () => {
+    const calls = [];
+    const storage = loadStorageService({
+      fetch:async (url, options) => {
+        calls.push({ url, options });
+        if(options.method === "GET") {
+          return response(true, 200, {
+            ok:true,
+            data:{
+              schemaVersion:1,
+              companyId:"demo-company",
+              revision:"rev_000014",
+              state:{ company:{ name:"Revision Co" } }
+            }
+          });
+        }
+        return response(true, 200, {
+          ok:true,
+          savedAt:"2026-06-24T08:10:00.000Z",
+          revision:"rev_000015"
+        });
+      }
+    }).configure({ mode:"backend" });
+
+    await storage.loadAsync();
+    const result = await storage.saveAsync({ company:{ name:"Revision Saved Co" } });
+    const body = JSON.parse(calls[1].options.body);
+
+    assert.equal(result.ok, true);
+    assert.equal(calls[1].options.headers["X-SmartBooks-State-Revision"], "rev_000014");
+    assert.equal(body.revision, "rev_000014");
+    assert.equal(storage.getStatus().stats.lastBackendRevision, "rev_000015");
+  });
+
+  await test("backend storage preserves revision conflict details", async () => {
+    const storage = loadStorageService({
+      fetch:async (url, options) => {
+        if(options.method === "GET") {
+          return response(true, 200, {
+            ok:true,
+            data:{ schemaVersion:1, companyId:"demo-company", revision:"rev_000020", state:{} }
+          });
+        }
+        return response(false, 409, {
+          ok:false,
+          error:"State revision conflict.",
+          code:"STATE_REVISION_CONFLICT",
+          expectedRevision:"rev_000020",
+          currentRevision:"rev_000021"
+        });
+      }
+    }).configure({ mode:"backend" });
+
+    await storage.loadAsync();
+    const result = await storage.saveAsync({ company:{ name:"Conflict Co" } });
+
+    assert.equal(result.ok, false);
+    assert.equal(result.error.code, "STATE_REVISION_CONFLICT");
+    assert.equal(result.error.expectedRevision, "rev_000020");
+    assert.equal(result.error.currentRevision, "rev_000021");
+    assert.equal(storage.getStatus().stats.lastError.code, "STATE_REVISION_CONFLICT");
   });
 
   await test("backend mode loadAsync and saveAsync use the configured backend endpoint", async () => {
