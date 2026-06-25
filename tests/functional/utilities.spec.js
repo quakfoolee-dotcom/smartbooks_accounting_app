@@ -32,8 +32,12 @@ test("utilities export data and reset company data", async ({ page }) => {
 test("CSV import previews and applies customer rows with a backup", async ({ page }) => {
   await openFreshApp(page);
 
-  await page.evaluate(() => window.openModal("importData"));
+  await page.locator("#settingsBtn").click();
+  await expect(page.locator("#topbarPopover")).toHaveClass(/open/);
+  await expect(page.locator("#topbarPopover")).toContainText("Import CSV data");
+  await page.locator('#topbarPopover [data-action="open-import-data"]').click();
   await expect(page.locator("#modalBackdrop")).toHaveClass(/open/);
+  await expect(page.locator("#modalTitle")).toHaveText("Import data");
   await expect(page.locator("#importSubmit")).toBeDisabled();
 
   await page.locator("#importFile").setInputFiles({

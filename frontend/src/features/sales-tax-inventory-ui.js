@@ -2993,6 +2993,7 @@ var v816DefaultCategories = v816FeedCategories.map(c=>c.id);
       <div class="panel-row" data-nav="taxes"><div class="panel-row-main"><span class="panel-icon">◐</span><div><strong>Tax settings</strong><span>Tax agencies, rates, returns, adjustments, and payments.</span></div></div><button class="btn square">Open</button></div>
       <div class="panel-row" data-modal="customize"><div class="panel-row-main"><span class="panel-icon">☷</span><div><strong>Customize menu</strong><span>Show, hide, and restore module navigation.</span></div></div><button class="btn square">Open</button></div>
       <div class="panel-row" data-action="toggle-theme"><div class="panel-row-main"><span class="panel-icon">${state.settings.theme==='dark'?'🌙':'☀'}</span><div><strong>Appearance</strong><span>Current mode: ${state.settings.theme==='dark'?'Dark':'Light'}.</span></div></div><button class="btn square">Switch</button></div>
+      <div class="panel-row" data-action="open-import-data"><div class="panel-row-main"><span class="panel-icon">CSV</span><div><strong>Import CSV data</strong><span>Preview and import customers, vendors, products, or bank transactions.</span></div></div><button class="btn square">Open</button></div>
       <div class="panel-row" id="exportDataPanel"><div class="panel-row-main"><span class="panel-icon">⇩</span><div><strong>Backup / export data</strong><span>Download a JSON backup of this browser data.</span></div></div><button class="btn square">Export</button></div>
     </div><div class="top-panel-foot"><button class="btn primary" data-nav="settings">Open Settings page</button></div></div>`;
   }
@@ -3022,6 +3023,7 @@ var v816DefaultCategories = v816FeedCategories.map(c=>c.id);
       <div class="panel-row" data-modal="company"><div class="panel-row-main"><span class="panel-icon">🏢</span><div><strong>View company profile</strong><span>Company details and accounting basis.</span></div></div><button class="btn square">Open</button></div>
       <div class="panel-row" data-nav="apps"><div class="panel-row-main"><span class="panel-icon">☷</span><div><strong>My Apps</strong><span>Open enabled modules and workflows.</span></div></div><button class="btn square">Open</button></div>
       <div class="panel-row" data-modal="customize"><div class="panel-row-main"><span class="panel-icon">⚙</span><div><strong>Preferences</strong><span>Customize visible modules and dashboard settings.</span></div></div><button class="btn square">Open</button></div>
+      <div class="panel-row" data-action="open-import-data"><div class="panel-row-main"><span class="panel-icon">CSV</span><div><strong>Import CSV data</strong><span>Preview and import customers, vendors, products, or bank transactions.</span></div></div><button class="btn square">Open</button></div>
       <div class="panel-row" id="exportDataProfile"><div class="panel-row-main"><span class="panel-icon">⇩</span><div><strong>Backup / export data</strong><span>Download a JSON backup before clearing browser data.</span></div></div><button class="btn square">Export</button></div>
       <div class="panel-row" data-action="sign-out-demo"><div class="panel-row-main"><span class="panel-icon">↪</span><div><strong>Sign out</strong><span>Close company session on this device.</span></div></div><button class="btn square">Sign out</button></div>
     </div></div>`;
@@ -3050,6 +3052,7 @@ var v816DefaultCategories = v816FeedCategories.map(c=>c.id);
     if(action==='close-topbar-panel'){ closeTopbarPanel(); return; }
     if(action==='mark-notification-read'){ state.settings.readNotifications ||= []; if(id && !state.settings.readNotifications.includes(id)) state.settings.readNotifications.push(id); saveState(); updateNotificationBadge(); setTimeout(closeTopbarPanel,120); return v85HandleActionBase(action,id); }
     if(action==='mark-all-notifications-read'){ state.settings.readNotifications = appNotifications().map(n=>n.id); saveState(); updateNotificationBadge(); openTopbarPanel('notifications'); showToast('Notifications marked as read.'); return; }
+    if(action==='open-import-data'){ closeTopbarPanel(); openModal('importData'); return; }
     if(action==='sign-out-demo'){ closeTopbarPanel(); showToast('Signed out of this local demo session. Your browser data remains available.'); return; }
     const result = v85HandleActionBase(action,id); updateNotificationBadge(); return result;
   };
