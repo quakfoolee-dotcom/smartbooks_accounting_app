@@ -78,6 +78,15 @@ function expectedRevision(req, payload) {
   return headerRevision || payload?.expectedRevision || payload?.revision || null;
 }
 
+async function readJsonBody(req) {
+  const body = await readRequestBody(req);
+  try {
+    return body ? JSON.parse(body) : {};
+  } catch (error) {
+    throw validationError("Request body must be valid JSON.");
+  }
+}
+
 function readRequestBody(req) {
   return new Promise((resolve, reject) => {
     let body = "";
@@ -121,15 +130,59 @@ async function handleApi(req, res, pathname, options = {}) {
     return sendJson(res, 200, { ok: true, requestId: scope.requestId, data: envelope });
   }
 
+  if (pathname === `${API_PREFIX}/state/backup` && req.method === "POST") {
+    const scope = scopedRequest(req);
+    const payload = await readJsonBody(req);
+    const current = await persistenceAdapter.read();
+    enforceCompanyScope(current, scope, "state backup");
+    const backup = await persistenceAdapter.backup(payload.label || "manual");
+    return sendJson(res, 200, {
+      ok: true,
+      requestId: scope.requestId,
+      backup
+    });
+  }
+
+  if (pathname === `${API_PREFIX}/state/backups` && req.method === "GET") {
+    const scope = scopedRequest(req);
+    const current = await persistenceAdapter.read();
+    enforceCompanyScope(current, scope, "state backup list");
+    const backups = await persistenceAdapter.listBackups();
+    return sendJson(res, 200, {
+      ok: true,
+      requestId: scope.requestId,
+      backups: backups.filter(backup => !backup.invalid && backup.companyId === scope.companyId)
+    });
+  }
+
+  if (pathname === `${API_PREFIX}/state/restore` && req.method === "POST") {
+    const scope = scopedRequest(req);
+    const payload = await readJsonBody(req);
+    if (!payload.backupId) throw validationError("Restore request must include a backupId.");
+    const current = await persistenceAdapter.read();
+    enforceCompanyScope(current, scope, "state restore");
+    const expected = expectedRevision(req, payload);
+    enforceExpectedRevision(current, expected);
+    const backup = await persistenceAdapter.readBackup(payload.backupId);
+    enforceCompanyScope(backup, scope, "backup restore");
+    const restored = await persistenceAdapter.restoreBackup(payload.backupId, {
+      companyId: scope.companyId,
+      expectedRevision: expected,
+      source: "restore"
+    });
+    return sendJson(res, 200, {
+      ok: true,
+      requestId: scope.requestId,
+      backupId: payload.backupId,
+      companyId: restored.companyId,
+      savedAt: restored.savedAt,
+      revision: restored.revision
+    });
+  }
+
   if (pathname === `${API_PREFIX}/state` && (req.method === "POST" || req.method === "PUT")) {
     const scope = scopedRequest(req);
-    const body = await readRequestBody(req);
-    let payload = {};
-    try {
-      payload = body ? JSON.parse(body) : {};
-    } catch (error) {
-      throw validationError("Request body must be valid JSON.");
-    }
+    const payload = await readJsonBody(req);
     if (payload && payload.companyId && payload.companyId !== scope.companyId) {
       throw httpError(403, "State payload companyId does not match request company scope.");
     }

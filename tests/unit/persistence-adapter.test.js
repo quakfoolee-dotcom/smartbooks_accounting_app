@@ -126,12 +126,52 @@ async function test(name, fn){
       const backup = await adapter.backup("before-migration");
 
       assert.equal(backup.ok, true);
-      assert.equal(fs.existsSync(backup.path), true);
-      assert.equal(path.dirname(backup.path), backupDir);
+      assert.match(backup.id, /before-migration\.json$/);
+      const backupPath = path.join(backupDir, backup.id);
+      assert.equal(fs.existsSync(backupPath), true);
+      assert.equal(backup.companyId, "demo-company");
+      assert.ok(backup.revision);
 
-      const backupEnvelope = JSON.parse(fs.readFileSync(backup.path, "utf8"));
+      const backupEnvelope = JSON.parse(fs.readFileSync(backupPath, "utf8"));
       assert.equal(backupEnvelope.companyId, "demo-company");
       assert.deepEqual(backupEnvelope.state, { company:{ name:"Backup Co" } });
+    });
+  });
+
+  await test("file adapter lists and restores backup copies through validated envelopes", async () => {
+    await withAdapter(async ({ adapter }) => {
+      const first = await adapter.write(stateEnvelope({ company:{ name:"Original Co" } }, { source:"backend" }));
+      const backup = await adapter.backup("restore-point");
+      const second = await adapter.write(
+        stateEnvelope({ company:{ name:"Changed Co" } }, { source:"backend", revision:first.revision }),
+        { expectedRevision:first.revision }
+      );
+
+      const backups = await adapter.listBackups();
+      assert.equal(backups.length, 1);
+      assert.equal(backups[0].id, backup.id);
+      assert.equal(backups[0].companyId, "demo-company");
+
+      const restored = await adapter.restoreBackup(backup.id, {
+        companyId:"demo-company",
+        expectedRevision:second.revision
+      });
+      assert.equal(restored.source, "restore");
+      assert.notEqual(restored.revision, second.revision);
+      assert.deepEqual(restored.state, { company:{ name:"Original Co" } });
+    });
+  });
+
+  await test("file adapter rejects unsafe or missing backup ids", async () => {
+    await withAdapter(async ({ adapter }) => {
+      await assert.rejects(
+        () => adapter.readBackup("../outside.json"),
+        /Backup id/
+      );
+      await assert.rejects(
+        () => adapter.readBackup("missing.json"),
+        /Backup not found/
+      );
     });
   });
 

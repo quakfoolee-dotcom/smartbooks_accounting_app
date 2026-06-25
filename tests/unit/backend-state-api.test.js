@@ -162,6 +162,109 @@ async function test(name, fn){
     });
   });
 
+  await test("state API creates, lists, and restores scoped backups", async () => {
+    await withServer(async ({ baseUrl }) => {
+      const first = await requestJson(baseUrl, "/api/state", {
+        method:"PUT",
+        body:{ schemaVersion:1, companyId:"demo-company", state:{ company:{ name:"Backup Source Co" } } }
+      });
+      assert.equal(first.status, 200);
+
+      const backup = await requestJson(baseUrl, "/api/state/backup", {
+        method:"POST",
+        body:{ label:"before-restore" }
+      });
+      assert.equal(backup.status, 200);
+      assert.equal(backup.body.ok, true);
+      assert.match(backup.body.backup.id, /before-restore\.json$/);
+      assert.equal(backup.body.backup.companyId, "demo-company");
+      assert.equal(backup.body.backup.revision, first.body.revision);
+
+      const changed = await requestJson(baseUrl, "/api/state", {
+        method:"PUT",
+        headers:{ [REVISION_HEADER]:first.body.revision },
+        body:{
+          schemaVersion:1,
+          companyId:"demo-company",
+          revision:first.body.revision,
+          state:{ company:{ name:"Changed Before Restore Co" } }
+        }
+      });
+      assert.equal(changed.status, 200);
+
+      const backups = await requestJson(baseUrl, "/api/state/backups");
+      assert.equal(backups.status, 200);
+      assert.equal(backups.body.backups.length, 1);
+      assert.equal(backups.body.backups[0].id, backup.body.backup.id);
+
+      const restored = await requestJson(baseUrl, "/api/state/restore", {
+        method:"POST",
+        headers:{ [REVISION_HEADER]:changed.body.revision },
+        body:{ backupId:backup.body.backup.id, revision:changed.body.revision }
+      });
+      assert.equal(restored.status, 200);
+      assert.equal(restored.body.ok, true);
+      assert.equal(restored.body.companyId, "demo-company");
+      assert.ok(restored.body.revision);
+      assert.notEqual(restored.body.revision, changed.body.revision);
+
+      const loaded = await requestJson(baseUrl, "/api/state");
+      assert.equal(loaded.body.data.source, "restore");
+      assert.equal(loaded.body.data.revision, restored.body.revision);
+      assert.equal(loaded.body.data.state.company.name, "Backup Source Co");
+    });
+  });
+
+  await test("state API rejects invalid restore requests safely", async () => {
+    await withServer(async ({ baseUrl }) => {
+      const first = await requestJson(baseUrl, "/api/state", {
+        method:"PUT",
+        body:{ schemaVersion:1, companyId:"demo-company", state:{ company:{ name:"Restore Guard Co" } } }
+      });
+      const backup = await requestJson(baseUrl, "/api/state/backup", {
+        method:"POST",
+        body:{ label:"restore-guard" }
+      });
+      const changed = await requestJson(baseUrl, "/api/state", {
+        method:"PUT",
+        headers:{ [REVISION_HEADER]:first.body.revision },
+        body:{ schemaVersion:1, companyId:"demo-company", revision:first.body.revision, state:{ company:{ name:"Newer Co" } } }
+      });
+
+      const missingId = await requestJson(baseUrl, "/api/state/restore", {
+        method:"POST",
+        body:{ revision:changed.body.revision }
+      });
+      assert.equal(missingId.status, 400);
+      assert.match(missingId.body.error, /backupId/);
+
+      const unsafeId = await requestJson(baseUrl, "/api/state/restore", {
+        method:"POST",
+        headers:{ [REVISION_HEADER]:changed.body.revision },
+        body:{ backupId:"../restore-guard.json", revision:changed.body.revision }
+      });
+      assert.equal(unsafeId.status, 400);
+
+      const staleRestore = await requestJson(baseUrl, "/api/state/restore", {
+        method:"POST",
+        headers:{ [REVISION_HEADER]:first.body.revision },
+        body:{ backupId:backup.body.backup.id, revision:first.body.revision }
+      });
+      assert.equal(staleRestore.status, 409);
+      assert.equal(staleRestore.body.code, "STATE_REVISION_CONFLICT");
+
+      const missingBackup = await requestJson(baseUrl, "/api/state/restore", {
+        method:"POST",
+        headers:{ [REVISION_HEADER]:changed.body.revision },
+        body:{ backupId:"missing.json", revision:changed.body.revision }
+      });
+      assert.equal(missingBackup.status, 404);
+
+      const loaded = await requestJson(baseUrl, "/api/state");
+      assert.equal(loaded.body.data.state.company.name, "Newer Co");
+    });
+  });
+
   await test("state API rejects payloads outside the request company scope", async () => {
     await withServer(async ({ baseUrl }) => {
       const result = await requestJson(baseUrl, "/api/state", {
