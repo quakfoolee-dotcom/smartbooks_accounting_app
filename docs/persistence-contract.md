@@ -129,7 +129,74 @@ Stale or missing revisions against an existing backend document return `409 Conf
 
 ### `POST /api/state/backup`
 
-Future endpoint. Creates a named backup copy before destructive resets or migrations.
+Creates a named backup copy before destructive resets, restores, or migrations.
+
+Request:
+
+```json
+{
+  "label": "before-import"
+}
+```
+
+Response:
+
+```json
+{
+  "ok": true,
+  "requestId": "sb-optional-trace-id",
+  "backup": {
+    "id": "2026-06-24T12-00-00-000Z-before-import.json",
+    "label": "before-import",
+    "createdAt": "2026-06-24T12:00:00.000Z",
+    "sizeBytes": 1024,
+    "savedAt": "2026-06-24T11:55:00.000Z",
+    "companyId": "demo-company",
+    "source": "backend",
+    "revision": "rev_000002"
+  }
+}
+```
+
+### `GET /api/state/backups`
+
+Lists available backups for the scoped company.
+
+Response:
+
+```json
+{
+  "ok": true,
+  "requestId": "sb-optional-trace-id",
+  "backups": []
+}
+```
+
+### `POST /api/state/restore`
+
+Restores a selected backup for the scoped company. Restore is guarded by the current backend revision, just like state writes.
+
+Request:
+
+```json
+{
+  "backupId": "2026-06-24T12-00-00-000Z-before-import.json",
+  "revision": "rev_000003"
+}
+```
+
+Response:
+
+```json
+{
+  "ok": true,
+  "requestId": "sb-optional-trace-id",
+  "backupId": "2026-06-24T12-00-00-000Z-before-import.json",
+  "companyId": "demo-company",
+  "savedAt": "2026-06-24T12:05:00.000Z",
+  "revision": "rev_000004"
+}
+```
 
 ## Frontend Storage Modes
 
@@ -165,6 +232,8 @@ Backend request validation should reject:
 - Payload `companyId` that does not match the request company scope
 - Reads or writes that would cross an existing persisted company scope
 - Stale or missing revisions when an existing backend state document is being overwritten
+- Restore requests without a valid `backupId`
+- Restore requests that reference missing, malformed, cross-company, or stale-revision backups
 
 Frontend validation should normalize:
 
@@ -179,6 +248,7 @@ Frontend validation should normalize:
 - Save failure: keep the in-memory state, record the error in persistence status, and offer export/backup.
 - Load failure: do not reset state automatically.
 - Conflict: keep an unsaved session copy, show reload guidance in persistence diagnostics, and do not overwrite the newer backend state.
+- Restore failure: leave the current backend state untouched and return the specific validation, missing backup, scope, or revision error.
 
 ## Security Notes
 

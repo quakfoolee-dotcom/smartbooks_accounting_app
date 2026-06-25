@@ -96,6 +96,28 @@ function backupFileName(label, date = new Date()) {
   return `${stamp}-${safeLabel(label)}.json`;
 }
 
+function safeBackupId(id) {
+  const value = String(id || "").trim();
+  if (!/^[A-Za-z0-9_.-]+\.json$/.test(value)) throw validationError("Backup id must be a JSON backup filename.");
+  if (path.basename(value) !== value) throw validationError("Backup id must not include a path.");
+  return value;
+}
+
+function backupMetadata(backupPath, envelope) {
+  const id = path.basename(backupPath);
+  const stat = fs.statSync(backupPath);
+  return {
+    id,
+    label: id.replace(/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z-/, "").replace(/\.json$/, ""),
+    createdAt: stat.birthtime?.toISOString?.() || stat.mtime.toISOString(),
+    sizeBytes: stat.size,
+    savedAt: envelope.savedAt,
+    companyId: envelope.companyId,
+    source: envelope.source,
+    revision: envelope.revision
+  };
+}
+
 class FileStatePersistenceAdapter {
   constructor(options = {}) {
     if (!options.stateFile) throw new Error("FileStatePersistenceAdapter requires a stateFile path.");
@@ -135,11 +157,56 @@ class FileStatePersistenceAdapter {
     fs.writeFileSync(backupPath, JSON.stringify(envelope, null, 2));
     return {
       ok: true,
-      path: backupPath,
-      savedAt: envelope.savedAt,
-      companyId: envelope.companyId,
-      source: envelope.source
+      ...backupMetadata(backupPath, envelope)
     };
+  }
+
+  async listBackups() {
+    if (!fs.existsSync(this.backupDir)) return [];
+    const files = fs.readdirSync(this.backupDir)
+      .filter(file => file.endsWith(".json"))
+      .sort()
+      .reverse();
+    const backups = [];
+    for (const file of files) {
+      const backupPath = path.join(this.backupDir, file);
+      try {
+        const envelope = normalizeStatePayload(JSON.parse(fs.readFileSync(backupPath, "utf8")), { source: "backend" });
+        backups.push(backupMetadata(backupPath, envelope));
+      } catch (error) {
+        backups.push({
+          id: file,
+          label: file.replace(/\.json$/, ""),
+          createdAt: fs.statSync(backupPath).mtime.toISOString(),
+          sizeBytes: fs.statSync(backupPath).size,
+          invalid: true,
+          error: error.message
+        });
+      }
+    }
+    return backups;
+  }
+
+  async readBackup(id) {
+    const backupId = safeBackupId(id);
+    const backupPath = path.join(this.backupDir, backupId);
+    if (!backupPath.startsWith(this.backupDir)) throw validationError("Backup id is outside the backup directory.");
+    if (!fs.existsSync(backupPath)) {
+      const error = new Error("Backup not found.");
+      error.statusCode = 404;
+      throw error;
+    }
+    return normalizeStatePayload(JSON.parse(fs.readFileSync(backupPath, "utf8")), { source: "backend" });
+  }
+
+  async restoreBackup(id, options = {}) {
+    const backup = await this.readBackup(id);
+    const restored = stateEnvelope(backup.state, {
+      companyId: options.companyId || backup.companyId,
+      source: options.source || "restore",
+      revision: options.expectedRevision || backup.revision
+    });
+    return this.write(restored, { expectedRevision: options.expectedRevision });
   }
 }
 
@@ -159,5 +226,6 @@ module.exports = {
   normalizeStatePayload,
   nextRevision,
   revisionConflictError,
+  safeBackupId,
   stateEnvelope
 };

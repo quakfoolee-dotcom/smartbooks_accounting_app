@@ -53,9 +53,9 @@ Do not enable backend persistence by default until each gate has an owner, imple
    - Return `409 Conflict` for stale writes and keep the newer backend state intact. **Covered by adapter, API, storage, and browser tests.**
 
 5. Add server-side backups and restore workflow.
-   - Implement `POST /api/state/backup`.
-   - Add restore as an explicit admin-only operation.
-   - Test backup failure, restore failure, and oversized backup rejection.
+   - Implement `POST /api/state/backup`. **Completed for the file-backed adapter.**
+   - Add restore as an explicit admin-only operation. **Restore endpoint is implemented and revision-guarded; role-aware admin authorization remains future production work.**
+   - Test backup failure, restore failure, and oversized backup rejection. **Covered for create/list/restore, invalid backup IDs, missing backups, stale restore revisions, and request body limits.**
 
 6. Add database adapter behind the proven contract.
    - Start with one company, one state document, and audit rows.
@@ -113,7 +113,7 @@ Expected conflict response:
 | Anonymous access | Anonymous write attempts fail in production mode. |
 | Audit events | Mutating endpoints create audit records with user/company/action/result. |
 | Revision conflicts | Stale writes return `409` and do not overwrite newer state. **Covered for the current file-backed backend.** |
-| Backup/restore | Backup, restore, and rollback paths work and preserve prior data. |
+| Backup/restore | Backup, restore, and rollback paths work and preserve prior data. **Covered for the current file-backed backend.** |
 | Performance | Larger state fixture stays within accepted startup and save budgets. |
 
 ## Next Issues To Create
