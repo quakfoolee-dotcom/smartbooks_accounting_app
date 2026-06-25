@@ -1328,7 +1328,16 @@
       body.v8-ui .estimate-payment-followups{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
       body.v8-ui .estimate-payment-followup{border:1px solid #e1e8ef;border-radius:14px;background:#fff;padding:12px}
       body.v8-ui .estimate-payment-followup strong{display:block}.estimate-payment-followup span{display:block;color:var(--muted,#667085);font-size:12px;margin-top:3px;line-height:1.3}
-      body.v8-ui.dark-mode .estimate-payment-card{background:#14202d;border-color:#2a3c4f}.v8-ui.dark-mode .estimate-payment-stat,.v8-ui.dark-mode .estimate-payment-step,.v8-ui.dark-mode .estimate-payment-followup{background:#101b27;border-color:#2a3c4f;color:#e8edf3}.v8-ui.dark-mode .estimate-payment-head h3,.v8-ui.dark-mode .estimate-payment-step strong,.v8-ui.dark-mode .estimate-payment-stat strong{color:#f8fafc}
+      body.v8-ui.dark-mode .estimate-payment-card{background:#14202d;border-color:#2a3c4f}
+      body.v8-ui.dark-mode .estimate-payment-stat,body.v8-ui.dark-mode .estimate-payment-step,body.v8-ui.dark-mode .estimate-payment-followup{background:#101b27!important;border-color:#2a3c4f!important;color:#e8edf3!important}
+      body.v8-ui.dark-mode .estimate-payment-step.attention{background:#2b2116!important;border-color:#8a5a22!important}
+      body.v8-ui.dark-mode .estimate-payment-step.done{background:#10271b!important;border-color:#2f6845!important}
+      body.v8-ui.dark-mode .estimate-payment-head h3,body.v8-ui.dark-mode .estimate-payment-step strong,body.v8-ui.dark-mode .estimate-payment-stat strong,body.v8-ui.dark-mode .estimate-payment-followup strong{color:#f8fafc!important}
+      body.v8-ui.dark-mode .estimate-payment-head p,body.v8-ui.dark-mode .estimate-payment-step small,body.v8-ui.dark-mode .estimate-payment-stat span,body.v8-ui.dark-mode .estimate-payment-followup span{color:#cbd5e1!important}
+      body.v8-ui.dark-mode .estimate-payment-step:after{color:#7f91a6}
+      body.v8-ui.dark-mode .estimate-payment-icon{background:#0f172a!important;border-color:#8ecae6!important;color:#e6f6ff!important}
+      body.v8-ui.dark-mode .estimate-payment-step.attention .estimate-payment-icon{border-color:#f59e0b!important;color:#ffd39a!important}
+      body.v8-ui.dark-mode .estimate-payment-step.done .estimate-payment-icon{border-color:#22c55e!important;color:#86efac!important}
       @media(max-width:1280px){body.v8-ui .estimate-payment-summary{grid-template-columns:repeat(3,minmax(0,1fr))}body.v8-ui .estimate-payment-flow{grid-template-columns:repeat(4,minmax(108px,1fr))}.estimate-payment-step:after{display:none}}
       @media(max-width:760px){body.v8-ui .estimate-payment-summary,body.v8-ui .estimate-payment-flow,body.v8-ui .estimate-payment-followups{grid-template-columns:1fr}.estimate-payment-head{display:block}}
     `;

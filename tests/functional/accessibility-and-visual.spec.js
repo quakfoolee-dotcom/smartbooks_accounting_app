@@ -182,3 +182,50 @@ test("workflow table sections avoid side-by-side table-card grids", async ({ pag
   await page.locator('[data-action="set-tax-tab"][data-id="settings"]').click();
   await assertNoTablePairs("tax settings");
 });
+
+test("dark mode keeps estimate-to-payment workflow text readable", async ({ page }) => {
+  await openFreshApp(page);
+  await navigateTo(page, "getthingsdone");
+  await page.evaluate(() => {
+    document.body.classList.add("dark-mode");
+    document.body.classList.add("v8-ui");
+  });
+  await expect(page.locator(".estimate-payment-step").first()).toBeVisible();
+
+  const audit = await page.locator(".estimate-payment-step").evaluateAll(steps => {
+    const rgb = value => {
+      const match = String(value || "").match(/rgba?\(([^)]+)\)/);
+      if(!match) return null;
+      return match[1].split(",").slice(0, 3).map(part => Number.parseFloat(part.trim()));
+    };
+    const luminance = color => {
+      const [r, g, b] = color.map(channel => {
+        const value = channel / 255;
+        return value <= 0.03928 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
+      });
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+    const ratio = (fg, bg) => {
+      const [light, dark] = [luminance(fg), luminance(bg)].sort((a, b) => b - a);
+      return (light + 0.05) / (dark + 0.05);
+    };
+    const readable = element => {
+      const stepStyle = getComputedStyle(element);
+      const bg = rgb(stepStyle.backgroundColor);
+      const title = element.querySelector("strong");
+      const detail = element.querySelector("small");
+      return [title, detail].map(target => {
+        const fg = rgb(getComputedStyle(target).color);
+        return {
+          text: target.textContent.trim(),
+          contrast: Math.round(ratio(fg, bg) * 100) / 100,
+          foreground: getComputedStyle(target).color,
+          background: stepStyle.backgroundColor
+        };
+      });
+    };
+    return steps.flatMap(readable).filter(item => item.contrast < 4.5);
+  });
+
+  expect(audit, "dark workflow step text contrast").toEqual([]);
+});
