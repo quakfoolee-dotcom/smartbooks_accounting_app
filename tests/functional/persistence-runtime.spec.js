@@ -9,6 +9,14 @@ const {
 
 installSmartBooksChecks();
 
+async function openStorageSettingsPanel(page) {
+  await page.evaluate(() => window.navigate("settings"));
+  await expect(page.locator("#page-settings.active")).toBeVisible();
+  const panel = page.locator("#page-settings .v30-persistence-panel");
+  await expect(panel).toBeVisible();
+  return panel;
+}
+
 test("backend mode loads startup state and saves through async persistence", async ({ page }) => {
   const writes = [];
   await page.route("**/api/state", async route => {
@@ -45,10 +53,13 @@ test("backend mode loads startup state and saves through async persistence", asy
 
   await openFreshApp(page, "/?sb_persistence=backend");
   await expect(page.locator("#topCompanyName")).toContainText("Backend Books");
-  await expect(page.locator(".v30-persistence-panel")).toContainText("Backend sync healthy");
-  await expect(page.locator(".v30-persistence-panel [data-action='retry-backend-save']")).toContainText("Retry save");
+  const panel = await openStorageSettingsPanel(page);
+  await expect(panel).toContainText("Backend sync healthy");
+  await expect(panel.locator("[data-action='retry-backend-save']")).toContainText("Retry save");
 
-  await page.locator('[data-action="toggle-privacy"]').click();
+  await page.evaluate(() => window.navigate("dashboard"));
+  await expect(page.locator("#page-dashboard.active")).toBeVisible();
+  await page.locator('#page-dashboard [data-action="toggle-privacy"]').first().click();
   await page.evaluate(() => window.SmartBooksRuntimePersistence?.flushSaves?.());
 
   expect(writes.length, "backend mode should write through PUT after a user save").toBeGreaterThan(0);
@@ -159,16 +170,19 @@ test("backend load failure does not save fallback state to backend", async ({ pa
     path:"/?sb_persistence=backend",
     ignoredConsole:[/api\/state.*500|500.*api\/state|status of 500/i]
   });
-  const panel = page.locator(".v30-persistence-panel");
+  const panel = await openStorageSettingsPanel(page);
   await expect(panel).toContainText("Storage needs attention");
   await expect(panel).toContainText("Retry load");
   await expect(panel).toContainText("Retry save");
   await expect(panel).toContainText("Export backup");
-  await page.locator('[data-action="toggle-privacy"]').click();
+  await page.evaluate(() => window.navigate("dashboard"));
+  await expect(page.locator("#page-dashboard.active")).toBeVisible();
+  await page.locator('#page-dashboard [data-action="toggle-privacy"]').first().click();
   await page.evaluate(() => window.SmartBooksRuntimePersistence?.flushSaves?.());
 
   expect(writes, "backend mode must not write fallback/demo state after a failed load").toBe(0);
 
+  await openStorageSettingsPanel(page);
   await panel.locator('[data-action="retry-backend-load"]').click();
   await expect(page.locator("#topCompanyName")).toContainText("Recovered Backend");
   await expect(panel).toContainText("Backend sync healthy");
@@ -258,7 +272,8 @@ test("hybrid migration can be declined without backend writes", async ({ page })
   await page.waitForTimeout(250);
 
   expect(writes).toBe(0);
-  await expect(page.locator(".v30-persistence-panel")).toContainText("Backend sync healthy");
+  const panel = await openStorageSettingsPanel(page);
+  await expect(panel).toContainText("Backend sync healthy");
 });
 
 test("hybrid migration save failure keeps local mode active", async ({ page }) => {
@@ -362,7 +377,7 @@ test("backend revision conflict surfaces reload guidance without overwriting sta
   await expect.poll(() => writes.length, { message:"save attempt should reach backend before conflict" }).toBeGreaterThan(0);
   expect(writes.at(-1).revision).toBe("rev_000080");
   expect(writes.at(-1).headerRevision).toBe("rev_000080");
-  const panel = page.locator(".v30-persistence-panel");
+  const panel = await openStorageSettingsPanel(page);
   await expect(panel).toContainText("Newer backend data available");
   await expect(panel).toContainText("reload latest company data");
   await expect(panel.locator('[data-action="retry-backend-load"]')).toContainText("Reload latest");

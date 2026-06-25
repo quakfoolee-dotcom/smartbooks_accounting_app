@@ -45,8 +45,15 @@ test("dashboard operations console summarizes attention, money, cash, and work",
   await expect(console.locator(".v25-ops-item").nth(2)).toContainText("Money out");
   await expect(console.locator(".v25-ops-item").nth(3)).toContainText("Cash position");
   await expect(console.locator(".v25-ops-item").nth(4)).toContainText("Open work");
+  await expect(console.locator('[data-modal="payment"]')).toBeVisible();
+  await expect(console.locator('[data-modal="payBill"]')).toBeVisible();
+  await expect(console.locator('[data-nav="banking"]')).toBeVisible();
+  await expect(console.locator('[data-action="open-setup-checklist"]')).toBeVisible();
 
-  const persistence = console.locator(".v30-persistence-panel");
+  await expect(console.locator(".v30-persistence-panel")).toHaveCount(0);
+  await page.evaluate(() => window.navigate("settings"));
+  await expect(page.locator("#page-settings.active")).toBeVisible();
+  const persistence = page.locator("#page-settings .v30-persistence-panel");
   await expect(persistence).toBeVisible();
   await expect(persistence).toContainText("Storage status");
   await expect(persistence).toContainText("Saved in this browser");
@@ -58,12 +65,9 @@ test("dashboard operations console summarizes attention, money, cash, and work",
   await expect(persistence).toContainText("Backend writes");
   await expect(persistence).toContainText("Errors");
   await expect(persistence.locator('[data-action="export-persistence-backup"]')).toContainText("Export backup");
-  await expect(persistence.locator('[data-action="open-persistence-settings"]')).toContainText("Open settings");
-
-  await expect(console.locator('[data-modal="payment"]')).toBeVisible();
-  await expect(console.locator('[data-modal="payBill"]')).toBeVisible();
-  await expect(console.locator('[data-nav="banking"]')).toBeVisible();
-  await expect(console.locator('[data-action="open-setup-checklist"]')).toBeVisible();
+  await expect(persistence.locator('[data-action="open-persistence-settings"]')).toHaveCount(0);
+  await page.evaluate(() => window.navigate("dashboard"));
+  await expect(page.locator("#page-dashboard.active")).toBeVisible();
   await console.locator('[data-action="open-setup-checklist"]').click();
   await expect(page.locator("#page-setup.active")).toContainText("Setup Checklist");
   await expect(page.locator("#page-setup.active")).toContainText("Progress");
