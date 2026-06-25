@@ -4180,6 +4180,11 @@ var v816DefaultCategories = v816FeedCategories.map(c=>c.id);
         .replace(/Reset\s+sample data/gi,'Reset company data')
         .replace(/Export JSON/gi,'Export backup');
     });
+    const dataCard=Array.from(dataCards).find(card=>/Data/i.test(card.querySelector('h3')?.textContent || ''));
+    const dataActions=dataCard?.querySelector('div[style*="flex"]');
+    if(dataActions && !dataActions.querySelector('[data-modal="importData"]')){
+      dataActions.insertAdjacentHTML('afterbegin','<button class="btn" data-modal="importData">Import CSV</button>');
+    }
     document.getElementById('exportData2')?.addEventListener('click', exportData);
     document.getElementById('resetDemo2')?.addEventListener('click', resetState);
     v812CleanVisibleText(el);

@@ -198,6 +198,7 @@
   let currentPage = 'dashboard';
   let currentModal = null;
   let lastModalFocus = null;
+  let pendingImportPlan = null;
 
   function loadLocalState(){
     try{
@@ -641,13 +642,15 @@
     const active = document.activeElement;
     if(active && !document.getElementById('modalBackdrop')?.contains(active)) lastModalFocus = active;
     currentModal = type;
+    pendingImportPlan = type === 'importData' ? null : pendingImportPlan;
     const isDetail = type.startsWith('bankTxDetail:');
-    const titles = {invoice:['Create invoice','Post debit Accounts Receivable and credit revenue / sales tax.'], expense:['Record expense','Post debit expense / input tax credit and credit bank or credit card.'], customer:['Add customer','Create a customer record.'], vendor:['Add vendor','Create a supplier record.'], bill:['Create bill','Post debit expense / input tax credit and credit Accounts Payable.'], payBill:['Pay bill','Post debit Accounts Payable and credit bank.'], deposit:['Bank deposit','Post debit bank and credit selected income account.'], bankTx:['Add bank transaction','Create an imported bank-feed style transaction for review and categorization.'], reconcile:['Bank reconciliation','Record statement balance and compare with book balance / cleared activity.'], transfer:['Transfer','Move funds between bank accounts using balanced ledger lines.'], product:['Add product/service','Create an item with a linked income account.'], payment:['Receive payment','Post debit bank and credit Accounts Receivable.'], estimate:['Create estimate','Create a non-posting quote.'], time:['Add time entry','Capture billable/non-billable hours.'], project:['New project','Create a project record.'], company:['Company settings','Update company profile and default tax rate.'], customize:['Customize app menus','Choose visible navigation modules.'], journal:['Journal entry','Create a balanced two-line manual journal entry.'], account:['Add account','Add a new account to the chart of accounts.'] };
+    const isImport = type === 'importData';
+    const titles = {invoice:['Create invoice','Post debit Accounts Receivable and credit revenue / sales tax.'], expense:['Record expense','Post debit expense / input tax credit and credit bank or credit card.'], customer:['Add customer','Create a customer record.'], vendor:['Add vendor','Create a supplier record.'], bill:['Create bill','Post debit expense / input tax credit and credit Accounts Payable.'], payBill:['Pay bill','Post debit Accounts Payable and credit bank.'], deposit:['Bank deposit','Post debit bank and credit selected income account.'], bankTx:['Add bank transaction','Create an imported bank-feed style transaction for review and categorization.'], reconcile:['Bank reconciliation','Record statement balance and compare with book balance / cleared activity.'], transfer:['Transfer','Move funds between bank accounts using balanced ledger lines.'], product:['Add product/service','Create an item with a linked income account.'], payment:['Receive payment','Post debit bank and credit Accounts Receivable.'], estimate:['Create estimate','Create a non-posting quote.'], time:['Add time entry','Capture billable/non-billable hours.'], project:['New project','Create a project record.'], company:['Company settings','Update company profile and default tax rate.'], customize:['Customize app menus','Choose visible navigation modules.'], journal:['Journal entry','Create a balanced two-line manual journal entry.'], account:['Add account','Add a new account to the chart of accounts.'], importData:['Import data','Upload CSV records, preview validation, then apply reviewed rows.'] };
     const [title, sub] = isDetail ? ['Transaction detail drawer','Review bank-feed details, suggested match, and posting preview.'] : (titles[type] || [type, 'Choose an available action or complete the related setup.']);
     document.getElementById('modalTitle').textContent = title;
     document.getElementById('modalSubtitle').textContent = sub;
     document.getElementById('modalBody').innerHTML = modalBodyContent(type);
-    document.getElementById('modalFooter').innerHTML = isDetail ? '<button type="button" class="btn" id="cancelModal">Close</button>' : '<button type="button" class="btn" id="cancelModal">Cancel</button><button type="submit" class="btn primary">Save</button>';
+    document.getElementById('modalFooter').innerHTML = isDetail ? '<button type="button" class="btn" id="cancelModal">Close</button>' : (isImport ? '<button type="button" class="btn" id="cancelModal">Cancel</button><button type="submit" class="btn primary" id="importSubmit" disabled>Import reviewed rows</button>' : '<button type="button" class="btn" id="cancelModal">Cancel</button><button type="submit" class="btn primary">Save</button>');
     document.getElementById('cancelModal').addEventListener('click', closeModal);
     document.getElementById('modalBackdrop').classList.add('open');
     bindModalLiveCalculations(type);
@@ -658,6 +661,7 @@
   function accountOptions(filterTypes=null){ return state.chartOfAccounts.filter(a=>!filterTypes || filterTypes.includes(a.type)).map(a=>`<option value="${a.id}">${a.code} · ${escapeHTML(a.name)}</option>`).join(''); }
   function productOptions(){ return state.products.map(p=>`<option value="${p.id}" data-price="${p.price}" data-account="${p.incomeAccountId||'4000'}">${escapeHTML(p.name)} · ${money(p.price)}</option>`).join(''); }
   function modalBodyContent(type){
+    if(type==='importData') return importDataBody();
     if(type==='invoice') return `<div class="form-grid"><div class="field"><label>Customer</label><select name="customerId">${customerOptions()}</select></div><div class="field"><label>Invoice date</label><input type="date" name="date" value="${todayISO()}" required></div><div class="field"><label>Due date</label><input type="date" name="dueDate" value="${addDaysISO(30)}" required></div><div class="field"><label>Status</label><select name="status"><option>Sent</option><option>Draft</option><option>Overdue</option></select></div><div class="field full"><label>Product / service</label><select id="invoiceProduct" name="productId">${productOptions()}</select></div><div class="field full"><label>Description</label><input id="invoiceDesc" name="desc" value="Consulting service" required></div><div class="field"><label>Qty</label><input id="invoiceQty" type="number" step="0.01" min="0" name="qty" value="1" required></div><div class="field"><label>Rate</label><input id="invoiceRate" type="number" step="0.01" min="0" name="rate" value="125" required></div><div class="field"><label>Sales tax %</label><input id="invoiceTax" type="number" step="0.01" min="0" name="taxRate" value="${state.company.salesTax}" required></div><div class="field"><label>Income account</label><select id="invoiceIncome" name="incomeAccountId">${accountOptions(['Income'])}</select></div></div><div class="inline-total"><span>Invoice total</span><span id="invoiceTotalPreview">$0.00</span></div>`;
     if(type==='expense') return `<div class="form-grid"><div class="field"><label>Vendor</label><select name="vendorId">${vendorOptions()}</select></div><div class="field"><label>Date</label><input type="date" name="date" value="${todayISO()}"></div><div class="field"><label>Expense account</label><select name="expenseAccountId">${accountOptions(['Expense','COGS'])}</select></div><div class="field"><label>Payment method</label><select name="paymentMethod"><option>Bank transfer</option><option>Credit card</option><option>Cash</option></select></div><div class="field"><label>Paid from</label><select name="bankAccountId">${bankOptions()}</select></div><div class="field"><label>Amount before tax</label><input id="expenseAmount" type="number" step="0.01" min="0" name="amount" value="100"></div><div class="field"><label>Tax / ITC</label><input id="expenseTax" type="number" step="0.01" min="0" name="tax" value="5"></div><div class="field full"><label>Memo</label><input name="memo" value="Business expense"></div></div><div class="inline-total"><span>Expense total</span><span id="expenseTotalPreview">$0.00</span></div>`;
     if(type==='customer') return `<div class="form-grid"><div class="field"><label>Name</label><input name="name" required></div><div class="field"><label>Company</label><input name="company"></div><div class="field"><label>Email</label><input type="email" name="email"></div><div class="field"><label>Phone</label><input name="phone"></div><div class="field"><label>Type</label><select name="type"><option>Commercial</option><option>Residential</option><option>Government</option><option>Education</option></select></div></div>`;
@@ -680,8 +684,68 @@
     if(type==='account') return `<div class="form-grid"><div class="field"><label>Code</label><input name="code" value="${nextAccountCode()}" required></div><div class="field"><label>Name</label><input name="name" required></div><div class="field"><label>Type</label><select name="type"><option>Asset</option><option>Liability</option><option>Equity</option><option>Income</option><option>COGS</option><option>Expense</option></select></div><div class="field"><label>Normal balance</label><select name="normal"><option>Debit</option><option>Credit</option></select></div><div class="field full"><label>Detail</label><input name="detail" value="Custom account"></div></div>`;
     return `<div class="empty"><strong>${escapeHTML(type)}</strong> is not available yet. Choose an available action from + New or complete the related setup.</div>`;
   }
+  function importDataBody(){
+    const importer=window.SmartBooksImport;
+    const typeOptions=Object.entries(importer?.types || {}).map(([id,cfg])=>`<option value="${id}">${escapeHTML(cfg.label)}</option>`).join('');
+    return `<div class="form-grid"><div class="field"><label>Data type</label><select name="importType" id="importType">${typeOptions}</select></div><div class="field"><label>CSV file</label><input type="file" name="importFile" id="importFile" accept=".csv,text/csv" required></div><div class="field full"><div class="empty"><strong>CSV import starts with low-risk records.</strong><br>Customers, vendors, products/services, and bank transactions can be imported. Bank transactions import as unreviewed and unposted.</div></div></div><div class="toolbar" style="margin-top:12px"><div><h3 style="margin:0">Preview</h3><div class="muted small" id="importStatus">Choose a CSV file to validate rows before importing.</div></div><button class="btn" type="button" id="downloadImportTemplate">Download template</button></div><div id="importPreview" class="card table-card" style="margin-top:10px"><div class="empty">No file selected.</div></div>`;
+  }
+  function renderImportPreview(plan){
+    if(!plan) return '<div class="empty">No validated rows yet.</div>';
+    const rows=(plan.entries||[]).slice(0,10).map(entry=>{
+      const record=entry.record||{};
+      const label=record.name || record.description || record.id || 'Row';
+      return [entry.rowNumber, tagForStatus(entry.action), escapeHTML(label), escapeHTML(record.id||''), escapeHTML((entry.messages||[]).join('; '))];
+    });
+    const summary=plan.summary || {};
+    return `<div class="toolbar" style="margin-bottom:10px"><div class="pill-row"><span class="tag">Total ${summary.total||0}</span><span class="tag paid">Create ${summary.create||0}</span><span class="tag sent">Update ${summary.update||0}</span><span class="tag overdue">Issues ${(summary.error||0)+(summary.skip||0)}</span></div></div>${table(['Row','Action','Record','ID','Notes'], rows)}`;
+  }
+  function setImportStatus(message, plan=null){
+    const status=document.getElementById('importStatus'), preview=document.getElementById('importPreview'), submit=document.getElementById('importSubmit');
+    if(status) status.textContent=message;
+    if(preview) preview.innerHTML=plan ? renderImportPreview(plan) : `<div class="empty">${escapeHTML(message)}</div>`;
+    if(submit) submit.disabled = !(plan && plan.summary && plan.summary.ready>0 && plan.summary.error===0);
+  }
+  function readImportFile(){
+    const type=document.getElementById('importType')?.value;
+    const file=document.getElementById('importFile')?.files?.[0];
+    pendingImportPlan=null;
+    if(!window.SmartBooksImport){ setImportStatus('Import service is not available.'); return; }
+    if(!file){ setImportStatus('Choose a CSV file to validate rows before importing.'); return; }
+    if(!/\.csv$/i.test(file.name)){ setImportStatus('Only CSV files are supported in this first import version.'); return; }
+    const reader=new FileReader();
+    reader.onload=()=>{
+      try{
+        const plan=window.SmartBooksImport.buildPlan(state, type, String(reader.result||''));
+        pendingImportPlan=plan;
+        const blocked=(plan.summary.error||0)+(plan.summary.skip||0);
+        setImportStatus(blocked ? `${plan.summary.ready} rows ready; ${blocked} rows need attention or will be skipped.` : `${plan.summary.ready} rows ready to import.`, plan);
+      }catch(error){
+        setImportStatus(error.message || 'CSV could not be parsed.');
+      }
+    };
+    reader.onerror=()=>setImportStatus('Unable to read the selected CSV file.');
+    reader.readAsText(file);
+  }
+  function downloadImportTemplate(){
+    const type=document.getElementById('importType')?.value || 'customers';
+    const csv=window.SmartBooksImport?.templateCsv(type) || '';
+    const blob=new Blob([csv],{type:'text/csv'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download=`smartbooks-${type}-template.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Import template downloaded.');
+  }
   function nextAccountCode(){ const max=Math.max(...state.chartOfAccounts.map(a=>num(a.code)),7000); return String(max+10); }
   function bindModalLiveCalculations(type){
+    if(type==='importData'){
+      document.getElementById('importFile')?.addEventListener('change', readImportFile);
+      document.getElementById('importType')?.addEventListener('change', readImportFile);
+      document.getElementById('downloadImportTemplate')?.addEventListener('click', downloadImportTemplate);
+      setImportStatus('Choose a CSV file to validate rows before importing.');
+    }
     if(type==='invoice'){
       const recalc=()=>{ const q=num(document.getElementById('invoiceQty')?.value), r=num(document.getElementById('invoiceRate')?.value), tx=num(document.getElementById('invoiceTax')?.value), preview=document.getElementById('invoiceTotalPreview'); if(preview) preview.textContent=money(q*r*(1+tx/100)); };
       ['invoiceQty','invoiceRate','invoiceTax'].forEach(id=>document.getElementById(id)?.addEventListener('input',recalc));
@@ -720,6 +784,16 @@
       case 'customize': { const modules = Array.from(document.querySelectorAll('input[name="module"]:checked')).map(i=>i.value); state.settings.visibleModules = modules.length?modules:menuModules.map(m=>m.id); audit('Menu customized'); showToast('Menu customized.'); break; }
       case 'journal': { const debit=num(data.debitAmount), credit=num(data.creditAmount); if(Math.abs(debit-credit)>0.01){ showToast('Journal entry is not balanced. Debit must equal credit.'); return; } const je={id:uid('JE'), date:data.date, memo:data.memo, status:data.status, lines:[{accountId:data.debitAccountId, debit, credit:0},{accountId:data.creditAccountId, debit:0, credit}]}; state.journalEntries.unshift(je); audit(`Journal entry ${je.id} ${data.status}`); showToast('Journal entry saved.'); break; }
       case 'account': { const code=String(data.code).trim(); if(state.chartOfAccounts.some(a=>a.code===code)){ showToast('Account code already exists.'); return; } const acct={id:code, code, name:data.name, type:data.type, normal:data.normal, detail:data.detail}; state.chartOfAccounts.push(acct); state.chartOfAccounts.sort((a,b)=>String(a.code).localeCompare(String(b.code))); audit(`Account added: ${code} ${data.name}`); showToast('Account added.'); break; }
+      case 'importData': {
+        if(!pendingImportPlan || !pendingImportPlan.summary?.ready){ showToast('Choose and validate a CSV file before importing.'); return; }
+        const backup=window.SmartBooksPersistence?.backup?.(state, 'pre_csv_import', { key:STORE_KEY });
+        if(backup && !backup.ok){ showToast('Import stopped because backup failed.'); return; }
+        const applied=window.SmartBooksImport.applyPlan(state, pendingImportPlan);
+        audit(`CSV import ${pendingImportPlan.label}: ${applied.create} created, ${applied.update} updated, ${applied.skip} skipped, ${applied.error} errors`);
+        showToast(`Import complete: ${applied.create} created, ${applied.update} updated.`);
+        pendingImportPlan=null;
+        break;
+      }
       default: showToast('Placeholder action acknowledged.'); break;
     }
     saveState(); closeModal(); renderAll();
