@@ -48,8 +48,8 @@ test("dashboard operations console summarizes attention, money, cash, and work",
 
   const persistence = console.locator(".v30-persistence-panel");
   await expect(persistence).toBeVisible();
-  await expect(persistence).toContainText("Persistence");
-  await expect(persistence).toContainText("Local browser persistence");
+  await expect(persistence).toContainText("Storage status");
+  await expect(persistence).toContainText("Saved in this browser");
   await expect(persistence).toContainText("Mode");
   await expect(persistence).toContainText("local");
   await expect(persistence).toContainText("Endpoint");
@@ -57,6 +57,8 @@ test("dashboard operations console summarizes attention, money, cash, and work",
   await expect(persistence).toContainText("Backend reads");
   await expect(persistence).toContainText("Backend writes");
   await expect(persistence).toContainText("Errors");
+  await expect(persistence.locator('[data-action="export-persistence-backup"]')).toContainText("Export backup");
+  await expect(persistence.locator('[data-action="open-persistence-settings"]')).toContainText("Open settings");
 
   await expect(console.locator('[data-modal="payment"]')).toBeVisible();
   await expect(console.locator('[data-modal="payBill"]')).toBeVisible();

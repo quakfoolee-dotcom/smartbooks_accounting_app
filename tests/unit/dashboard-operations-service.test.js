@@ -116,8 +116,9 @@ test("persistence summary reports local mode defaults", () => {
   assert.equal(summary.mode, "local");
   assert.equal(summary.endpoint, "/api/state");
   assert.equal(summary.level, "neutral");
-  assert.equal(summary.headline, "Local browser persistence");
+  assert.equal(summary.headline, "Saved in this browser");
   assert.equal(summary.backendEnabled, false);
+  assert.deepEqual(summary.actions.map(action => action.label), ["Export backup", "Open settings"]);
   assert.deepEqual(summary.counters, { reads:0, writes:0, errors:0 });
 });
 
@@ -138,10 +139,11 @@ test("persistence summary reports healthy backend diagnostics", () => {
   assert.equal(summary.mode, "hybrid");
   assert.equal(summary.endpoint, "/api/state-test");
   assert.equal(summary.level, "good");
-  assert.equal(summary.headline, "Backend persistence connected");
+  assert.equal(summary.headline, "Backend sync healthy");
   assert.equal(summary.backendEnabled, true);
   assert.equal(summary.revision, "rev_000009");
   assert.equal(summary.lastBackendSavedAt, "2026-06-24T04:15:00.000Z");
+  assert.deepEqual(summary.actions.map(action => action.label), ["Retry save", "Export backup", "Open settings"]);
   assert.deepEqual(summary.counters, { reads:2, writes:3, errors:0 });
 });
 
@@ -159,8 +161,9 @@ test("persistence summary surfaces backend errors for review", () => {
   });
 
   assert.equal(summary.level, "warn");
-  assert.equal(summary.headline, "Persistence needs review");
-  assert.equal(summary.detail, "Backend save failed with HTTP 500.");
+  assert.equal(summary.headline, "Storage needs attention");
+  assert.equal(summary.detail, "Last backend action failed: Backend save failed with HTTP 500.");
+  assert.deepEqual(summary.actions.map(action => action.label), ["Retry load", "Retry save", "Export backup", "Open settings"]);
   assert.deepEqual(summary.counters, { reads:1, writes:1, errors:2 });
 });
 
@@ -181,9 +184,10 @@ test("persistence summary surfaces revision conflicts with reload guidance", () 
   });
 
   assert.equal(summary.level, "warn");
-  assert.equal(summary.headline, "Persistence conflict detected");
-  assert.match(summary.detail, /Reload latest company data/);
+  assert.equal(summary.headline, "Newer backend data available");
+  assert.match(summary.detail, /reload latest company data/);
   assert.equal(summary.revision, "rev_000020");
+  assert.deepEqual(summary.actions.map(action => action.label), ["Reload latest", "Export session", "Open settings"]);
 });
 
 console.log("All dashboard operations service tests passed.");

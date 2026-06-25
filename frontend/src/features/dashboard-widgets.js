@@ -147,14 +147,22 @@
       detail:'Local storage remains the default until migration safeguards are complete.',
       revision:'Not loaded',
       lastBackendSavedAt:'Not saved yet',
+      actions:[
+        {label:'Export backup', actionAttr:'data-action="export-persistence-backup"'},
+        {label:'Open settings', actionAttr:'data-action="open-persistence-settings"'}
+      ],
       counters:{reads:0,writes:0,errors:0}
     };
     const counters=info.counters || {};
+    const actions=(info.actions||[]).map(action =>
+      `<button type="button" class="btn" ${action.actionAttr || ''}>${escapeHTML(action.label)}</button>`
+    ).join('');
     return `<div class="v30-persistence-panel ${escapeHTML(info.level || 'neutral')}" aria-label="Persistence diagnostics">
       <div class="v30-persistence-copy">
-        <span>Persistence</span>
+        <span>Storage status</span>
         <strong>${escapeHTML(info.headline)}</strong>
         <p>${escapeHTML(info.detail)}</p>
+        ${actions ? `<div class="v30-persistence-actions">${actions}</div>` : ''}
       </div>
       <div class="v30-persistence-grid">
         <div><span>Mode</span><strong>${escapeHTML(info.mode)}</strong></div>
@@ -234,6 +242,7 @@
       body.v8-ui .v30-persistence-panel{grid-column:1/-1;display:grid;grid-template-columns:minmax(220px,.72fr) minmax(0,2.4fr);gap:14px;align-items:center;border:1px solid #d8e2ea;border-radius:16px;background:#fbfcfd;padding:13px 14px}
       body.v8-ui .v30-persistence-panel.warn{border-color:#fed7aa;background:#fffaf2}.v30-persistence-panel.good{border-color:#bbf7d0;background:#f6fff8}
       body.v8-ui .v30-persistence-copy span{display:block;font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#1d6f8f}.v30-persistence-copy strong{display:block;margin:4px 0 3px;font-size:16px;color:#061b37}.v30-persistence-copy p{margin:0;color:var(--muted,#667085);line-height:1.4}
+      body.v8-ui .v30-persistence-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.v30-persistence-actions .btn{min-height:32px;padding:7px 10px;font-size:12px}
       body.v8-ui .v30-persistence-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
       body.v8-ui .v30-persistence-grid div{min-width:0;border:1px solid #e2e8ef;border-radius:12px;background:#fff;padding:9px 10px}.v30-persistence-grid span{display:block;font-size:11px;font-weight:900;color:#667085;text-transform:uppercase;letter-spacing:.04em}.v30-persistence-grid strong{display:block;margin-top:4px;color:#061b37;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
       body.v8-ui .v25-dashboard-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px;align-items:start}
@@ -323,6 +332,40 @@
       state.settings ||= {}; state.settings.dashboardEditMode=!state.settings.dashboardEditMode; saveState();
       if(currentModal==='customizeDashboard' && document.getElementById('modalBody')) document.getElementById('modalBody').innerHTML=v25CustomizeDashboardBody();
       renderDashboard(); showToast(state.settings.dashboardEditMode?'Dashboard customize mode on.':'Dashboard customize mode off.'); return;
+    }
+    if(action==='export-persistence-backup'){
+      exportData(); return;
+    }
+    if(action==='open-persistence-settings'){
+      navigate('settings'); showToast('Storage settings opened.'); return;
+    }
+    if(action==='retry-backend-save'){
+      const runtime=window.SmartBooksRuntimePersistence;
+      if(runtime?.saveStateAsync){
+        runtime.saveStateAsync().then(ok=>{
+          if(ok) showToast('Backend save retried.');
+          else showToast('Backend save still needs attention.');
+          renderDashboard();
+        });
+      }else{
+        showToast('Backend save is not available in local mode.');
+      }
+      return;
+    }
+    if(action==='retry-backend-load'){
+      const runtime=window.SmartBooksRuntimePersistence;
+      if(runtime?.bootstrap){
+        runtime.backendLoaded=false;
+        runtime.backendLoadFailed=false;
+        runtime.backendLoadState='not-started';
+        runtime.bootstrap().then(ok=>{
+          renderAll();
+          showToast(ok ? 'Latest backend data loaded.' : 'Backend load still needs attention.');
+        });
+      }else{
+        showToast('Backend load is not available in local mode.');
+      }
+      return;
     }
     if(action==='dashboard-widget-move'){
       const [wid,dir]=String(id||'').split(':');

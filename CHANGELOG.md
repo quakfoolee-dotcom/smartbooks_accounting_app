@@ -15,6 +15,18 @@ This project follows a simple Keep a Changelog-style format:
 
 Use this section for the next pull request before moving entries into a dated release section.
 
+### Added
+
+- Added actionable storage diagnostics controls for retrying backend load/save, exporting a backup, and opening settings from the dashboard operations console.
+
+### Changed
+
+- Reworded persistence/admin status labels so local, backend, warning, and conflict states are clearer for non-technical users.
+
+### Tests
+
+- Added dashboard and persistence runtime coverage for the new storage diagnostics actions, including retrying a failed backend load.
+
 ## 0.1.0 - 2026-06-25
 
 ### Added
