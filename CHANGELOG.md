@@ -17,6 +17,7 @@ Use this section for the next pull request before moving entries into a dated re
 
 ### Added
 
+- Added a deterministic large-state performance fixture with startup, navigation, report rendering, and backend save budget checks.
 - Added actionable storage diagnostics controls for retrying backend load/save, exporting a backup, and opening settings from the dashboard operations console.
 
 ### Changed
