@@ -54,17 +54,36 @@
     const conflict = errorCode(stats.lastError) === "STATE_REVISION_CONFLICT";
     const level = lastError ? "warn" : (backendEnabled ? "good" : "neutral");
     const headline = conflict
-      ? "Persistence conflict detected"
+      ? "Newer backend data available"
       : lastError
-      ? "Persistence needs review"
-      : (backendEnabled ? "Backend persistence connected" : "Local browser persistence");
+      ? "Storage needs attention"
+      : (backendEnabled ? "Backend sync healthy" : "Saved in this browser");
     const detail = conflict
-      ? "Backend data changed in another session. Reload latest company data before saving again."
+      ? "Backend data changed in another session. Export this session if needed, then reload latest company data before saving again."
       : lastError
-      ? lastError
+      ? `Last backend action failed: ${lastError}`
       : (backendEnabled
-          ? "Backend save/load is available for this session."
-          : "Local storage remains the default until migration safeguards are complete.");
+          ? "Company data can load and save through the configured backend endpoint."
+          : "This device keeps the working copy. Export a backup before clearing browser data or changing storage mode.");
+    const actions = conflict ? [
+      { label:"Reload latest", actionAttr:"data-action=\"retry-backend-load\"" },
+      { label:"Export session", actionAttr:"data-action=\"export-persistence-backup\"" },
+      { label:"Open settings", actionAttr:"data-action=\"open-persistence-settings\"" }
+    ] : lastError ? [
+      ...(backendEnabled ? [
+        { label:"Retry load", actionAttr:"data-action=\"retry-backend-load\"" },
+        { label:"Retry save", actionAttr:"data-action=\"retry-backend-save\"" }
+      ] : []),
+      { label:"Export backup", actionAttr:"data-action=\"export-persistence-backup\"" },
+      { label:"Open settings", actionAttr:"data-action=\"open-persistence-settings\"" }
+    ] : backendEnabled ? [
+      { label:"Retry save", actionAttr:"data-action=\"retry-backend-save\"" },
+      { label:"Export backup", actionAttr:"data-action=\"export-persistence-backup\"" },
+      { label:"Open settings", actionAttr:"data-action=\"open-persistence-settings\"" }
+    ] : [
+      { label:"Export backup", actionAttr:"data-action=\"export-persistence-backup\"" },
+      { label:"Open settings", actionAttr:"data-action=\"open-persistence-settings\"" }
+    ];
 
     return {
       mode,
@@ -75,6 +94,7 @@
       backendEnabled,
       revision: stats.lastBackendRevision || "Not loaded",
       lastBackendSavedAt: timestampLabel(stats.lastBackendSavedAt),
+      actions,
       counters: {
         reads: num(stats.backendReads),
         writes: num(stats.backendWrites),

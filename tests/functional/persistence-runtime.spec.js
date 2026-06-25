@@ -45,7 +45,8 @@ test("backend mode loads startup state and saves through async persistence", asy
 
   await openFreshApp(page, "/?sb_persistence=backend");
   await expect(page.locator("#topCompanyName")).toContainText("Backend Books");
-  await expect(page.locator(".v30-persistence-panel")).toContainText("Backend persistence connected");
+  await expect(page.locator(".v30-persistence-panel")).toContainText("Backend sync healthy");
+  await expect(page.locator(".v30-persistence-panel [data-action='retry-backend-save']")).toContainText("Retry save");
 
   await page.locator('[data-action="toggle-privacy"]').click();
   await page.evaluate(() => window.SmartBooksRuntimePersistence?.flushSaves?.());
@@ -112,14 +113,34 @@ test("backend mode restores saved state after reload without localStorage", asyn
 
 test("backend load failure does not save fallback state to backend", async ({ page }) => {
   let writes = 0;
+  let reads = 0;
   await page.route("**/api/state", async route => {
     const request = route.request();
     if(request.method() === "GET") {
-      await route.fulfill({
-        status:500,
-        contentType:"application/json",
-        body:JSON.stringify({ ok:false, error:"Backend unavailable" })
-      });
+      reads++;
+      if(reads === 1) {
+        await route.fulfill({
+          status:500,
+          contentType:"application/json",
+          body:JSON.stringify({ ok:false, error:"Backend unavailable" })
+        });
+      } else {
+        await route.fulfill({
+          status:200,
+          contentType:"application/json",
+          body:JSON.stringify({
+            ok:true,
+            data:{
+              schemaVersion:1,
+              savedAt:"2026-06-24T04:33:00.000Z",
+              source:"backend",
+              companyId:"demo-company",
+              revision:"rev_000033",
+              state:{ company:{ name:"Recovered Backend" }, settings:{} }
+            }
+          })
+        });
+      }
       return;
     }
     if(request.method() === "PUT") {
@@ -138,11 +159,19 @@ test("backend load failure does not save fallback state to backend", async ({ pa
     path:"/?sb_persistence=backend",
     ignoredConsole:[/api\/state.*500|500.*api\/state|status of 500/i]
   });
-  await expect(page.locator(".v30-persistence-panel")).toContainText("Persistence needs review");
+  const panel = page.locator(".v30-persistence-panel");
+  await expect(panel).toContainText("Storage needs attention");
+  await expect(panel).toContainText("Retry load");
+  await expect(panel).toContainText("Retry save");
+  await expect(panel).toContainText("Export backup");
   await page.locator('[data-action="toggle-privacy"]').click();
   await page.evaluate(() => window.SmartBooksRuntimePersistence?.flushSaves?.());
 
   expect(writes, "backend mode must not write fallback/demo state after a failed load").toBe(0);
+
+  await panel.locator('[data-action="retry-backend-load"]').click();
+  await expect(page.locator("#topCompanyName")).toContainText("Recovered Backend");
+  await expect(panel).toContainText("Backend sync healthy");
 });
 
 test("hybrid mode migrates local state to empty backend after confirmation", async ({ page }) => {
@@ -229,7 +258,7 @@ test("hybrid migration can be declined without backend writes", async ({ page })
   await page.waitForTimeout(250);
 
   expect(writes).toBe(0);
-  await expect(page.locator(".v30-persistence-panel")).toContainText("Backend persistence connected");
+  await expect(page.locator(".v30-persistence-panel")).toContainText("Backend sync healthy");
 });
 
 test("hybrid migration save failure keeps local mode active", async ({ page }) => {
@@ -333,6 +362,9 @@ test("backend revision conflict surfaces reload guidance without overwriting sta
   await expect.poll(() => writes.length, { message:"save attempt should reach backend before conflict" }).toBeGreaterThan(0);
   expect(writes.at(-1).revision).toBe("rev_000080");
   expect(writes.at(-1).headerRevision).toBe("rev_000080");
-  await expect(page.locator(".v30-persistence-panel")).toContainText("Persistence conflict detected");
-  await expect(page.locator(".v30-persistence-panel")).toContainText("Reload latest company data");
+  const panel = page.locator(".v30-persistence-panel");
+  await expect(panel).toContainText("Newer backend data available");
+  await expect(panel).toContainText("reload latest company data");
+  await expect(panel.locator('[data-action="retry-backend-load"]')).toContainText("Reload latest");
+  await expect(panel.locator('[data-action="export-persistence-backup"]')).toContainText("Export session");
 });
