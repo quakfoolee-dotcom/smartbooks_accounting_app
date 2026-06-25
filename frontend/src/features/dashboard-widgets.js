@@ -136,7 +136,7 @@
       ${actionLabel&&actionAttr?`<button type="button" class="btn" ${actionAttr}>${escapeHTML(actionLabel)}</button>`:''}
     </div>`;
   }
-  function v30PersistenceDiagnostics(){
+  function v30PersistenceDiagnostics(options={}){
     const service=window.SmartBooksDashboardOperations;
     const rawStatus=window.SmartBooksPersistence?.getStatus ? window.SmartBooksPersistence.getStatus() : {};
     const info=service?.persistenceSummary ? service.persistenceSummary(rawStatus) : {
@@ -154,7 +154,8 @@
       counters:{reads:0,writes:0,errors:0}
     };
     const counters=info.counters || {};
-    const actions=(info.actions||[]).map(action =>
+    const diagnosticsActions=(info.actions||[]).filter(action => options.includeSettingsAction !== false || !/open-persistence-settings/.test(action.actionAttr || ''));
+    const actions=diagnosticsActions.map(action =>
       `<button type="button" class="btn" ${action.actionAttr || ''}>${escapeHTML(action.label)}</button>`
     ).join('');
     return `<div class="v30-persistence-panel ${escapeHTML(info.level || 'neutral')}" aria-label="Persistence diagnostics">
@@ -199,7 +200,6 @@
       <div class="v25-ops-grid">
         ${metrics.join('')}
       </div>
-      ${v30PersistenceDiagnostics()}
     </section>`;
   }
   function v25RenderAllWidgetContent(){
@@ -277,6 +277,14 @@
       <div class="v25-dashboard-grid" id="dashboardWidgetGrid">${v25RenderDashboardWidgets()}</div>`;
     renderModulePills();
     v25RenderAllWidgetContent();
+  };
+  const renderSettingsBeforeV30 = renderSettings;
+  renderSettings = function(){
+    injectV25DashboardStyles();
+    renderSettingsBeforeV30();
+    const el=document.getElementById('page-settings');
+    if(!el || el.querySelector('.v30-persistence-panel')) return;
+    el.insertAdjacentHTML('beforeend', `<div class="settings-storage-status" style="margin-top:16px">${v30PersistenceDiagnostics({includeSettingsAction:false})}</div>`);
   };
   function v25CustomizeDashboardBody(){
     v25EnsureDashboardState();
