@@ -1392,8 +1392,13 @@ var v816DefaultCategories = v816FeedCategories.map(c=>c.id);
 
 
   // ---------- V7.2 user-facing version label cleanup ----------
+  function isRecordIdWithVersionLikeSuffix(value){
+    return /\b[A-Z]{2,12}-V\d[A-Z0-9]*\b/.test(String(value || ''));
+  }
   function removeVersionLabelsFromString(value){
-    return String(value || '')
+    const text = String(value || '');
+    if(isRecordIdWithVersionLikeSuffix(text)) return text.trim();
+    return text
       .replace(/\s*-\s*V\d+(?:\.\d+)?/gi, '')
       .replace(/\bV\d+(?:\.\d+)?\s*rule:\s*/gi, '')
       .replace(/\bV\d+(?:\.\d+)?\s*(prototype|scope|active|keeps|adds|implemented|initialized)?\s*/gi, '')
@@ -1419,6 +1424,7 @@ var v816DefaultCategories = v816FeedCategories.map(c=>c.id);
       acceptNode(node){
         const parent = node.parentElement;
         if(!parent || skipTags.has(parent.tagName)) return NodeFilter.FILTER_REJECT;
+        if(isRecordIdWithVersionLikeSuffix(node.nodeValue)) return NodeFilter.FILTER_SKIP;
         return /\bV\d+(?:\.\d+)?\b/i.test(node.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
       }
     });
@@ -3694,7 +3700,9 @@ var v816DefaultCategories = v816FeedCategories.map(c=>c.id);
   }
 
   function v810CleanCopy(value){
-    return String(value ?? '')
+    const text = String(value ?? '');
+    if(isRecordIdWithVersionLikeSuffix(text)) return text.trim();
+    return text
       .replace(/\bV\d+(?:\.\d+)?\s*(?:rule|prototype|active|adds|calculates|initialized|demo)?\s*:?\s*/gi,'')
       .replace(/\bYour Company\s*-\s*V\d+(?:\.\d+)?\b/gi,'Your Company')
       .replace(/\s{2,}/g,' ')
@@ -3939,7 +3947,11 @@ var v816DefaultCategories = v816FeedCategories.map(c=>c.id);
     const walker=document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
     const nodes=[];
     while(walker.nextNode()) nodes.push(walker.currentNode);
-    nodes.forEach(n=>{ const cleaned=v810CleanCopy(n.nodeValue); if(cleaned && cleaned!==n.nodeValue.trim()) n.nodeValue=n.nodeValue.replace(n.nodeValue.trim(),cleaned); });
+    nodes.forEach(n=>{
+      if(isRecordIdWithVersionLikeSuffix(n.nodeValue)) return;
+      const cleaned=v810CleanCopy(n.nodeValue);
+      if(cleaned && cleaned!==n.nodeValue.trim()) n.nodeValue=n.nodeValue.replace(n.nodeValue.trim(),cleaned);
+    });
   }
   const v810RenderAllBase = renderAll;
   renderAll = function(){ ensureV810State(); v810RenderAllBase(); v810CleanVisibleText(document.body); updateInsightsBadge(); };
