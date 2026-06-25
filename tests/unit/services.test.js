@@ -373,6 +373,53 @@ test('storage service downloadJson creates and cleans up a download link', () =>
   assert.equal(anchors[0].removed, 1);
 });
 
+test('import service parses quoted CSV and plans customer create/update rows', () => {
+  const { window } = loadBrowserScript('frontend/src/services/import-service.js');
+  const importer = window.SmartBooksImport;
+  const state = {
+    customers:[{ id:'C-1001', name:'County Parks Department', company:'County Parks Department', email:'parks@example.com', phone:'517-111-2223', type:'Government' }]
+  };
+
+  const csv = [
+    'id,name,company,email,phone,type',
+    ',"Quinn, Lee",Quinn Studio,quinn@example.com,555-0100,Commercial',
+    ',County Parks Department,County Parks Department,parks@example.com,517-999-0000,Government'
+  ].join('\n');
+  const plan = importer.buildPlan(state, 'customers', csv);
+
+  assert.equal(plan.summary.create, 1);
+  assert.equal(plan.summary.update, 1);
+  assert.equal(plan.entries[0].record.name, 'Quinn, Lee');
+  assert.equal(plan.entries[1].record.id, 'C-1001');
+});
+
+test('import service keeps bank transaction imports unposted and skips duplicates', () => {
+  const { window } = loadBrowserScript('frontend/src/services/import-service.js');
+  const importer = window.SmartBooksImport;
+  const state = {
+    chartOfAccounts:[{ id:'4100', code:'4100' }, { id:'6000', code:'6000' }],
+    bankAccounts:[{ id:'BA-1', name:'Operating Checking' }],
+    bankTransactions:[{ id:'BFT-1001', date:'2026-06-01', description:'Existing deposit', amount:100, bankAccountId:'BA-1' }]
+  };
+  const csv = [
+    'date,description,amount,bankAccountId,suggestedAccountId,note',
+    '2026-06-01,Existing deposit,100,BA-1,4100,duplicate',
+    '2026-06-02,Bank fee,-12.50,BA-1,6000,monthly fee'
+  ].join('\n');
+
+  const plan = importer.buildPlan(state, 'bankTransactions', csv);
+  assert.equal(plan.summary.skip, 1);
+  assert.equal(plan.summary.create, 1);
+  assert.equal(plan.entries[1].record.status, 'Unreviewed');
+  assert.equal(plan.entries[1].record.posted, false);
+
+  const applied = importer.applyPlan(state, plan);
+  assert.deepEqual(applied, { create:1, update:0, skip:1, error:0 });
+  assert.equal(state.bankTransactions.length, 2);
+  assert.equal(state.bankTransactions[0].description, 'Bank fee');
+  assert.equal(state.bankTransactions[0].posted, false);
+});
+
 test('icon service renders safe svg and repairs mojibake text', () => {
   const { window } = loadBrowserScript('frontend/src/services/icon-service.js');
   const icons = window.SmartBooksIcons;
