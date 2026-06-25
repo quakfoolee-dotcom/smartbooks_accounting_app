@@ -40,16 +40,19 @@ test("CSV import previews and applies customer rows with a backup", async ({ pag
   await expect(page.locator("#modalTitle")).toHaveText("Import data");
   await expect(page.locator("#importSubmit")).toBeDisabled();
 
-  await page.locator("#importFile").setInputFiles({
-    name: "customers.csv",
-    mimeType: "text/csv",
-    buffer: Buffer.from([
+  await page.evaluate(csv => {
+    const data = new DataTransfer();
+    data.items.add(new File([csv], "customers.csv", { type:"text/csv" }));
+    const dropZone = document.getElementById("importDropZone");
+    dropZone.dispatchEvent(new DragEvent("dragenter", { bubbles:true, cancelable:true, dataTransfer:data }));
+    dropZone.dispatchEvent(new DragEvent("drop", { bubbles:true, cancelable:true, dataTransfer:data }));
+  }, [
       "id,name,company,email,phone,type",
       ",River City Foods,River City Foods,ap@rivercity.example.com,555-7100,Commercial",
       ",Northside Clinic,Northside Clinic,billing@northside.example.com,555-7101,Healthcare"
-    ].join("\n"))
-  });
+    ].join("\n"));
 
+  await expect(page.locator("#importFileName")).toHaveText("customers.csv");
   await expect(page.locator("#importStatus")).toContainText("2 rows ready to import");
   await expect(page.locator("#importSubmit")).toBeEnabled();
   await page.locator("#importSubmit").click();

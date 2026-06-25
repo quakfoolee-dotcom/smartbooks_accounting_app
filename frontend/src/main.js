@@ -199,6 +199,7 @@
   let currentModal = null;
   let lastModalFocus = null;
   let pendingImportPlan = null;
+  let pendingImportFile = null;
 
   function loadLocalState(){
     try{
@@ -643,6 +644,7 @@
     if(active && !document.getElementById('modalBackdrop')?.contains(active)) lastModalFocus = active;
     currentModal = type;
     pendingImportPlan = type === 'importData' ? null : pendingImportPlan;
+    pendingImportFile = type === 'importData' ? null : pendingImportFile;
     const isDetail = type.startsWith('bankTxDetail:');
     const isImport = type === 'importData';
     const titles = {invoice:['Create invoice','Post debit Accounts Receivable and credit revenue / sales tax.'], expense:['Record expense','Post debit expense / input tax credit and credit bank or credit card.'], customer:['Add customer','Create a customer record.'], vendor:['Add vendor','Create a supplier record.'], bill:['Create bill','Post debit expense / input tax credit and credit Accounts Payable.'], payBill:['Pay bill','Post debit Accounts Payable and credit bank.'], deposit:['Bank deposit','Post debit bank and credit selected income account.'], bankTx:['Add bank transaction','Create an imported bank-feed style transaction for review and categorization.'], reconcile:['Bank reconciliation','Record statement balance and compare with book balance / cleared activity.'], transfer:['Transfer','Move funds between bank accounts using balanced ledger lines.'], product:['Add product/service','Create an item with a linked income account.'], payment:['Receive payment','Post debit bank and credit Accounts Receivable.'], estimate:['Create estimate','Create a non-posting quote.'], time:['Add time entry','Capture billable/non-billable hours.'], project:['New project','Create a project record.'], company:['Company settings','Update company profile and default tax rate.'], customize:['Customize app menus','Choose visible navigation modules.'], journal:['Journal entry','Create a balanced two-line manual journal entry.'], account:['Add account','Add a new account to the chart of accounts.'], importData:['Import data','Upload CSV records, preview validation, then apply reviewed rows.'] };
@@ -687,7 +689,7 @@
   function importDataBody(){
     const importer=window.SmartBooksImport;
     const typeOptions=Object.entries(importer?.types || {}).map(([id,cfg])=>`<option value="${id}">${escapeHTML(cfg.label)}</option>`).join('');
-    return `<div class="form-grid"><div class="field"><label>Data type</label><select name="importType" id="importType">${typeOptions}</select></div><div class="field"><label>CSV file</label><input type="file" name="importFile" id="importFile" accept=".csv,text/csv" required></div><div class="field full"><div class="empty"><strong>CSV import starts with low-risk records.</strong><br>Customers, vendors, products/services, and bank transactions can be imported. Bank transactions import as unreviewed and unposted.</div></div></div><div class="toolbar" style="margin-top:12px"><div><h3 style="margin:0">Preview</h3><div class="muted small" id="importStatus">Choose a CSV file to validate rows before importing.</div></div><button class="btn" type="button" id="downloadImportTemplate">Download template</button></div><div id="importPreview" class="card table-card" style="margin-top:10px"><div class="empty">No file selected.</div></div>`;
+    return `<div class="form-grid"><div class="field"><label>Data type</label><select name="importType" id="importType">${typeOptions}</select></div><div class="field"><label>CSV file</label><input type="file" name="importFile" id="importFile" accept=".csv,text/csv"></div><div class="field full"><div id="importDropZone" class="empty" tabindex="0" role="button" aria-label="Drop CSV file or browse" style="border:2px dashed var(--line,#dfe7ee);padding:18px;text-align:center;cursor:pointer"><strong>Drop CSV file here</strong><br><span class="muted small">or browse from your computer</span><div id="importFileName" class="muted small" style="margin-top:8px">No file selected</div><button class="btn" type="button" id="browseImportFile" style="margin-top:10px">Browse</button></div></div><div class="field full"><div class="empty"><strong>CSV import starts with low-risk records.</strong><br>Customers, vendors, products/services, and bank transactions can be imported. Bank transactions import as unreviewed and unposted.</div></div></div><div class="toolbar" style="margin-top:12px"><div><h3 style="margin:0">Preview</h3><div class="muted small" id="importStatus">Choose a CSV file to validate rows before importing.</div></div><button class="btn" type="button" id="downloadImportTemplate">Download template</button></div><div id="importPreview" class="card table-card" style="margin-top:10px"><div class="empty">No file selected.</div></div>`;
   }
   function renderImportPreview(plan){
     if(!plan) return '<div class="empty">No validated rows yet.</div>';
@@ -705,12 +707,23 @@
     if(preview) preview.innerHTML=plan ? renderImportPreview(plan) : `<div class="empty">${escapeHTML(message)}</div>`;
     if(submit) submit.disabled = !(plan && plan.summary && plan.summary.ready>0 && plan.summary.error===0);
   }
-  function readImportFile(){
+  function setImportFileName(file){
+    const fileName=document.getElementById('importFileName');
+    if(fileName) fileName.textContent=file ? file.name : 'No file selected';
+  }
+  function setImportDropActive(active){
+    const zone=document.getElementById('importDropZone');
+    if(!zone) return;
+    zone.style.borderColor = active ? '#0a8f3c' : 'var(--line,#dfe7ee)';
+    zone.style.background = active ? 'rgba(10,143,60,.08)' : '';
+  }
+  function parseImportFile(file){
     const type=document.getElementById('importType')?.value;
-    const file=document.getElementById('importFile')?.files?.[0];
     pendingImportPlan=null;
     if(!window.SmartBooksImport){ setImportStatus('Import service is not available.'); return; }
-    if(!file){ setImportStatus('Choose a CSV file to validate rows before importing.'); return; }
+    if(!file){ pendingImportFile=null; setImportFileName(null); setImportStatus('Choose a CSV file to validate rows before importing.'); return; }
+    pendingImportFile=file;
+    setImportFileName(file);
     if(!/\.csv$/i.test(file.name)){ setImportStatus('Only CSV files are supported in this first import version.'); return; }
     const reader=new FileReader();
     reader.onload=()=>{
@@ -725,6 +738,16 @@
     };
     reader.onerror=()=>setImportStatus('Unable to read the selected CSV file.');
     reader.readAsText(file);
+  }
+  function readImportFile(){
+    parseImportFile(document.getElementById('importFile')?.files?.[0] || pendingImportFile);
+  }
+  function handleImportDrop(event){
+    event.preventDefault();
+    event.stopPropagation();
+    setImportDropActive(false);
+    const file=event.dataTransfer?.files?.[0];
+    parseImportFile(file);
   }
   function downloadImportTemplate(){
     const type=document.getElementById('importType')?.value || 'customers';
@@ -741,9 +764,16 @@
   function nextAccountCode(){ const max=Math.max(...state.chartOfAccounts.map(a=>num(a.code)),7000); return String(max+10); }
   function bindModalLiveCalculations(type){
     if(type==='importData'){
+      const dropZone=document.getElementById('importDropZone');
       document.getElementById('importFile')?.addEventListener('change', readImportFile);
       document.getElementById('importType')?.addEventListener('change', readImportFile);
       document.getElementById('downloadImportTemplate')?.addEventListener('click', downloadImportTemplate);
+      document.getElementById('browseImportFile')?.addEventListener('click', ()=>document.getElementById('importFile')?.click());
+      dropZone?.addEventListener('click', e=>{ if(!e.target.closest('button')) document.getElementById('importFile')?.click(); });
+      dropZone?.addEventListener('keydown', e=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); document.getElementById('importFile')?.click(); } });
+      ['dragenter','dragover'].forEach(name=>dropZone?.addEventListener(name, e=>{ e.preventDefault(); setImportDropActive(true); }));
+      ['dragleave','dragend'].forEach(name=>dropZone?.addEventListener(name, e=>{ e.preventDefault(); setImportDropActive(false); }));
+      dropZone?.addEventListener('drop', handleImportDrop);
       setImportStatus('Choose a CSV file to validate rows before importing.');
     }
     if(type==='invoice'){
@@ -792,6 +822,7 @@
         audit(`CSV import ${pendingImportPlan.label}: ${applied.create} created, ${applied.update} updated, ${applied.skip} skipped, ${applied.error} errors`);
         showToast(`Import complete: ${applied.create} created, ${applied.update} updated.`);
         pendingImportPlan=null;
+        pendingImportFile=null;
         break;
       }
       default: showToast('Placeholder action acknowledged.'); break;

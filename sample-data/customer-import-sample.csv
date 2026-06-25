@@ -1,0 +1,16 @@
+id,name,company,email,phone,type
+,River City Foods,River City Foods,ap@rivercity.example.com,555-7100,Commercial
+,Northside Clinic,Northside Clinic,billing@northside.example.com,555-7101,Healthcare
+,Cedar Ridge Dental,Cedar Ridge Dental,billing@cedarridge.example.com,555-7102,Healthcare
+,Harbor View School,Harbor View School,office@harborview.example.com,555-7103,Education
+,Oak Street Homeowners Association,Oak Street HOA,treasurer@oakstreet.example.com,555-7104,Residential
+,Greenfield Parks Agency,Greenfield Parks Agency,finance@greenfieldparks.example.com,555-7105,Government
+,Summit Equipment Rentals,Summit Equipment Rentals,accounts@summitrentals.example.com,555-7106,Commercial
+,Bright Path Youth Center,Bright Path Youth Center,admin@brightpath.example.com,555-7107,Nonprofit
+,Westside Plumbing Co.,Westside Plumbing Co.,office@westsideplumbing.example.com,555-7108,Commercial
+,Maple Grove Apartments,Maple Grove Apartments,manager@maplegrove.example.com,555-7109,Residential
+,Lakeside Fitness Club,Lakeside Fitness Club,owner@lakesidefit.example.com,555-7110,Commercial
+,Pioneer Community College,Pioneer Community College,procurement@pioneercc.example.com,555-7111,Education
+,Metro Arts Foundation,Metro Arts Foundation,finance@metroarts.example.com,555-7112,Nonprofit
+,Evergreen Veterinary Care,Evergreen Veterinary Care,billing@evergreenvet.example.com,555-7113,Healthcare
+,Bluebird Cafe,Bluebird Cafe,books@bluebirdcafe.example.com,555-7114,Commercial
