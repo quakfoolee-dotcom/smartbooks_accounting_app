@@ -188,7 +188,6 @@ test("dark mode keeps estimate-to-payment workflow text readable", async ({ page
   await navigateTo(page, "getthingsdone");
   await page.evaluate(() => {
     document.body.classList.add("dark-mode");
-    document.body.classList.add("v8-ui");
   });
   await expect(page.locator(".estimate-payment-step").first()).toBeVisible();
 
@@ -212,19 +211,27 @@ test("dark mode keeps estimate-to-payment workflow text readable", async ({ page
     const readable = element => {
       const stepStyle = getComputedStyle(element);
       const bg = rgb(stepStyle.backgroundColor);
+      const bgLum = Math.round(luminance(bg) * 100) / 100;
       const title = element.querySelector("strong");
       const detail = element.querySelector("small");
-      return [title, detail].map(target => {
+      const failures = bgLum > 0.22 ? [{
+        text: `${title.textContent.trim()} background`,
+        reason: "card background stayed too light for dark mode",
+        luminance: bgLum,
+        background: stepStyle.backgroundColor
+      }] : [];
+      return failures.concat([title, detail].map(target => {
         const fg = rgb(getComputedStyle(target).color);
         return {
           text: target.textContent.trim(),
+          reason: "text contrast below WCAG AA",
           contrast: Math.round(ratio(fg, bg) * 100) / 100,
           foreground: getComputedStyle(target).color,
           background: stepStyle.backgroundColor
         };
-      });
+      }).filter(item => item.contrast < 4.5));
     };
-    return steps.flatMap(readable).filter(item => item.contrast < 4.5);
+    return steps.flatMap(readable);
   });
 
   expect(audit, "dark workflow step text contrast").toEqual([]);
