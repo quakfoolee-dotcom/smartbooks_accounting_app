@@ -421,6 +421,15 @@ docs/issue-53-admin-flow-polish-snapshot.md
 
 It records the before/after behavior for dashboard admin grouping, setup task states, settings sections, and hidden-module setup guidance.
 
+Database persistence adapter contract planning is documented here:
+
+```text
+docs/database-persistence-adapter-contract.md
+docs/issue-52-database-adapter-contract-snapshot.md
+```
+
+It defines the future Supabase/PostgreSQL adapter boundary, proposed tables, revision and backup rules, open decisions, and the #52 before/after report.
+
 ## Architecture Notes
 
 The frontend preserves the original localStorage behavior while separating responsibilities:

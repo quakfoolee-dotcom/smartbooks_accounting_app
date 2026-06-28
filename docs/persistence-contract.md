@@ -288,4 +288,5 @@ Minimum tests before enabling backend mode:
 6. Plan production persistence hardening before database work. **Completed with a readiness gate plan for identity, company scoping, audit logging, revision conflicts, backups, validation, observability, and performance.**
 7. Add a backend persistence adapter contract. **Completed for file-backed read, write, and backup behavior so a future database adapter can share one server contract.**
 8. Add request identity and company scoping guard. **Completed for required company scope headers, request IDs, cross-company read/write rejection, and frontend backend/hybrid header propagation.**
-9. Only then consider making backend mode the default.
+9. Spike the database persistence adapter contract. **Completed with an in-memory database-shaped adapter test double and `docs/database-persistence-adapter-contract.md`; no live database is required yet.**
+10. Only then consider making backend mode the default.
