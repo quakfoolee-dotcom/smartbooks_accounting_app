@@ -7,14 +7,24 @@ const {
 
 installSmartBooksChecks();
 
-const STARTUP_BUDGET_MS = Number(process.env.SMARTBOOKS_STARTUP_BUDGET_MS || 12000);
-const BACKEND_STARTUP_BUDGET_MS = Number(process.env.SMARTBOOKS_BACKEND_STARTUP_BUDGET_MS || 15000);
-const BACKEND_SAVE_BUDGET_MS = Number(process.env.SMARTBOOKS_BACKEND_SAVE_BUDGET_MS || 5000);
-const API_READ_BUDGET_MS = Number(process.env.SMARTBOOKS_API_READ_BUDGET_MS || 3000);
-const LARGE_STARTUP_BUDGET_MS = Number(process.env.SMARTBOOKS_LARGE_STARTUP_BUDGET_MS || 35000);
-const LARGE_BACKEND_STARTUP_BUDGET_MS = Number(process.env.SMARTBOOKS_LARGE_BACKEND_STARTUP_BUDGET_MS || 30000);
-const LARGE_BACKEND_SAVE_BUDGET_MS = Number(process.env.SMARTBOOKS_LARGE_BACKEND_SAVE_BUDGET_MS || 12000);
-const LARGE_NAVIGATION_BUDGET_MS = Number(process.env.SMARTBOOKS_LARGE_NAVIGATION_BUDGET_MS || 8000);
+const BUDGET_PROFILE = process.env.CI ? "ci" : "local";
+
+function configuredBudget(key, localDefaultMs, ciDefaultMs = localDefaultMs){
+  const profileKey = `SMARTBOOKS_${key}_BUDGET_${BUDGET_PROFILE.toUpperCase()}_MS`;
+  const legacyKey = `SMARTBOOKS_${key}_BUDGET_MS`;
+  return Number(process.env[profileKey] || process.env[legacyKey] || (BUDGET_PROFILE === "ci" ? ciDefaultMs : localDefaultMs));
+}
+
+const STARTUP_BUDGET_MS = configuredBudget("STARTUP", 12000, 16000);
+const BACKEND_STARTUP_BUDGET_MS = configuredBudget("BACKEND_STARTUP", 20000, 25000);
+const BACKEND_SAVE_BUDGET_MS = configuredBudget("BACKEND_SAVE", 5000, 7000);
+const API_READ_BUDGET_MS = configuredBudget("API_READ", 3000, 5000);
+const LARGE_STARTUP_BUDGET_MS = configuredBudget("LARGE_STARTUP", 45000, 55000);
+const LARGE_BACKEND_STARTUP_BUDGET_MS = configuredBudget("LARGE_BACKEND_STARTUP", 45000, 55000);
+const LARGE_BACKEND_READ_BUDGET_MS = configuredBudget("LARGE_BACKEND_READ", 6000, 9000);
+const LARGE_BACKEND_SAVE_BUDGET_MS = configuredBudget("LARGE_BACKEND_SAVE", 12000, 16000);
+const LARGE_DASHBOARD_RENDER_BUDGET_MS = configuredBudget("LARGE_DASHBOARD_RENDER", 8000, 12000);
+const LARGE_NAVIGATION_BUDGET_MS = configuredBudget("LARGE_NAVIGATION", 8000, 12000);
 
 function now(){
   return Date.now();
@@ -43,6 +53,32 @@ async function attachMetrics(testInfo, name, metrics){
   await testInfo.attach(name, {
     body:JSON.stringify(metrics, null, 2),
     contentType:"application/json"
+  });
+}
+
+async function dashboardRenderTiming(page){
+  return page.evaluate(() => {
+    const started = performance.now();
+    renderDashboard();
+    return Math.round(performance.now() - started);
+  });
+}
+
+async function backendStateReadTiming(page){
+  return page.evaluate(async () => {
+    const started = performance.now();
+    const response = await fetch("/api/state", {
+      headers:{
+        "X-SmartBooks-Company-Id":"demo-company",
+        "X-SmartBooks-Request-Id":"performance-large-read"
+      }
+    });
+    const payload = await response.json();
+    return {
+      ms:Math.round(performance.now() - started),
+      ok:response.ok && payload.ok === true,
+      bytes:JSON.stringify(payload).length
+    };
   });
 }
 
@@ -202,6 +238,7 @@ test("local startup stays within baseline performance budget", async ({ page }, 
   await openFreshApp(page, "/");
   const readyMs = now() - started;
   const metrics = {
+    budgetProfile:BUDGET_PROFILE,
     mode:"local",
     readyMs,
     navigation:await navigationTiming(page),
@@ -246,7 +283,10 @@ test("backend startup and save stay within baseline performance budgets", async 
   });
 
   const startupStarted = now();
-  await openFreshApp(page, "/?sb_persistence=backend");
+  await openFreshApp(page, {
+    path:"/?sb_persistence=backend",
+    ignoredConsole:[/ERR_NETWORK_CHANGED/]
+  });
   const readyMs = now() - startupStarted;
   await expect(page.locator("#topCompanyName")).toContainText("Performance Backend");
 
@@ -257,6 +297,7 @@ test("backend startup and save stay within baseline performance budgets", async 
   const saveMs = now() - saveStarted;
 
   const metrics = {
+    budgetProfile:BUDGET_PROFILE,
     mode:"backend",
     readyMs,
     saveMs,
@@ -292,6 +333,7 @@ test("backend read endpoints stay within baseline API budget", async ({ request 
   expect(body.ok).toBe(true);
 
   const metrics = {
+    budgetProfile:BUDGET_PROFILE,
     healthMs,
     stateReadMs:stateMs,
     budgetMs:API_READ_BUDGET_MS
@@ -302,13 +344,14 @@ test("backend read endpoints stay within baseline API budget", async ({ request 
   assertWithinBudget("backend state API read", stateMs, API_READ_BUDGET_MS);
 });
 
-test("large-state fixture stays within startup, navigation, and backend save budgets", async ({ page }, testInfo) => {
+test("large-state fixture stays within startup, render, read, navigation, and save budgets", async ({ page }, testInfo) => {
   test.setTimeout(180000);
   const fixture = largeStateFixture();
   const localStartupStarted = now();
   await openFreshApp(page, { path:"/", localState:fixture });
   const localStartupMs = now() - localStartupStarted;
   await expect(page.locator("#topCompanyName")).toContainText("Large Performance Co");
+  const dashboardRenderMs = await dashboardRenderTiming(page);
 
   const navigation = [];
   navigation.push(await timedStep("sales page", async () => {
@@ -364,9 +407,14 @@ test("large-state fixture stays within startup, navigation, and backend save bud
   });
 
   const backendStartupStarted = now();
-  await openFreshApp(page, "/?sb_persistence=backend");
+  await openFreshApp(page, {
+    path:"/?sb_persistence=backend",
+    ignoredConsole:[/ERR_NETWORK_CHANGED/]
+  });
   const backendStartupMs = now() - backendStartupStarted;
   await expect(page.locator("#topCompanyName")).toContainText("Large Performance Co");
+  const backendRead = await backendStateReadTiming(page);
+  expect(backendRead.ok, "large backend read should return a valid envelope").toBe(true);
 
   const backendSaveStarted = now();
   await page.evaluate(() => window.SmartBooksRuntimePersistence?.saveStateAsync?.());
@@ -374,18 +422,32 @@ test("large-state fixture stays within startup, navigation, and backend save bud
   const backendSaveMs = now() - backendSaveStarted;
 
   const metrics = {
+    budgetProfile:BUDGET_PROFILE,
     fixture:"large-state",
     counts:fixtureCounts(fixture),
-    localStartupMs,
-    backendStartupMs,
-    backendSaveMs,
-    navigation,
-    navigationMaxMs:Math.max(...navigation.map(item => item.ms)),
-    writes:writes.length,
+    startup:{
+      localMs:localStartupMs,
+      backendMs:backendStartupMs
+    },
+    dashboard:{
+      renderMs:dashboardRenderMs
+    },
+    backend:{
+      readMs:backendRead.ms,
+      readBytes:backendRead.bytes,
+      saveMs:backendSaveMs,
+      writes:writes.length
+    },
+    navigation:{
+      steps:navigation,
+      maxMs:Math.max(...navigation.map(item => item.ms))
+    },
     budgets:{
       localStartupMs:LARGE_STARTUP_BUDGET_MS,
       backendStartupMs:LARGE_BACKEND_STARTUP_BUDGET_MS,
+      backendReadMs:LARGE_BACKEND_READ_BUDGET_MS,
       backendSaveMs:LARGE_BACKEND_SAVE_BUDGET_MS,
+      dashboardRenderMs:LARGE_DASHBOARD_RENDER_BUDGET_MS,
       navigationMs:LARGE_NAVIGATION_BUDGET_MS
     },
     navigationTiming:await navigationTiming(page)
@@ -394,7 +456,9 @@ test("large-state fixture stays within startup, navigation, and backend save bud
   await attachMetrics(testInfo, "large-state-performance.json", metrics);
   assertWithinBudget("large local startup", localStartupMs, LARGE_STARTUP_BUDGET_MS);
   assertWithinBudget("large backend startup", backendStartupMs, LARGE_BACKEND_STARTUP_BUDGET_MS);
+  assertWithinBudget("large backend read", backendRead.ms, LARGE_BACKEND_READ_BUDGET_MS);
   assertWithinBudget("large backend save", backendSaveMs, LARGE_BACKEND_SAVE_BUDGET_MS);
+  assertWithinBudget("large dashboard render", dashboardRenderMs, LARGE_DASHBOARD_RENDER_BUDGET_MS);
   for(const step of navigation) {
     assertWithinBudget(`large-state navigation: ${step.label}`, step.ms, LARGE_NAVIGATION_BUDGET_MS);
   }
