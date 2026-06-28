@@ -114,7 +114,7 @@ Expected conflict response:
 | Audit events | Mutating endpoints create audit records with user/company/action/result. |
 | Revision conflicts | Stale writes return `409` and do not overwrite newer state. **Covered for the current file-backed backend.** |
 | Backup/restore | Backup, restore, and rollback paths work and preserve prior data. **Covered for the current file-backed backend.** |
-| Performance | Larger state fixture stays within accepted startup and save budgets. |
+| Performance | Larger state fixture stays within accepted startup, dashboard render, backend read/save, and navigation budgets. **Covered in `tests/functional/performance.spec.js`.** |
 
 ## Next Issues To Create
 
@@ -125,7 +125,7 @@ Expected conflict response:
 | P1 | Add revision conflict protection | Completed for the current file-backed backend; revisit when the database adapter lands. |
 | P2 | Add audit logging for state mutations | Creates operational and compliance traceability. |
 | P2 | Add server-side backup and restore endpoints | Gives recovery path before database migration. |
-| P2 | Add large-state performance fixture | Measures database-readiness with realistic data volume. |
+| P2 | Add large-state performance fixture | Completed with deterministic fixture coverage, timing artifacts, and local/CI budget profiles. |
 
 ## Definition Of Done For Production Default
 
