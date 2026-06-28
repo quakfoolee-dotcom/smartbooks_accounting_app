@@ -275,7 +275,7 @@ Minimum tests before enabling backend mode:
 - Migration test from localStorage to backend envelope. **Covered for approve, decline, and save-failure paths.**
 - Failure tests for invalid JSON, network errors, oversized payloads, and backend `500`. **Covered across storage, backend API, and functional tests.**
 - Functional test that reloads the app and verifies saved backend state is restored. **Covered for backend mode without relying on localStorage.**
-- Baseline speed tests for local startup, backend startup/save, and backend read latency. **Covered with guardrail budgets in `tests/functional/performance.spec.js`.**
+- Baseline speed tests for local startup, backend startup/save, backend read latency, and large-state dashboard/navigation coverage. **Covered with guardrail budgets in `tests/functional/performance.spec.js` and documented in `docs/performance-baseline.md`.**
 - Maintenance snapshots for critical persistence/admin behavior changes. **Use `docs/persistence-snapshot-guide.md` for before/after state, risk reduced, QC evidence, and follow-up.**
 - Manual QA for export, reset, backup, and reload.
 
@@ -290,4 +290,5 @@ Minimum tests before enabling backend mode:
 7. Add a backend persistence adapter contract. **Completed for file-backed read, write, and backup behavior so a future database adapter can share one server contract.**
 8. Add request identity and company scoping guard. **Completed for required company scope headers, request IDs, cross-company read/write rejection, and frontend backend/hybrid header propagation.**
 9. Spike the database persistence adapter contract. **Completed with an in-memory database-shaped adapter test double and `docs/database-persistence-adapter-contract.md`; no live database is required yet.**
-10. Only then consider making backend mode the default.
+10. Add large-state performance fixture and budget coverage. **Completed with deterministic large-state startup, dashboard render, backend read/save, and navigation timings.**
+11. Only then consider making backend mode the default.
