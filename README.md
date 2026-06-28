@@ -430,6 +430,15 @@ docs/issue-52-database-adapter-contract-snapshot.md
 
 It defines the future Supabase/PostgreSQL adapter boundary, proposed tables, revision and backup rules, open decisions, and the #52 before/after report.
 
+Critical persistence/admin snapshot guidance is documented here:
+
+```text
+docs/persistence-snapshot-guide.md
+docs/issue-58-persistence-snapshot-documentation.md
+```
+
+It defines the reusable before/after snapshot format for persistence roadmap work and indexes the current persistence/admin reports.
+
 ## Architecture Notes
 
 The frontend preserves the original localStorage behavior while separating responsibilities:
