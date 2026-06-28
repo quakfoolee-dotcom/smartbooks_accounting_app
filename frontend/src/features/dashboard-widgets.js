@@ -128,8 +128,8 @@
     if(level==='good') return 'On track';
     return 'Monitor';
   }
-  function v25OpsMetric(title,value,detail,actionLabel,actionAttr,level='neutral'){
-    return `<div class="v25-ops-item ${level}">
+  function v25OpsMetric(title,value,detail,actionLabel,actionAttr,level='neutral',category='daily'){
+    return `<div class="v25-ops-item ${level} ${category}">
       <div class="v25-ops-item-head"><span>${escapeHTML(title)}</span><strong>${escapeHTML(v25StatusLabel(level))}</strong></div>
       <div class="v25-ops-value">${value}</div>
       <p>${escapeHTML(detail)}</p>
@@ -190,13 +190,15 @@
     const metrics=(summary.metrics||[]).map(metric=>{
       const value=metric.moneyValue!==undefined ? money(metric.moneyValue) : String(metric.value ?? '');
       const detail=metric.moneyDetailValue!==undefined ? `${metric.detail} ${money(metric.moneyDetailValue)}` : metric.detail;
-      return v25OpsMetric(metric.title,value,detail,metric.actionLabel,metric.actionAttr,metric.level);
+      const category=metric.category || (metric.id==='openWork' ? 'admin' : 'daily');
+      return v25OpsMetric(metric.title,value,detail,metric.actionLabel,metric.actionAttr,metric.level,category);
     });
     return `<section class="v25-ops-console" aria-label="Dashboard operations summary">
       <div class="v25-ops-lead">
         <span>Operations console</span>
         <h3>${escapeHTML(summary.headline)}</h3>
         <p>Receivables, payables, cash, banking, and setup health for today's review.</p>
+        <div class="v25-ops-tags" aria-label="Operations action groups"><span>Daily work</span><span>Admin setup</span></div>
       </div>
       <div class="v25-ops-grid">
         ${metrics.join('')}
@@ -232,8 +234,10 @@
       body.v8-ui .v25-ops-lead span{font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#1d6f8f}
       body.v8-ui .v25-ops-lead h3{margin:7px 0 6px;font-size:22px;line-height:1.15;color:#061b37}
       body.v8-ui .v25-ops-lead p{margin:0;color:var(--muted,#667085);line-height:1.45}
+      body.v8-ui .v25-ops-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.v25-ops-tags span{border:1px solid #d6e3ec;border-radius:999px;background:#fff;padding:4px 8px;font-size:11px!important;font-weight:900;letter-spacing:0!important;text-transform:none!important;color:#475467!important}
       body.v8-ui .v25-ops-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
       body.v8-ui .v25-ops-item{min-width:0;border:1px solid #e2e8ef;border-radius:14px;background:#fbfcfd;padding:12px;display:flex;flex-direction:column;gap:8px}
+      body.v8-ui .v25-ops-item.admin{border-style:dashed}
       body.v8-ui .v25-ops-item.warn{border-color:#fed7aa;background:#fffaf2}.v25-ops-item.good{border-color:#bbf7d0;background:#f6fff8}
       body.v8-ui .v25-ops-item-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
       body.v8-ui .v25-ops-item-head span{font-size:12px;font-weight:900;color:#475467}.v25-ops-item-head strong{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#667085;white-space:nowrap}

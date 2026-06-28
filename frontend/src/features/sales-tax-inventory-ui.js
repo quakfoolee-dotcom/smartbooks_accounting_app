@@ -6139,5 +6139,114 @@ var v816DefaultCategories = v816FeedCategories.map(c=>c.id);
     if(typeof closeTopbarPanel === 'function') closeTopbarPanel();
   }, true);
 
+  // ---------- V8.26: admin/setup flow polish ----------
+  function injectV826AdminFlowStyles(){
+    if(document.getElementById('v826-admin-flow-styles')) return;
+    const style=document.createElement('style');
+    style.id='v826-admin-flow-styles';
+    style.textContent=`
+      body.v8-ui .v826-admin-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 16px}
+      body.v8-ui .v826-admin-card{border:1px solid #dfe7ee;border-radius:16px;background:#fff;padding:14px;min-width:0}
+      body.v8-ui .v826-admin-card h3{margin:0 0 8px;font-size:16px;color:#061b37}
+      body.v8-ui .v826-admin-card p{margin:0 0 12px;color:var(--muted,#667085);line-height:1.4}
+      body.v8-ui .v826-action-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+      body.v8-ui .v826-setup-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0 0 16px}
+      body.v8-ui .v826-setup-stat{border:1px solid #dfe7ee;border-radius:14px;background:#fbfcfd;padding:12px}
+      body.v8-ui .v826-setup-stat span{display:block;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:#667085}
+      body.v8-ui .v826-setup-stat strong{display:block;margin-top:4px;font-size:22px;color:#061b37}
+      body.v8-ui .v826-setup-state{display:inline-flex;align-items:center;border:1px solid #d6e3ec;border-radius:999px;background:#fff;padding:4px 8px;font-size:11px;font-weight:900;color:#475467}
+      body.v8-ui .v826-setup-state.done{border-color:#bbf7d0;background:#f6fff8;color:#166534}
+      body.v8-ui .v826-setup-state.hidden{border-color:#e5e7eb;background:#f8fafc;color:#475467}
+      body.v8-ui .v826-setup-state.unavailable{border-color:#fed7aa;background:#fff7ed;color:#9a3412}
+      body.v8-ui .v826-risk-card{border-color:#fecaca;background:#fffafa}
+      body.v8-ui .v826-risk-card h3{color:#991b1b}
+      body.v8-ui .v826-settings-band{margin-top:16px}
+      body.v8-ui.dark-mode .v826-admin-card,body.v8-ui.dark-mode .v826-setup-stat{background:#101b27;border-color:#2a3c4f;color:#e8edf3}
+      body.v8-ui.dark-mode .v826-admin-card h3,body.v8-ui.dark-mode .v826-setup-stat strong{color:#f3f7fb}
+      body.v8-ui.dark-mode .v826-risk-card{background:#2b1717;border-color:#7f1d1d}
+      @media(max-width:980px){body.v8-ui .v826-admin-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.v826-setup-summary{grid-template-columns:1fr!important}}
+      @media(max-width:680px){body.v8-ui .v826-admin-grid{grid-template-columns:1fr}}
+    `;
+    document.head.appendChild(style);
+  }
+  function v826SetupTasks(){
+    try{ ensureV74State(); }catch(e){}
+    return Array.isArray(state.setupTasks) ? state.setupTasks : [];
+  }
+  function v826ModuleLabel(id){
+    if(!id) return '';
+    const item=(typeof masterModuleRegistry!=='undefined' ? masterModuleRegistry : []).find(m=>m.id===id);
+    return item?.label || id;
+  }
+  function v826TaskMeta(task){
+    const available=!task.nav || (typeof canNavigate==='function' ? canNavigate(task.nav) : true);
+    if(task.done) return {className:'done', label:'Complete', detail:'Completed setup task.', available};
+    if(task.hidden) return {className:'hidden', label:'Hidden', detail:'Hidden from the dashboard checklist.', available};
+    if(!available) return {className:'unavailable', label:'Module hidden', detail:`${v826ModuleLabel(task.nav)} is hidden. Restore the module to use this task.`, available};
+    return {className:'ready', label:'Ready', detail:'Available setup task.', available};
+  }
+  function v826SetupActionButtons(task, meta){
+    const open=meta.available && task.nav ? `<button class="btn square" data-nav="${escapeHTML(task.nav)}">Open</button>` : `<button class="btn square" data-modal="customize">Configure</button>`;
+    return `<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">${open}<button class="btn square" data-action="complete-setup-task" data-id="${escapeHTML(task.id)}">${task.done?'Undo':'Done'}</button><button class="btn square" data-action="hide-setup-task" data-id="${escapeHTML(task.id)}">${task.hidden?'Show':'Hide'}</button></div>`;
+  }
+  const v826RenderSetupCardBase = renderSetupCard;
+  renderSetupCard = function(){
+    injectV826AdminFlowStyles();
+    const card=document.getElementById('setupCard');
+    if(!card) return v826RenderSetupCardBase?.();
+    const all=v826SetupTasks();
+    const active=all.filter(task=>{ const meta=v826TaskMeta(task); return !task.hidden && meta.available; });
+    const done=active.filter(task=>task.done).length;
+    const total=active.length || 1;
+    const pct=Math.round(done/total*100);
+    const needsReview=all.filter(task=>task.hidden || !v826TaskMeta(task).available).length;
+    card.innerHTML = `<h3>Setup Checklist</h3><div class="muted">Admin setup for visible modules, company profile, and storage readiness.</div><div class="setup-progress"><span style="width:${pct}%"></span></div><div class="report-line"><span>${done} of ${total} active tasks completed</span><strong>${pct}%</strong></div><div class="checklist">${active.slice(0,4).map(task=>{ const meta=v826TaskMeta(task); return `<div class="check-row ${task.done?'done':''}"><span class="check-dot">${task.done?'✓':'○'}</span><div><strong>${escapeHTML(task.title)}</strong><div class="muted small">${escapeHTML(task.group)} · ${escapeHTML(meta.label)}</div></div><button class="btn square" data-action="complete-setup-task" data-id="${escapeHTML(task.id)}">${task.done?'Undo':'Done'}</button></div>`; }).join('')}</div>${needsReview?`<div class="muted small" style="margin-top:10px">${needsReview} hidden or unavailable setup task${needsReview===1?'':'s'} can be reviewed on the setup page.</div>`:''}${isModuleVisible('setup')?'<button class="btn primary" data-nav="setup" style="margin-top:14px;width:100%">Open setup checklist</button>':''}`;
+  };
+  renderSetupPage = function(){
+    injectV826AdminFlowStyles();
+    try{ ensureV74State(); }catch(e){}
+    const el=document.getElementById('page-setup'); if(!el) return;
+    const tasks=v826SetupTasks();
+    const active=tasks.filter(task=>!task.hidden && v826TaskMeta(task).available);
+    const completed=tasks.filter(task=>task.done).length;
+    const unavailable=tasks.filter(task=>task.hidden || !v826TaskMeta(task).available).length;
+    const pct=Math.round((completed/(tasks.length||1))*100);
+    const groups=[...new Set(tasks.map(task=>task.group))];
+    el.innerHTML = header('Setup Checklist', 'Guided admin setup for company profile, visible modules, storage readiness, and daily workflow controls.', `<button class="btn" data-modal="customize">Configure menu</button><button class="btn" data-modal="customizeDashboard">Customize dashboard</button><button class="btn primary" data-modal="company">Open company settings</button>`) +
+      `<div class="card" style="margin-bottom:16px"><h3>Progress</h3><div class="setup-progress"><span style="width:${pct}%"></span></div><div class="report-line"><span>${completed} of ${tasks.length || 0} total tasks completed</span><strong>${pct}%</strong></div></div>` +
+      `<div class="v826-setup-summary"><div class="v826-setup-stat"><span>Active setup</span><strong>${active.length}</strong></div><div class="v826-setup-stat"><span>Completed</span><strong>${completed}</strong></div><div class="v826-setup-stat"><span>Hidden or unavailable</span><strong>${unavailable}</strong></div></div>` +
+      (groups.length ? groups.map(group=>`<div class="card" style="margin-bottom:16px"><h3>${escapeHTML(group)}</h3><div class="checklist">${tasks.filter(task=>task.group===group).map(task=>{ const meta=v826TaskMeta(task); return `<div class="check-row ${task.done?'done':''} ${task.hidden?'hidden-task':''} ${meta.available?'':'hidden-task'}"><span class="check-dot">${task.done?'✓':'○'}</span><div><strong>${escapeHTML(task.title)}</strong><div class="muted small">${escapeHTML(meta.detail)}</div></div><span class="v826-setup-state ${escapeHTML(meta.className)}">${escapeHTML(meta.label)}</span>${v826SetupActionButtons(task, meta)}</div>`; }).join('')}</div></div>`).join('') : '<div class="empty">No setup tasks are available for the currently visible modules.</div>');
+    applyQuickActionVisibility(el);
+  };
+  const v826RenderSettingsBase = renderSettings;
+  renderSettings = function(){
+    injectV826AdminFlowStyles();
+    try{ ensureV74State(); }catch(e){}
+    const el=document.getElementById('page-settings');
+    if(!el) return v826RenderSettingsBase?.();
+    const status=window.SmartBooksPersistence?.getStatus ? window.SmartBooksPersistence.getStatus() : {};
+    const mode=status.mode || 'local';
+    const taskCount=v826SetupTasks().length;
+    const completed=v826SetupTasks().filter(task=>task.done).length;
+    el.innerHTML = header('Settings', 'Company, setup, workspace, storage, backup, and reset controls in one admin surface.', `<button class="btn" data-modal="customize">Configure menu</button><button class="btn" data-modal="customizeDashboard">Customize dashboard</button><button class="btn primary" data-modal="company">Open company settings</button>`) +
+      `<div class="v826-admin-grid">
+        <section class="v826-admin-card"><h3>Company profile</h3><p>Legal name, province, fiscal year, sales tax, and accounting method.</p><div class="report-line"><span>Name</span><strong>${escapeHTML(state.company.name)}</strong></div><div class="report-line"><span>Method</span><strong>${escapeHTML(state.company.accountingMethod||'Accrual')}</strong></div><div class="v826-action-row"><button class="btn primary" data-modal="company">Open company settings</button></div></section>
+        <section class="v826-admin-card"><h3>Workspace setup</h3><p>Visible modules, setup checklist, dashboard widgets, and privacy mode.</p><div class="report-line"><span>Setup progress</span><strong>${completed}/${taskCount}</strong></div><div class="report-line"><span>Visible modules</span><strong>${(state.settings.visibleModules||[]).length}</strong></div><div class="v826-action-row"><button class="btn" data-action="open-setup-checklist">Open setup checklist</button><button class="btn" data-modal="customize">Configure menu</button></div></section>
+        <section class="v826-admin-card"><h3>Dashboard controls</h3><p>Adjust the dashboard layout and mask financial values when needed.</p><div class="report-line"><span>Privacy mode</span><strong>${state.settings.privacyMode?'On':'Off'}</strong></div><div class="report-line"><span>Visible widgets</span><strong>${(state.settings.dashboardWidgets||[]).length}</strong></div><div class="v826-action-row"><button class="btn" data-action="toggle-privacy">Toggle privacy</button><button class="btn" data-modal="customizeDashboard">Customize dashboard</button></div></section>
+        <section class="v826-admin-card"><h3>Storage status</h3><p>Current persistence mode and backup posture for this company session.</p><div class="report-line"><span>Save location</span><strong>${escapeHTML(mode)}</strong></div><div class="report-line"><span>Endpoint</span><strong>${escapeHTML(status.backendEndpoint || '/api/state')}</strong></div><div class="v826-action-row"><button class="btn" id="exportData2">Export backup</button><button class="btn" data-modal="importData">Import CSV</button></div></section>
+      </div>
+      <div class="grid two v826-settings-band"><section class="card"><h3>Backup and import</h3><p class="muted">Export a JSON backup before clearing browser data, importing files, or switching devices.</p><div class="v826-action-row"><button class="btn" id="exportData3">Export backup</button><button class="btn" data-modal="importData">Import CSV</button></div></section><section class="card v826-risk-card"><h3>Reset company data</h3><p class="muted">This clears the current browser company data. Export a backup first if you need to keep this session.</p><div class="v826-action-row"><button class="btn danger" id="resetDemo2">Reset company data</button></div></section></div>`;
+    document.getElementById('exportData2')?.addEventListener('click', exportData);
+    document.getElementById('exportData3')?.addEventListener('click', exportData);
+    document.getElementById('resetDemo2')?.addEventListener('click', resetState);
+  };
+  const v826RenderSettingsPanelBase = typeof renderSettingsPanel === 'function' ? renderSettingsPanel : null;
+  if(v826RenderSettingsPanelBase){
+    renderSettingsPanel = function(){
+      const html=v826RenderSettingsPanelBase();
+      return html.replace('Open company, accounting, tax, display, and data controls.', 'Open setup, company, storage, backup, and workspace controls.');
+    };
+  }
+
 
 

@@ -116,6 +116,8 @@ test("hidden modules do not leave visible navigation actions", async ({ page }) 
   await expect(page.locator('[data-action="open-setup-checklist"]')).toBeVisible();
   await page.locator('[data-action="open-setup-checklist"]').click();
   await expect(page.locator("#page-setup.active")).toContainText("Setup Checklist");
+  await expect(page.locator("#page-setup.active")).toContainText("Module hidden");
+  await expect(page.locator("#page-setup.active [data-modal='customize']").first()).toContainText("Configure");
   await expect.poll(() => visibleHiddenNavLeaks(page, hiddenModules.filter(nav => nav !== "setup"), "#page-setup"), {
     message: "hidden modules should not leak into setup tasks"
   }).toEqual([]);

@@ -413,6 +413,14 @@ docs/issue-49-persistence-diagnostics-snapshot.md
 
 It records the before/after behavior for retry actions, fallback guidance, local safety copies, and backend warning coverage.
 
+Setup, settings, and persistence admin flow polish is documented here:
+
+```text
+docs/issue-53-admin-flow-polish-snapshot.md
+```
+
+It records the before/after behavior for dashboard admin grouping, setup task states, settings sections, and hidden-module setup guidance.
+
 ## Architecture Notes
 
 The frontend preserves the original localStorage behavior while separating responsibilities:
