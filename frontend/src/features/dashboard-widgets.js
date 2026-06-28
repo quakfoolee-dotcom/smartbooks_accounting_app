@@ -148,8 +148,8 @@
       revision:'Not loaded',
       lastBackendSavedAt:'Not saved yet',
       actions:[
-        {label:'Export backup', actionAttr:'data-action="export-persistence-backup"'},
-        {label:'Open settings', actionAttr:'data-action="open-persistence-settings"'}
+        {label:'Export safety backup', actionAttr:'data-action="export-persistence-backup"'},
+        {label:'Review settings', actionAttr:'data-action="open-persistence-settings"'}
       ],
       counters:{reads:0,writes:0,errors:0}
     };
@@ -158,21 +158,21 @@
     const actions=diagnosticsActions.map(action =>
       `<button type="button" class="btn" ${action.actionAttr || ''}>${escapeHTML(action.label)}</button>`
     ).join('');
-    return `<div class="v30-persistence-panel ${escapeHTML(info.level || 'neutral')}" aria-label="Persistence diagnostics">
+    return `<div class="v30-persistence-panel ${escapeHTML(info.level || 'neutral')}" aria-label="Company data storage status">
       <div class="v30-persistence-copy">
-        <span>Storage status</span>
+        <span>Company data</span>
         <strong>${escapeHTML(info.headline)}</strong>
         <p>${escapeHTML(info.detail)}</p>
         ${actions ? `<div class="v30-persistence-actions">${actions}</div>` : ''}
       </div>
       <div class="v30-persistence-grid">
-        <div><span>Mode</span><strong>${escapeHTML(info.mode)}</strong></div>
-        <div><span>Endpoint</span><strong title="${escapeHTML(info.endpoint)}">${escapeHTML(info.endpoint)}</strong></div>
-        <div><span>Revision</span><strong>${escapeHTML(info.revision || 'Not loaded')}</strong></div>
-        <div><span>Last backend save</span><strong>${escapeHTML(info.lastBackendSavedAt)}</strong></div>
-        <div><span>Backend reads</span><strong>${Number(counters.reads)||0}</strong></div>
-        <div><span>Backend writes</span><strong>${Number(counters.writes)||0}</strong></div>
-        <div><span>Errors</span><strong>${Number(counters.errors)||0}</strong></div>
+        <div><span>Save location</span><strong>${escapeHTML(info.modeLabel || info.mode)}</strong></div>
+        <div><span>Service address</span><strong title="${escapeHTML(info.endpoint)}">${escapeHTML(info.endpoint)}</strong></div>
+        <div><span>Saved version</span><strong>${escapeHTML(info.revision || 'Not loaded')}</strong></div>
+        <div><span>Last shared save</span><strong>${escapeHTML(info.lastBackendSavedAt)}</strong></div>
+        <div><span>Shared loads</span><strong>${Number(counters.reads)||0}</strong></div>
+        <div><span>Shared saves</span><strong>${Number(counters.writes)||0}</strong></div>
+        <div><span>Issues</span><strong>${Number(counters.errors)||0}</strong></div>
       </div>
     </div>`;
   }
@@ -351,12 +351,12 @@
       const runtime=window.SmartBooksRuntimePersistence;
       if(runtime?.saveStateAsync){
         runtime.saveStateAsync().then(ok=>{
-          if(ok) showToast('Backend save retried.');
-          else showToast('Backend save still needs attention.');
+          if(ok) showToast('Company data save retried.');
+          else showToast('Company data save still needs attention.');
           renderDashboard();
         });
       }else{
-        showToast('Backend save is not available in local mode.');
+        showToast('Shared storage is not turned on.');
       }
       return;
     }
@@ -368,10 +368,10 @@
         runtime.backendLoadState='not-started';
         runtime.bootstrap().then(ok=>{
           renderAll();
-          showToast(ok ? 'Latest backend data loaded.' : 'Backend load still needs attention.');
+          showToast(ok ? 'Latest company data loaded.' : 'Company data load still needs attention.');
         });
       }else{
-        showToast('Backend load is not available in local mode.');
+        showToast('Shared storage is not turned on.');
       }
       return;
     }

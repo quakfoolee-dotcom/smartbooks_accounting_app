@@ -54,8 +54,8 @@ test("backend mode loads startup state and saves through async persistence", asy
   await openFreshApp(page, "/?sb_persistence=backend");
   await expect(page.locator("#topCompanyName")).toContainText("Backend Books");
   const panel = await openStorageSettingsPanel(page);
-  await expect(panel).toContainText("Backend sync healthy");
-  await expect(panel.locator("[data-action='retry-backend-save']")).toContainText("Retry save");
+  await expect(panel).toContainText("Shared storage connected");
+  await expect(panel.locator("[data-action='retry-backend-save']")).toContainText("Try saving again");
 
   await page.evaluate(() => window.navigate("dashboard"));
   await expect(page.locator("#page-dashboard.active")).toBeVisible();
@@ -171,10 +171,10 @@ test("backend load failure does not save fallback state to backend", async ({ pa
     ignoredConsole:[/api\/state.*500|500.*api\/state|status of 500/i]
   });
   const panel = await openStorageSettingsPanel(page);
-  await expect(panel).toContainText("Storage needs attention");
-  await expect(panel).toContainText("Retry load");
-  await expect(panel).toContainText("Retry save");
-  await expect(panel).toContainText("Export backup");
+  await expect(panel).toContainText("Company data needs attention");
+  await expect(panel).toContainText("Try loading again");
+  await expect(panel).toContainText("Try saving again");
+  await expect(panel).toContainText("Export safety backup");
   await page.evaluate(() => window.navigate("dashboard"));
   await expect(page.locator("#page-dashboard.active")).toBeVisible();
   await page.locator('#page-dashboard [data-action="toggle-privacy"]').first().click();
@@ -185,7 +185,7 @@ test("backend load failure does not save fallback state to backend", async ({ pa
   await openStorageSettingsPanel(page);
   await panel.locator('[data-action="retry-backend-load"]').click();
   await expect(page.locator("#topCompanyName")).toContainText("Recovered Backend");
-  await expect(panel).toContainText("Backend sync healthy");
+  await expect(panel).toContainText("Shared storage connected");
 });
 
 test("hybrid mode migrates local state to empty backend after confirmation", async ({ page }) => {
@@ -273,7 +273,7 @@ test("hybrid migration can be declined without backend writes", async ({ page })
 
   expect(writes).toBe(0);
   const panel = await openStorageSettingsPanel(page);
-  await expect(panel).toContainText("Backend sync healthy");
+  await expect(panel).toContainText("Migration storage connected");
 });
 
 test("hybrid migration save failure keeps local mode active", async ({ page }) => {
@@ -378,8 +378,8 @@ test("backend revision conflict surfaces reload guidance without overwriting sta
   expect(writes.at(-1).revision).toBe("rev_000080");
   expect(writes.at(-1).headerRevision).toBe("rev_000080");
   const panel = await openStorageSettingsPanel(page);
-  await expect(panel).toContainText("Newer backend data available");
-  await expect(panel).toContainText("reload latest company data");
-  await expect(panel.locator('[data-action="retry-backend-load"]')).toContainText("Reload latest");
-  await expect(panel.locator('[data-action="export-persistence-backup"]')).toContainText("Export session");
+  await expect(panel).toContainText("Newer company data is available");
+  await expect(panel).toContainText("reload before saving again");
+  await expect(panel.locator('[data-action="retry-backend-load"]')).toContainText("Reload company data");
+  await expect(panel.locator('[data-action="export-persistence-backup"]')).toContainText("Export current session");
 });
