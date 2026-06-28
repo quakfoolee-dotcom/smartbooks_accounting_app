@@ -381,6 +381,14 @@ docs/codebase-health-audit.md
 
 It lists the highest-risk modules, completed test-suite organization work, and the recommended refactor sequence.
 
+The refactoring code-smells audit is documented here:
+
+```text
+docs/refactoring-code-smells-audit.md
+```
+
+It maps the codebase to the four smell categories from the refactoring guide: bloaters, change blockers, dispensables, and couplers.
+
 ## Data And Security Notes
 
 - `backend/data/*.json` is ignored and should not be committed.
