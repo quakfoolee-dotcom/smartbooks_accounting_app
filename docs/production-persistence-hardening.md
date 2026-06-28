@@ -135,4 +135,5 @@ Backend persistence can be considered for default enablement only when:
 - backup and export paths are tested,
 - performance budgets have CI thresholds,
 - manual QA passes for migration, reload, backup, restore, export, reset, and conflict handling,
-- the deployment environment has documented auth, secrets, HTTPS, and backup configuration.
+- the deployment environment has documented auth, secrets, HTTPS, and backup configuration,
+- `docs/production-backend-environment.md` has been reviewed for the target host and storage location.

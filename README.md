@@ -397,6 +397,14 @@ It maps the codebase to the four smell categories from the refactoring guide: bl
 - The public GitHub Pages app is for testing only.
 - Browser data can be cleared with the app's reset utility or through browser storage tools.
 
+Backend persistence production setup is documented here:
+
+```text
+docs/production-backend-environment.md
+```
+
+It covers runtime settings, HTTPS, storage paths, backup expectations, secrets, logs, monitoring, and the remaining gaps that block real customer data.
+
 ## Architecture Notes
 
 The frontend preserves the original localStorage behavior while separating responsibilities:
