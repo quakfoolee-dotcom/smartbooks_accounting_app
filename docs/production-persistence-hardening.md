@@ -69,6 +69,18 @@ Do not enable backend persistence by default until each gate has an owner, imple
    - Store secrets outside source control.
    - Apply rate limits to write/import/reset endpoints.
 
+## Maintenance Snapshot Records
+
+Critical persistence and admin changes should leave a before/after snapshot using `docs/persistence-snapshot-guide.md`. These snapshots record the stable maintenance knowledge behind each roadmap slice: before state, change point, risk reduced, QC evidence, and follow-up.
+
+Use a snapshot when a change affects:
+
+- backend/local/hybrid persistence behavior,
+- backup, restore, reset, import, export, or diagnostics flows,
+- setup/settings/admin controls that explain persistence state,
+- production-readiness gates,
+- database adapter contracts or storage boundaries.
+
 ## API Contract Extensions
 
 The existing persistence envelope remains valid, but production mode should add these fields:

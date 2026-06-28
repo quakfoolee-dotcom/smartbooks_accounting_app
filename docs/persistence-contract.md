@@ -276,6 +276,7 @@ Minimum tests before enabling backend mode:
 - Failure tests for invalid JSON, network errors, oversized payloads, and backend `500`. **Covered across storage, backend API, and functional tests.**
 - Functional test that reloads the app and verifies saved backend state is restored. **Covered for backend mode without relying on localStorage.**
 - Baseline speed tests for local startup, backend startup/save, backend read latency, and large-state dashboard/navigation coverage. **Covered with guardrail budgets in `tests/functional/performance.spec.js` and documented in `docs/performance-baseline.md`.**
+- Maintenance snapshots for critical persistence/admin behavior changes. **Use `docs/persistence-snapshot-guide.md` for before/after state, risk reduced, QC evidence, and follow-up.**
 - Manual QA for export, reset, backup, and reload.
 
 ## Implementation Sequence
