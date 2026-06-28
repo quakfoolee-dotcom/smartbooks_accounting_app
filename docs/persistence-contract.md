@@ -264,6 +264,8 @@ Before production, backend persistence must add:
 
 Use `docs/production-persistence-hardening.md` as the detailed readiness plan before backend mode becomes the default or database-backed storage is introduced.
 
+Use `docs/production-backend-environment.md` for the required runtime settings, deployment assumptions, storage path, backup, logging, and HTTPS setup before enabling backend persistence outside local development.
+
 ## Test Plan
 
 Minimum tests before enabling backend mode:
