@@ -175,6 +175,12 @@ test("backend load failure does not save fallback state to backend", async ({ pa
   await expect(panel).toContainText("Try loading again");
   await expect(panel).toContainText("Try saving again");
   await expect(panel).toContainText("Export safety backup");
+  await expect(panel).toContainText("Retry shared storage, then export or save a local copy if this warning stays visible.");
+  await expect(panel.locator('[data-action="save-local-fallback-copy"]')).toContainText("Save local copy");
+  await panel.locator('[data-action="save-local-fallback-copy"]').click();
+  await expect.poll(() => page.evaluate(() => Boolean(sessionStorage.getItem("smartbooks_v71_state_manual_local_fallback_session_copy")))).toBe(true);
+  await expect.poll(() => page.evaluate(() => Boolean(localStorage.getItem("smartbooks_v71_state_manual_local_fallback_backup")))).toBe(true);
+  expect(writes, "saving a local fallback copy must not write to backend").toBe(0);
   await page.evaluate(() => window.navigate("dashboard"));
   await expect(page.locator("#page-dashboard.active")).toBeVisible();
   await page.locator('#page-dashboard [data-action="toggle-privacy"]').first().click();
@@ -380,6 +386,8 @@ test("backend revision conflict surfaces reload guidance without overwriting sta
   const panel = await openStorageSettingsPanel(page);
   await expect(panel).toContainText("Newer company data is available");
   await expect(panel).toContainText("reload before saving again");
+  await expect(panel).toContainText("Reload only reads from shared storage.");
   await expect(panel.locator('[data-action="retry-backend-load"]')).toContainText("Reload company data");
   await expect(panel.locator('[data-action="export-persistence-backup"]')).toContainText("Export current session");
+  await expect(panel.locator('[data-action="save-local-fallback-copy"]')).toContainText("Save local copy");
 });

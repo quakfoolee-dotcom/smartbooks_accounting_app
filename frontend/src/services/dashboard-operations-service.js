@@ -59,6 +59,7 @@
     const lastError = compactError(stats.lastError);
     const conflict = errorCode(stats.lastError) === "STATE_REVISION_CONFLICT";
     const level = lastError ? "warn" : (backendEnabled ? "good" : "neutral");
+    const fallbackCopyAction = { label:"Save local copy", actionAttr:"data-action=\"save-local-fallback-copy\"" };
     const headline = conflict
       ? "Newer company data is available"
       : lastError
@@ -77,9 +78,17 @@
           : mode === "hybrid"
           ? "Migration mode keeps a local backup while saving through the backend service."
           : "This browser keeps the working copy. Export a backup before clearing browser data or switching devices.");
+    const guidance = conflict
+      ? "Reload only reads from shared storage. Export this session first if you need to keep local edits."
+      : lastError
+      ? (backendEnabled
+          ? "Retry shared storage, then export or save a local copy if this warning stays visible."
+          : "Export or save a local copy before making more changes if this warning stays visible.")
+      : "";
     const actions = conflict ? [
       { label:"Reload company data", actionAttr:"data-action=\"retry-backend-load\"" },
       { label:"Export current session", actionAttr:"data-action=\"export-persistence-backup\"" },
+      fallbackCopyAction,
       { label:"Review settings", actionAttr:"data-action=\"open-persistence-settings\"" }
     ] : lastError ? [
       ...(backendEnabled ? [
@@ -87,6 +96,7 @@
         { label:"Try saving again", actionAttr:"data-action=\"retry-backend-save\"" }
       ] : []),
       { label:"Export safety backup", actionAttr:"data-action=\"export-persistence-backup\"" },
+      fallbackCopyAction,
       { label:"Review settings", actionAttr:"data-action=\"open-persistence-settings\"" }
     ] : backendEnabled ? [
       { label:"Try saving again", actionAttr:"data-action=\"retry-backend-save\"" },
@@ -104,6 +114,8 @@
       level,
       headline,
       detail,
+      guidance,
+      lastError,
       backendEnabled,
       revision: stats.lastBackendRevision || "Not loaded",
       lastBackendSavedAt: timestampLabel(stats.lastBackendSavedAt),
