@@ -405,6 +405,14 @@ docs/production-backend-environment.md
 
 It covers runtime settings, HTTPS, storage paths, backup expectations, secrets, logs, monitoring, and the remaining gaps that block real customer data.
 
+Persistence diagnostics UI improvements are documented here:
+
+```text
+docs/issue-49-persistence-diagnostics-snapshot.md
+```
+
+It records the before/after behavior for retry actions, fallback guidance, local safety copies, and backend warning coverage.
+
 ## Architecture Notes
 
 The frontend preserves the original localStorage behavior while separating responsibilities:
