@@ -38,7 +38,10 @@ test("dashboard operations console summarizes attention, money, cash, and work",
   const console = page.locator(".v25-ops-console");
   await expect(console).toBeVisible();
   await expect(console.locator(".v25-ops-lead")).toContainText("Operations console");
+  await expect(console.locator(".v25-ops-tags")).toContainText("Daily work");
+  await expect(console.locator(".v25-ops-tags")).toContainText("Admin setup");
   await expect(console.locator(".v25-ops-item")).toHaveCount(5);
+  await expect(console.locator(".v25-ops-item.admin")).toContainText("Open work");
 
   await expect(console.locator(".v25-ops-item").nth(0)).toContainText("Attention needed");
   await expect(console.locator(".v25-ops-item").nth(1)).toContainText("Money in");
@@ -53,6 +56,12 @@ test("dashboard operations console summarizes attention, money, cash, and work",
   await expect(console.locator(".v30-persistence-panel")).toHaveCount(0);
   await page.evaluate(() => window.navigate("settings"));
   await expect(page.locator("#page-settings.active")).toBeVisible();
+  await expect(page.locator("#page-settings.active")).toContainText("Company profile");
+  await expect(page.locator("#page-settings.active")).toContainText("Workspace setup");
+  await expect(page.locator("#page-settings.active")).toContainText("Dashboard controls");
+  await expect(page.locator("#page-settings.active")).toContainText("Storage status");
+  await expect(page.locator("#page-settings.active")).toContainText("Backup and import");
+  await expect(page.locator("#page-settings.active .v826-risk-card")).toContainText("Reset company data");
   const persistence = page.locator("#page-settings .v30-persistence-panel");
   await expect(persistence).toBeVisible();
   await expect(persistence).toContainText("Company data");
@@ -71,4 +80,7 @@ test("dashboard operations console summarizes attention, money, cash, and work",
   await console.locator('[data-action="open-setup-checklist"]').click();
   await expect(page.locator("#page-setup.active")).toContainText("Setup Checklist");
   await expect(page.locator("#page-setup.active")).toContainText("Progress");
+  await expect(page.locator("#page-setup.active")).toContainText("Active setup");
+  await expect(page.locator("#page-setup.active")).toContainText("Hidden or unavailable");
+  await expect(page.locator("#page-setup.active .v826-setup-state").first()).toBeVisible();
 });
