@@ -114,11 +114,12 @@ test("persistence summary reports local mode defaults", () => {
   });
 
   assert.equal(summary.mode, "local");
+  assert.equal(summary.modeLabel, "This browser");
   assert.equal(summary.endpoint, "/api/state");
   assert.equal(summary.level, "neutral");
-  assert.equal(summary.headline, "Saved in this browser");
+  assert.equal(summary.headline, "Saved on this device");
   assert.equal(summary.backendEnabled, false);
-  assert.deepEqual(summary.actions.map(action => action.label), ["Export backup", "Open settings"]);
+  assert.deepEqual(summary.actions.map(action => action.label), ["Export safety backup", "Review settings"]);
   assert.deepEqual(summary.counters, { reads:0, writes:0, errors:0 });
 });
 
@@ -137,13 +138,14 @@ test("persistence summary reports healthy backend diagnostics", () => {
   });
 
   assert.equal(summary.mode, "hybrid");
+  assert.equal(summary.modeLabel, "Local + backend migration");
   assert.equal(summary.endpoint, "/api/state-test");
   assert.equal(summary.level, "good");
-  assert.equal(summary.headline, "Backend sync healthy");
+  assert.equal(summary.headline, "Migration storage connected");
   assert.equal(summary.backendEnabled, true);
   assert.equal(summary.revision, "rev_000009");
   assert.equal(summary.lastBackendSavedAt, "2026-06-24T04:15:00.000Z");
-  assert.deepEqual(summary.actions.map(action => action.label), ["Retry save", "Export backup", "Open settings"]);
+  assert.deepEqual(summary.actions.map(action => action.label), ["Try saving again", "Export safety backup", "Review settings"]);
   assert.deepEqual(summary.counters, { reads:2, writes:3, errors:0 });
 });
 
@@ -161,9 +163,9 @@ test("persistence summary surfaces backend errors for review", () => {
   });
 
   assert.equal(summary.level, "warn");
-  assert.equal(summary.headline, "Storage needs attention");
-  assert.equal(summary.detail, "Last backend action failed: Backend save failed with HTTP 500.");
-  assert.deepEqual(summary.actions.map(action => action.label), ["Retry load", "Retry save", "Export backup", "Open settings"]);
+  assert.equal(summary.headline, "Company data needs attention");
+  assert.equal(summary.detail, "The last storage action failed: Backend save failed with HTTP 500.");
+  assert.deepEqual(summary.actions.map(action => action.label), ["Try loading again", "Try saving again", "Export safety backup", "Review settings"]);
   assert.deepEqual(summary.counters, { reads:1, writes:1, errors:2 });
 });
 
@@ -184,10 +186,10 @@ test("persistence summary surfaces revision conflicts with reload guidance", () 
   });
 
   assert.equal(summary.level, "warn");
-  assert.equal(summary.headline, "Newer backend data available");
-  assert.match(summary.detail, /reload latest company data/);
+  assert.equal(summary.headline, "Newer company data is available");
+  assert.match(summary.detail, /reload before saving again/);
   assert.equal(summary.revision, "rev_000020");
-  assert.deepEqual(summary.actions.map(action => action.label), ["Reload latest", "Export session", "Open settings"]);
+  assert.deepEqual(summary.actions.map(action => action.label), ["Reload company data", "Export current session", "Review settings"]);
 });
 
 console.log("All dashboard operations service tests passed.");

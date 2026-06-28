@@ -45,6 +45,12 @@
     return date.toISOString();
   }
 
+  function modeLabel(mode){
+    if(mode === "backend") return "Shared backend";
+    if(mode === "hybrid") return "Local + backend migration";
+    return "This browser";
+  }
+
   function persistenceSummary(status = {}){
     const mode = ["local", "backend", "hybrid"].includes(String(status.mode)) ? String(status.mode) : "local";
     const stats = status.stats || {};
@@ -54,39 +60,46 @@
     const conflict = errorCode(stats.lastError) === "STATE_REVISION_CONFLICT";
     const level = lastError ? "warn" : (backendEnabled ? "good" : "neutral");
     const headline = conflict
-      ? "Newer backend data available"
+      ? "Newer company data is available"
       : lastError
-      ? "Storage needs attention"
-      : (backendEnabled ? "Backend sync healthy" : "Saved in this browser");
+      ? "Company data needs attention"
+      : (mode === "backend"
+          ? "Shared storage connected"
+          : mode === "hybrid"
+          ? "Migration storage connected"
+          : "Saved on this device");
     const detail = conflict
-      ? "Backend data changed in another session. Export this session if needed, then reload latest company data before saving again."
+      ? "Another session saved newer company data. Export this session if needed, then reload before saving again."
       : lastError
-      ? `Last backend action failed: ${lastError}`
-      : (backendEnabled
-          ? "Company data can load and save through the configured backend endpoint."
-          : "This device keeps the working copy. Export a backup before clearing browser data or changing storage mode.");
+      ? `The last storage action failed: ${lastError}`
+      : (mode === "backend"
+          ? "This company can load and save through the configured backend service."
+          : mode === "hybrid"
+          ? "Migration mode keeps a local backup while saving through the backend service."
+          : "This browser keeps the working copy. Export a backup before clearing browser data or switching devices.");
     const actions = conflict ? [
-      { label:"Reload latest", actionAttr:"data-action=\"retry-backend-load\"" },
-      { label:"Export session", actionAttr:"data-action=\"export-persistence-backup\"" },
-      { label:"Open settings", actionAttr:"data-action=\"open-persistence-settings\"" }
+      { label:"Reload company data", actionAttr:"data-action=\"retry-backend-load\"" },
+      { label:"Export current session", actionAttr:"data-action=\"export-persistence-backup\"" },
+      { label:"Review settings", actionAttr:"data-action=\"open-persistence-settings\"" }
     ] : lastError ? [
       ...(backendEnabled ? [
-        { label:"Retry load", actionAttr:"data-action=\"retry-backend-load\"" },
-        { label:"Retry save", actionAttr:"data-action=\"retry-backend-save\"" }
+        { label:"Try loading again", actionAttr:"data-action=\"retry-backend-load\"" },
+        { label:"Try saving again", actionAttr:"data-action=\"retry-backend-save\"" }
       ] : []),
-      { label:"Export backup", actionAttr:"data-action=\"export-persistence-backup\"" },
-      { label:"Open settings", actionAttr:"data-action=\"open-persistence-settings\"" }
+      { label:"Export safety backup", actionAttr:"data-action=\"export-persistence-backup\"" },
+      { label:"Review settings", actionAttr:"data-action=\"open-persistence-settings\"" }
     ] : backendEnabled ? [
-      { label:"Retry save", actionAttr:"data-action=\"retry-backend-save\"" },
-      { label:"Export backup", actionAttr:"data-action=\"export-persistence-backup\"" },
-      { label:"Open settings", actionAttr:"data-action=\"open-persistence-settings\"" }
+      { label:"Try saving again", actionAttr:"data-action=\"retry-backend-save\"" },
+      { label:"Export safety backup", actionAttr:"data-action=\"export-persistence-backup\"" },
+      { label:"Review settings", actionAttr:"data-action=\"open-persistence-settings\"" }
     ] : [
-      { label:"Export backup", actionAttr:"data-action=\"export-persistence-backup\"" },
-      { label:"Open settings", actionAttr:"data-action=\"open-persistence-settings\"" }
+      { label:"Export safety backup", actionAttr:"data-action=\"export-persistence-backup\"" },
+      { label:"Review settings", actionAttr:"data-action=\"open-persistence-settings\"" }
     ];
 
     return {
       mode,
+      modeLabel: modeLabel(mode),
       endpoint,
       level,
       headline,
