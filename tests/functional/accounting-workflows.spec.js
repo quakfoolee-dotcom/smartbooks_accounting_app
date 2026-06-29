@@ -59,6 +59,16 @@ async function expectAgingBucketColumns(detail) {
   }
 }
 
+async function expectTableRowByFirstCell(table, firstCell, expectedCells) {
+  await expect(table, `${firstCell} table should be visible`).toBeVisible();
+  await expect.poll(async () => table.locator("tbody tr").evaluateAll((rows, target) => {
+    const normalizedRows = rows.map(row =>
+      Array.from(row.cells, cell => (cell.textContent || "").replace(/\s+/g, " ").trim())
+    );
+    return normalizedRows.find(cells => cells[0] === target) || [];
+  }, firstCell), { message:`Table should render row for ${firstCell}` }).toEqual(expect.arrayContaining(expectedCells));
+}
+
 test("core accounting workflows create and post records", async ({ page }) => {
   await openFreshApp(page);
 
@@ -308,8 +318,8 @@ test("documented money-out manual flows preserve expense, A/P, and cash impact",
 
   await page.locator('[data-nav="expenses"]').first().click();
   await page.locator('[data-action="set-expense-tab"][data-id="bills"]').click();
-  await expect(expensesPage).toContainText(bill.id);
-  await expect(expensesPage).toContainText(money(378));
+  const billsTable = expensesPage.locator(".table-card", { hasText:"Bill & Expense Center" }).locator("table").first();
+  await expectTableRowByFirstCell(billsTable, bill.id, [bill.id, money(378), "Open"]);
 
   await openModal(page, "payBill");
   await page.locator('[name="billId"]').selectOption(bill.id);
