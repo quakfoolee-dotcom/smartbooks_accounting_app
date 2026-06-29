@@ -236,3 +236,142 @@ test("dark mode keeps estimate-to-payment workflow text readable", async ({ page
 
   expect(audit, "dark workflow step text contrast").toEqual([]);
 });
+
+test("dark mode keeps workflow dashboard and admin cards readable", async ({ page }) => {
+  await openFreshApp(page);
+
+  await page.locator("#railCustomize").click();
+  const setupShortcut = page.locator('.v29-menu-row[data-menu-id="setup"] input[name="menuItem"]');
+  if(await setupShortcut.count() && !(await setupShortcut.isChecked())) await setupShortcut.check();
+  await submitModal(page);
+
+  await page.evaluate(() => document.body.classList.add("dark-mode"));
+
+  const cardSelectors = [
+    ".card",
+    ".feed-card",
+    ".funnel-card",
+    ".kpi-card",
+    ".gtd-step",
+    ".gtd-task",
+    ".gtd-template",
+    ".v12-record-card",
+    ".v12-workflow-card",
+    ".v13-summary-card",
+    ".v13-mini-stat",
+    ".v13-workflow-card",
+    ".estimate-payment-stat",
+    ".estimate-payment-step",
+    ".estimate-payment-followup",
+    ".v826-admin-card",
+    ".v826-setup-stat",
+    ".check-row"
+  ].join(",");
+  const textSelectors = [
+    "h2",
+    "h3",
+    "h4",
+    "strong",
+    "p",
+    "small",
+    ".muted",
+    ".tag",
+    ".stock-pill",
+    ".v826-setup-state",
+    ".status-chip",
+    ".btn"
+  ].join(",");
+
+  const auditActivePage = async context => page.evaluate(({ cardSelectors: cards, textSelectors: text, context }) => {
+    const parseColor = value => {
+      const match = String(value || "").match(/rgba?\(([^)]+)\)/);
+      if(!match) return null;
+      const parts = match[1].split(",").map(part => Number.parseFloat(part.trim()));
+      return { r:parts[0], g:parts[1], b:parts[2], a:Number.isFinite(parts[3]) ? parts[3] : 1 };
+    };
+    const luminance = color => {
+      const channels = [color.r, color.g, color.b].map(channel => {
+        const value = channel / 255;
+        return value <= 0.03928 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
+      });
+      return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+    };
+    const contrast = (fg, bg) => {
+      const [light, dark] = [luminance(fg), luminance(bg)].sort((a, b) => b - a);
+      return (light + 0.05) / (dark + 0.05);
+    };
+    const visible = element => {
+      const rect = element.getBoundingClientRect();
+      const style = getComputedStyle(element);
+      return rect.width > 0 && rect.height > 0 && style.display !== "none" && style.visibility !== "hidden";
+    };
+    const effectiveBackground = element => {
+      let current = element;
+      while(current && current.nodeType === Node.ELEMENT_NODE) {
+        const bg = parseColor(getComputedStyle(current).backgroundColor);
+        if(bg && bg.a > 0.05) return bg;
+        current = current.parentElement;
+      }
+      return parseColor(getComputedStyle(document.body).backgroundColor);
+    };
+    const label = element => {
+      const title = element.querySelector("h2,h3,h4,strong")?.textContent || element.textContent || element.className || element.tagName;
+      return String(title).replace(/\s+/g, " ").trim().slice(0, 80);
+    };
+    const isDocumentSurface = element => element.closest(".invoice-preview,.estimate-preview,.print-preview,.document-preview,[data-print-preview]");
+    const failures = [];
+
+    Array.from(document.querySelectorAll(`.page.active ${cards}`)).filter(visible).forEach(card => {
+      if(isDocumentSurface(card)) return;
+      const bg = effectiveBackground(card);
+      const bgLum = luminance(bg);
+      if(bgLum > 0.22) {
+        failures.push({
+          context,
+          target: label(card),
+          reason: "card background stayed too light for dark mode",
+          luminance: Math.round(bgLum * 100) / 100,
+          background: getComputedStyle(card).backgroundColor
+        });
+      }
+
+      Array.from(card.querySelectorAll(text)).filter(visible).forEach(target => {
+        if(isDocumentSurface(target)) return;
+        const textValue = (target.textContent || "").replace(/\s+/g, " ").trim();
+        if(!textValue) return;
+        const fg = parseColor(getComputedStyle(target).color);
+        const targetBg = effectiveBackground(target) || bg;
+        const ratio = contrast(fg, targetBg);
+        const minRatio = target.matches(".btn,.tag,.stock-pill,.v826-setup-state,.status-chip") ? 3 : 4.5;
+        if(ratio < minRatio) {
+          failures.push({
+            context,
+            target: textValue.slice(0, 80),
+            reason: "text contrast below target",
+            contrast: Math.round(ratio * 100) / 100,
+            foreground: getComputedStyle(target).color,
+            background: getComputedStyle(target).backgroundColor || getComputedStyle(card).backgroundColor
+          });
+        }
+      });
+    });
+    return failures;
+  }, { cardSelectors, textSelectors, context });
+
+  const failures = [];
+  for(const nav of ["dashboard", "getthingsdone", "expenses", "reports", "settings", "setup"]) {
+    await navigateTo(page, nav);
+    failures.push(...await auditActivePage(nav));
+  }
+
+  await navigateTo(page, "expenses");
+  for(const tab of ["bills", "capture", "expenses", "payments"]) {
+    const button = page.locator(`[data-action="set-expense-tab"][data-id="${tab}"]`);
+    if(await button.count()) {
+      await button.click();
+      failures.push(...await auditActivePage(`expenses:${tab}`));
+    }
+  }
+
+  expect(failures, "dark-mode card contrast across high-risk pages").toEqual([]);
+});
