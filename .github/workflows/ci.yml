@@ -12,6 +12,9 @@ on:
 permissions:
   contents: read
 
+env:
+  NODE_VERSION: "20"
+
 concurrency:
   group: smartbooks-ci-${{ github.ref }}
   cancel-in-progress: true
@@ -29,7 +32,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
       - name: Install dependencies
@@ -50,7 +53,11 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Check Markdown links and image assets
         run: npm run docs:check
@@ -67,7 +74,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
       - name: Install dependencies
@@ -88,7 +95,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
       - name: Install dependencies
@@ -118,7 +125,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
       - name: Install dependencies
@@ -157,6 +164,18 @@ jobs:
       - name: Verify all CI jobs passed
         shell: bash
         run: |
+          {
+            echo "## SmartBooks CI Result"
+            echo
+            echo "| Job | Result |"
+            echo "|---|---|"
+            echo "| Syntax Check | ${{ needs.syntax-check.result }} |"
+            echo "| Documentation Checks | ${{ needs.documentation-checks.result }} |"
+            echo "| Unit Tests | ${{ needs.unit-tests.result }} |"
+            echo "| Coverage Report | ${{ needs.coverage.result }} |"
+            echo "| Functional Browser Tests | ${{ needs.functional-tests.result }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
           echo "syntax-check: ${{ needs.syntax-check.result }}"
           echo "documentation-checks: ${{ needs.documentation-checks.result }}"
           echo "unit-tests: ${{ needs.unit-tests.result }}"

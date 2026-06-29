@@ -12,6 +12,7 @@
     "test:unit": "node tests/unit/services.test.js && node tests/unit/accounting-service.test.js && node tests/unit/dashboard-operations-service.test.js && node tests/unit/backend-state-api.test.js && node tests/unit/persistence-adapter.test.js && node tests/unit/database-persistence-adapter.test.js && node tests/unit/storage-backend-service.test.js",
     "coverage": "node scripts/run-coverage.js",
     "coverage:check": "node scripts/run-coverage.js --check-coverage",
+    "test:ci": "npm run check && npm run test:unit && npm run coverage:check && npm run test:functional",
     "test:business": "node tests/unit/accounting-service.test.js && playwright test tests/functional/accounting-workflows.spec.js",
     "test:ui-contracts": "playwright test tests/functional/ui-contract-snapshots.spec.js",
     "test:functional": "playwright test",
