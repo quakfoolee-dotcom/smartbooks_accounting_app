@@ -209,6 +209,12 @@ Run the normal local release gate:
 npm run test:all
 ```
 
+Run the local app CI gate:
+
+```powershell
+npm run test:ci
+```
+
 What each command covers:
 
 - `npm run check` verifies documentation links/assets and JavaScript syntax across app files, Playwright configs, unit tests, and functional tests.
@@ -220,6 +226,7 @@ What each command covers:
 - `npm run test:ui-contracts` verifies the approved structured UI contract snapshot for startup navigation, optional shortcuts, and Manage menu defaults.
 - `npm run test:functional` starts the local Node server and runs Chromium workflow tests against startup, navigation, Customize, dashboard layout, search, accounting workflows, accessibility, visual regressions, and utilities.
 - `npm run test:pages-smoke` opens the live GitHub Pages URL and checks for load failures, browser errors, visible mojibake, sidebar chevrons, Manage menu, and Reports navigation.
+- `npm run test:ci` mirrors the local app CI gate by running `check`, unit tests, coverage threshold checks, and the local functional browser suite.
 - `npm run test:all` runs `check`, unit tests, and local functional tests.
 
 For the full testing strategy, coverage map, and rules for adding new tests, see:
@@ -273,6 +280,12 @@ Detailed release steps live in:
 
 ```text
 docs/release-workflow.md
+```
+
+The CI quality gate reference lives in:
+
+```text
+docs/ci-quality-gate.md
 ```
 
 The practical pre-merge and post-merge checklist lives in:
