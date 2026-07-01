@@ -1,6 +1,6 @@
 # Production Backend Environment Setup
 
-This guide documents the environment required before SmartBooks backend persistence is used outside local development. Use `docs/production-deployment-runbook.md` for the deployment sequence, smoke tests, rollback, and post-deploy monitoring. Backend mode is still opt-in and is not production-safe for real accounting data until the remaining production gates in `docs/production-persistence-hardening.md` are complete.
+This guide documents the environment required before SmartBooks backend persistence is used outside local development. Use `docs/backend-persistence-deployment-topology.md` for the supported persistence deployment shapes and migration path, and use `docs/production-deployment-runbook.md` for the deployment sequence, smoke tests, rollback, and post-deploy monitoring. Backend mode is still opt-in and is not production-safe for real accounting data until the remaining production gates in `docs/production-persistence-hardening.md` are complete.
 
 ## Current Backend Posture
 

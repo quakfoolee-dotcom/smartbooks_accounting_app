@@ -127,6 +127,7 @@ Record this evidence in the PR, release notes, or deployment ticket:
 
 | Doc | Purpose |
 |---|---|
+| `docs/backend-persistence-deployment-topology.md` | Backend persistence topology, supported modes, migration path, backup expectations, and rollback checklist. |
 | `docs/production-backend-environment.md` | Backend environment variables, persistence endpoints, and operational requirements. |
 | `docs/production-persistence-hardening.md` | Remaining gates before real production accounting data. |
 | `docs/release-checklist.md` | Release validation checklist and evidence template. |
