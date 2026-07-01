@@ -40,6 +40,7 @@ For deployment or public runtime changes, also run:
 ```powershell
 npm run smoke:backend
 npm run test:pages-smoke
+npm run test:deployment-smoke
 ```
 
 ## 3. PR Review Gate
@@ -80,6 +81,7 @@ After merging into `main`, confirm:
 | UI contract snapshot | `npm run test:ui-contracts` |  |  |
 | Backend production smoke | `npm run smoke:backend` |  |  |
 | Live Pages smoke | `npm run test:pages-smoke` |  |  |
+| Deployment workflow smoke | `npm run test:deployment-smoke` |  |  |
 | GitHub CI | `SmartBooks CI / CI Result` |  |  |
 | Pages deploy | `Deploy SmartBooks Pages` |  |  |
 

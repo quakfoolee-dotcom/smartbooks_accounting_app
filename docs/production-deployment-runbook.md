@@ -39,6 +39,7 @@ For deployment or public runtime changes, also run:
 ```powershell
 npm run smoke:backend
 npm run test:pages-smoke
+npm run test:deployment-smoke
 ```
 
 Expected results:
@@ -51,6 +52,7 @@ Expected results:
 | `npm run test:functional` | Local Playwright functional suite passes. |
 | `npm run smoke:backend` | Liveness, readiness, state read/write, readback, and metrics gates pass. |
 | `npm run test:pages-smoke` | Deployed/public Pages smoke passes for the configured target URL. |
+| `npm run test:deployment-smoke` | Deployed/public app loads, persists isolated local test state, posts a money-in workflow, reloads, and preserves the paid invoice state. |
 
 ## 4. Pre-Deploy Backup
 
@@ -75,7 +77,7 @@ Before deploying a change that can alter backend state:
 | 5 | Verify readiness. | `GET /api/ready` returns `status:ready`; if it returns `degraded`, remove the backend from traffic. |
 | 6 | Verify metrics. | `GET /api/metrics` returns request counters without secrets or filesystem paths. |
 | 7 | Verify state route. | `GET /api/state` returns the expected company scope and revision. |
-| 8 | Run smoke tests. | Backend smoke and Pages smoke pass. |
+| 8 | Run smoke tests. | Backend smoke, Pages smoke, and deployment workflow smoke pass. |
 
 ## 6. Post-Deploy Monitoring
 

@@ -1,5 +1,8 @@
 const { defineConfig, devices } = require("@playwright/test");
 
+const externalTarget = process.env.SMARTBOOKS_DEPLOYMENT_URL || process.env.SMARTBOOKS_PAGES_URL || "";
+const localTarget = "http://127.0.0.1:3218/";
+const targetUrl = externalTarget || localTarget;
 const ciReporters = [
   ["list"],
   ["html", { outputFolder: "playwright-report", open: "never" }],
@@ -8,25 +11,24 @@ const ciReporters = [
 
 module.exports = defineConfig({
   testDir: "tests/functional",
-  testMatch: "*.spec.js",
-  testIgnore: ["pages-smoke.spec.js", "deployment-smoke.spec.js"],
+  testMatch: "deployment-smoke.spec.js",
   fullyParallel: false,
   workers: 1,
   timeout: 60000,
   expect: { timeout: 10000 },
   reporter: process.env.CI ? ciReporters : [["list"]],
   use: {
-    baseURL: "http://127.0.0.1:3217",
+    baseURL: targetUrl,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "retain-on-failure"
   },
-  webServer: {
+  webServer: externalTarget ? undefined : {
     command: "npm start",
-    url: "http://127.0.0.1:3217/api/health",
+    url: "http://127.0.0.1:3218/api/health",
     reuseExistingServer: true,
     timeout: 30000,
-    env: { PORT: "3217" }
+    env: { PORT: "3218" }
   },
   projects: [
     {
