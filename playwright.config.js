@@ -1,5 +1,11 @@
 const { defineConfig, devices } = require("@playwright/test");
 
+const ciReporters = [
+  ["list"],
+  ["html", { outputFolder: "playwright-report", open: "never" }],
+  ["json", { outputFile: "test-results/playwright-results.json" }]
+];
+
 module.exports = defineConfig({
   testDir: "tests/functional",
   testMatch: "*.spec.js",
@@ -8,7 +14,7 @@ module.exports = defineConfig({
   workers: 1,
   timeout: 60000,
   expect: { timeout: 10000 },
-  reporter: [["list"]],
+  reporter: process.env.CI ? ciReporters : [["list"]],
   use: {
     baseURL: "http://127.0.0.1:3217",
     trace: "retain-on-failure",

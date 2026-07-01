@@ -8,6 +8,7 @@ npm-debug.log*
 *.log
 test-results/
 playwright-report/
+playwright-diagnostics/
 coverage/
 .nyc_output/
 backend/data/*.json

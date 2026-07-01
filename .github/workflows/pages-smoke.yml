@@ -57,13 +57,18 @@ jobs:
       - name: Run live Pages smoke test
         run: npm run test:pages-smoke
 
+      - name: Write smoke failure summary
+        if: failure()
+        run: node scripts/write-playwright-diagnostics.js pages-smoke
+
       - name: Upload smoke failure artifacts
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: pages-smoke-failure-artifacts
+          name: pages-smoke-diagnostics
           path: |
+            playwright-diagnostics/
             test-results/
             playwright-report/
           if-no-files-found: ignore
-          retention-days: 14
+          retention-days: 7

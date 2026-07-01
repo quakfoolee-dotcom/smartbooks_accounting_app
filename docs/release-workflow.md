@@ -88,7 +88,7 @@ Manual runs can target another URL with the `pages_url` input.
 When CI fails:
 
 1. Open the failed job first, not the aggregate `CI Result`.
-2. Download Playwright artifacts if a browser test failed.
+2. Download the matching `playwright-diagnostics-*` artifact if a browser test failed.
 3. Reproduce locally with the smallest matching command.
 4. Fix the defect in a new commit.
 5. Push and wait for `CI Result` to pass.
@@ -103,6 +103,6 @@ When deployment fails:
 When live smoke fails:
 
 1. Open the deployed site manually.
-2. Download Playwright artifacts.
+2. Download the `pages-smoke-diagnostics` artifact.
 3. Confirm whether the failure is deployment-specific or reproducible locally.
 4. If deployment-specific, re-run deploy after checking artifact contents.
