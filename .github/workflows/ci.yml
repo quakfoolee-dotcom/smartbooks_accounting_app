@@ -149,16 +149,21 @@ jobs:
       - name: Run functional browser test shard
         run: ${{ matrix.command }}
 
+      - name: Write Playwright failure summary
+        if: failure()
+        run: node scripts/write-playwright-diagnostics.js ${{ matrix.shard }}
+
       - name: Upload Playwright failure artifacts
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-failure-artifacts-${{ matrix.shard }}
+          name: playwright-diagnostics-${{ matrix.shard }}
           path: |
+            playwright-diagnostics/
             test-results/
             playwright-report/
           if-no-files-found: ignore
-          retention-days: 14
+          retention-days: 7
 
   ci-result:
     name: CI Result

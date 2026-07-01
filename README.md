@@ -258,7 +258,7 @@ This repository uses five GitHub automation layers:
   - Splits checks into syntax, documentation, unit, service coverage, and functional browser jobs.
   - Publishes a final `CI Result` job for branch protection.
   - Runs service coverage thresholds and uploads a `coverage-report` artifact.
-  - Uploads Playwright failure artifacts when browser tests fail.
+  - Uploads shard-specific Playwright diagnostics artifacts when browser tests fail.
 
 - `Deploy SmartBooks Pages`
   - Runs after `SmartBooks CI` succeeds on `main`.
@@ -300,6 +300,12 @@ The CI quality gate reference lives in:
 
 ```text
 docs/ci-quality-gate.md
+```
+
+The Playwright failure artifact guide lives in:
+
+```text
+docs/playwright-ci-diagnostics.md
 ```
 
 The practical pre-merge and post-merge checklist lives in:
