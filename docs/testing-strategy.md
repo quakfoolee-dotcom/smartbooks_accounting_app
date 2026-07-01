@@ -151,7 +151,8 @@ tests/functional/accounting-workflows.spec.js
 tests/functional/customize-menu.spec.js
 tests/functional/dashboard-customization.spec.js
 tests/functional/global-search.spec.js
-tests/functional/pages-smoke.spec.js
+tests/functional/performance.spec.js
+tests/functional/persistence-runtime.spec.js
 tests/functional/startup-navigation.spec.js
 tests/functional/ui-contract-snapshots.spec.js
 tests/functional/utilities.spec.js
@@ -159,6 +160,17 @@ tests/functional/support/smartbooks-app.js
 ```
 
 The local functional suite starts the Node server with `npm start`, opens Chromium, clears SmartBooks localStorage before each test, and runs against a fresh browser state.
+
+Functional coverage can be run as independent shards:
+
+| Shard | Command | Use when |
+|---|---|---|
+| UI | `npm run test:functional:ui` | changing navigation, dashboards, search, accessibility, visual behavior, utility workflows, or UI contracts |
+| Accounting | `npm run test:functional:accounting` | changing invoices, payments, expenses, bills, deposits, bank-feed matching, or reports |
+| Persistence | `npm run test:functional:persistence` | changing backend storage, hybrid migration, restore behavior, or revision conflicts |
+| Performance | `npm run test:functional:performance` | changing startup, rendering, persistence performance, or large-state handling |
+
+CI runs the shards as a matrix. Locally, `npm run test:functional:ci` runs the same shards sequentially.
 
 Current coverage:
 

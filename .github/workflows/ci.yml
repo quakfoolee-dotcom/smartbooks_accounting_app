@@ -114,9 +114,21 @@ jobs:
           retention-days: 14
 
   functional-tests:
-    name: Functional Browser Tests
+    name: Functional Browser Tests (${{ matrix.shard }})
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 18
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - shard: ui
+            command: npm run test:functional:ui
+          - shard: accounting
+            command: npm run test:functional:accounting
+          - shard: persistence
+            command: npm run test:functional:persistence
+          - shard: performance
+            command: npm run test:functional:performance
 
     steps:
       - name: Check out repository
@@ -134,14 +146,14 @@ jobs:
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 
-      - name: Run functional browser tests
-        run: npm run test:functional
+      - name: Run functional browser test shard
+        run: ${{ matrix.command }}
 
       - name: Upload Playwright failure artifacts
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-failure-artifacts
+          name: playwright-failure-artifacts-${{ matrix.shard }}
           path: |
             test-results/
             playwright-report/
@@ -173,14 +185,14 @@ jobs:
             echo "| Documentation Checks | ${{ needs.documentation-checks.result }} |"
             echo "| Unit Tests | ${{ needs.unit-tests.result }} |"
             echo "| Coverage Report | ${{ needs.coverage.result }} |"
-            echo "| Functional Browser Tests | ${{ needs.functional-tests.result }} |"
+            echo "| Functional Browser Test Shards | ${{ needs.functional-tests.result }} |"
           } >> "$GITHUB_STEP_SUMMARY"
 
           echo "syntax-check: ${{ needs.syntax-check.result }}"
           echo "documentation-checks: ${{ needs.documentation-checks.result }}"
           echo "unit-tests: ${{ needs.unit-tests.result }}"
           echo "coverage: ${{ needs.coverage.result }}"
-          echo "functional-tests: ${{ needs.functional-tests.result }}"
+          echo "functional-test-shards: ${{ needs.functional-tests.result }}"
 
           if [[ "${{ needs.syntax-check.result }}" != "success" ]]; then
             exit 1
