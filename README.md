@@ -197,6 +197,15 @@ Run local browser functional tests:
 npm run test:functional
 ```
 
+Run local browser functional test shards:
+
+```powershell
+npm run test:functional:ui
+npm run test:functional:accounting
+npm run test:functional:persistence
+npm run test:functional:performance
+```
+
 Run the deployed GitHub Pages smoke test:
 
 ```powershell
@@ -225,8 +234,13 @@ What each command covers:
 - `npm run coverage:check` applies the current service coverage thresholds for local quality review.
 - `npm run test:ui-contracts` verifies the approved structured UI contract snapshot for startup navigation, optional shortcuts, and Manage menu defaults.
 - `npm run test:functional` starts the local Node server and runs Chromium workflow tests against startup, navigation, Customize, dashboard layout, search, accounting workflows, accessibility, visual regressions, and utilities.
+- `npm run test:functional:ui` runs the UI, navigation, search, accessibility, visual, utility, and UI contract shard.
+- `npm run test:functional:accounting` runs invoice, payment, expense, bill, deposit, bank-feed, and report workflows.
+- `npm run test:functional:persistence` runs backend and hybrid storage runtime workflows.
+- `npm run test:functional:performance` runs startup, backend, API, and large-state performance budgets.
+- `npm run test:functional:ci` runs all functional shards sequentially for local CI parity.
 - `npm run test:pages-smoke` opens the live GitHub Pages URL and checks for load failures, browser errors, visible mojibake, sidebar chevrons, Manage menu, and Reports navigation.
-- `npm run test:ci` mirrors the local app CI gate by running `check`, unit tests, coverage threshold checks, and the local functional browser suite.
+- `npm run test:ci` mirrors the local app CI gate by running `check`, unit tests, coverage threshold checks, and the local functional browser shards.
 - `npm run test:all` runs `check`, unit tests, and local functional tests.
 
 For the full testing strategy, coverage map, and rules for adding new tests, see:
