@@ -81,6 +81,58 @@ async function test(name, fn){
     });
   });
 
+  await test("monitoring endpoints expose liveness, readiness, and safe metrics", async () => {
+    await withServer(async ({ baseUrl, stateFile }) => {
+      const live = await requestJson(baseUrl, "/api/live", { companyId:null });
+      assert.equal(live.status, 200);
+      assert.equal(live.body.ok, true);
+      assert.equal(live.body.status, "live");
+      assert.equal(live.body.service, "smartbooks-backend");
+
+      const health = await requestJson(baseUrl, "/api/health", { companyId:null });
+      assert.equal(health.status, 200);
+      assert.equal(health.body.status, "live");
+
+      const ready = await requestJson(baseUrl, "/api/ready", { companyId:null });
+      assert.equal(ready.status, 200);
+      assert.equal(ready.body.ok, true);
+      assert.equal(ready.body.status, "ready");
+      assert.equal(ready.body.checks.persistence.status, "pass");
+      assert.equal(ready.body.checks.persistence.revisionPresent, true);
+      assert.equal(JSON.stringify(ready.body).includes(stateFile), false);
+
+      const metrics = await requestJson(baseUrl, "/api/metrics", { companyId:null });
+      assert.equal(metrics.status, 200);
+      assert.equal(metrics.body.ok, true);
+      assert.equal(metrics.body.service, "smartbooks-backend");
+      assert.ok(metrics.body.requests.total >= 3);
+      assert.ok(metrics.body.requests.api >= 3);
+      assert.ok(metrics.body.requests.routes["GET /api/live"]);
+      assert.ok(metrics.body.requests.routes["GET /api/ready"]);
+      assert.equal(JSON.stringify(metrics.body).includes(stateFile), false);
+    });
+  });
+
+  await test("readiness reports degraded persistence without leaking internals", async () => {
+    const persistenceAdapter = {
+      async read(){
+        throw new Error("C:\\private\\smartbooks-state.json permission denied");
+      }
+    };
+
+    await withServer(async ({ baseUrl }) => {
+      const ready = await requestJson(baseUrl, "/api/ready", { companyId:null });
+      assert.equal(ready.status, 503);
+      assert.equal(ready.body.ok, false);
+      assert.equal(ready.body.status, "degraded");
+      assert.equal(ready.body.checks.persistence.status, "fail");
+      assert.equal(ready.body.checks.persistence.detail, "Persistence dependency is not readable.");
+      const serialized = JSON.stringify(ready.body);
+      assert.equal(serialized.includes("private"), false);
+      assert.equal(serialized.includes("permission denied"), false);
+    }, { persistenceAdapter });
+  });
+
   await test("state API requires a request company scope", async () => {
     await withServer(async ({ baseUrl }) => {
       const missingRead = await requestJson(baseUrl, "/api/state", { companyId:null });

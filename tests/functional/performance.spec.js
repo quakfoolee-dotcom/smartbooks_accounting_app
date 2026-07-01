@@ -320,6 +320,16 @@ test("backend read endpoints stay within baseline API budget", async ({ request 
   const healthMs = now() - healthStarted;
   expect(health.ok()).toBe(true);
 
+  const readyStarted = now();
+  const ready = await request.get("/api/ready");
+  const readyMs = now() - readyStarted;
+  expect(ready.ok()).toBe(true);
+
+  const metricsStarted = now();
+  const metricsResponse = await request.get("/api/metrics");
+  const metricsMs = now() - metricsStarted;
+  expect(metricsResponse.ok()).toBe(true);
+
   const stateStarted = now();
   const state = await request.get("/api/state", {
     headers:{
@@ -335,12 +345,16 @@ test("backend read endpoints stay within baseline API budget", async ({ request 
   const metrics = {
     budgetProfile:BUDGET_PROFILE,
     healthMs,
+    readyMs,
+    metricsMs,
     stateReadMs:stateMs,
     budgetMs:API_READ_BUDGET_MS
   };
 
   await attachMetrics(testInfo, "backend-api-read-performance.json", metrics);
   assertWithinBudget("backend health API read", healthMs, API_READ_BUDGET_MS);
+  assertWithinBudget("backend readiness API read", readyMs, API_READ_BUDGET_MS);
+  assertWithinBudget("backend metrics API read", metricsMs, API_READ_BUDGET_MS);
   assertWithinBudget("backend state API read", stateMs, API_READ_BUDGET_MS);
 });
 

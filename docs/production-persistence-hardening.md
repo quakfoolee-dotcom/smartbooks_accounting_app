@@ -11,7 +11,7 @@ This plan turns backend persistence from a prototype file-backed state store int
 | Authorization | Company-scoped reads/writes are guarded for the file-backed state document. | Needs role-aware permissions before real data. |
 | Validation | Request size, JSON shape, schema version, and envelope validation are covered. | Needs deeper server-side domain validation and unknown-field policy. |
 | Migration | Hybrid local-to-backend migration is guarded and backed up locally. | Needs production backup, rollback, and audit trail. |
-| Observability | Functional and performance tests cover baseline behavior. | Needs request IDs, structured logs, audit events, and operational alerts. |
+| Observability | Functional and performance tests cover baseline behavior; backend exposes liveness, readiness, and safe JSON metrics endpoints. | Needs structured logs, audit events, and operational alerts. |
 
 ## Production Readiness Gates
 
@@ -27,7 +27,7 @@ Do not enable backend persistence by default until each gate has an owner, imple
 | Backup and recovery | Server-side backups exist before destructive or migratory operations. | Backup creation, restore, and rollback are tested with failure paths. |
 | Schema validation | Server validates persisted document shape beyond envelope checks. | Invalid core accounting arrays, malformed entities, and unsupported schema versions are rejected. |
 | Database readiness | Storage adapter supports file and database implementations behind one contract. | Tests run against the adapter contract without changing frontend persistence code. |
-| Observability | API emits request IDs and structured operational logs. | Errors can be traced from frontend report to backend request and audit event. |
+| Observability | API emits request IDs, liveness/readiness signals, metrics, and structured operational logs. | Errors can be traced from frontend report to backend request, readiness state, metrics, and audit event. |
 | Performance | Startup, save, and read budgets stay within accepted thresholds. | `tests/functional/performance.spec.js` passes with agreed CI budgets. |
 
 ## Recommended Implementation Order
