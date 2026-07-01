@@ -19,8 +19,15 @@ async function openStorageSettingsPanel(page) {
 
 test("backend mode loads startup state and saves through async persistence", async ({ page }) => {
   const writes = [];
+  const requests = [];
   await page.route("**/api/state", async route => {
     const request = route.request();
+    requests.push({
+      method:request.method(),
+      companyId:request.headers()["x-smartbooks-company-id"],
+      requestId:request.headers()["x-smartbooks-request-id"],
+      revision:request.headers()["x-smartbooks-state-revision"] || null
+    });
     if(request.method() === "GET") {
       await route.fulfill({
         status:200,
@@ -31,7 +38,7 @@ test("backend mode loads startup state and saves through async persistence", asy
             schemaVersion:1,
             savedAt:"2026-06-24T04:30:00.000Z",
             source:"backend",
-            companyId:"demo-company",
+            companyId:"playwright-company",
             revision:"rev_000030",
             state:{ company:{ name:"Backend Books" }, settings:{} }
           }
@@ -51,7 +58,7 @@ test("backend mode loads startup state and saves through async persistence", asy
     await route.continue();
   });
 
-  await openFreshApp(page, "/?sb_persistence=backend");
+  await openFreshApp(page, "/?sb_persistence=backend&sb_company_id=playwright-company");
   await expect(page.locator("#topCompanyName")).toContainText("Backend Books");
   const panel = await openStorageSettingsPanel(page);
   await expect(panel).toContainText("Shared storage connected");
@@ -64,7 +71,21 @@ test("backend mode loads startup state and saves through async persistence", asy
 
   expect(writes.length, "backend mode should write through PUT after a user save").toBeGreaterThan(0);
   expect(writes.at(-1).revision).toBe("rev_000030");
+  expect(writes.at(-1).companyId).toBe("playwright-company");
   expect(writes.at(-1).state.settings.privacyMode).toBe(true);
+  expect(requests[0]).toMatchObject({
+    method:"GET",
+    companyId:"playwright-company",
+    revision:null
+  });
+  expect(requests[0].requestId).toMatch(/.+/);
+  const saveRequest = requests.find(request => request.method === "PUT");
+  expect(saveRequest).toMatchObject({
+    method:"PUT",
+    companyId:"playwright-company",
+    revision:"rev_000030"
+  });
+  expect(saveRequest.requestId).toMatch(/.+/);
 });
 
 test("backend mode restores saved state after reload without localStorage", async ({ page }) => {

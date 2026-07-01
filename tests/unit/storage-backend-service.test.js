@@ -308,6 +308,36 @@ async function test(name, fn){
     assert.equal(storage.getStatus().companyId, "company-config");
   });
 
+  await test("local mode remains isolated from backend state even when endpoint is configured", async () => {
+    let backendCalls = 0;
+    const localStorage = memoryStorage({
+      local_state:JSON.stringify({ company:{ name:"Local Only" }, settings:{ visibleModules:["dashboard"] } })
+    });
+    const storage = loadStorageService({
+      localStorage,
+      fetch:async () => {
+        backendCalls++;
+        return response(true, 200, { ok:true, data:{ schemaVersion:1, state:{ company:{ name:"Backend Leak" } } } });
+      }
+    }).configure({
+      key:"local_state",
+      mode:"local",
+      backendEndpoint:"/api/state-should-not-run",
+      companyId:"local-company"
+    });
+
+    const loaded = await storage.loadAsync({ fallback:() => ({ company:{ name:"Fallback" } }) });
+    const saved = await storage.saveAsync({ company:{ name:"Saved Locally" } });
+
+    assert.deepEqual(loaded, { company:{ name:"Local Only" }, settings:{ visibleModules:["dashboard"] } });
+    assert.equal(saved.ok, true);
+    assert.equal(backendCalls, 0);
+    assert.deepEqual(JSON.parse(localStorage.getItem("local_state")), { company:{ name:"Saved Locally" } });
+    assert.equal(storage.getStatus().stats.backendReads, 0);
+    assert.equal(storage.getStatus().stats.backendWrites, 0);
+    assert.equal(storage.getStatus().companyId, "local-company");
+  });
+
   console.log("All storage backend service tests passed.");
 })().catch(error => {
   console.error(error);
