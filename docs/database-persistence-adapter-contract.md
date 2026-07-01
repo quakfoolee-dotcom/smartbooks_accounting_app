@@ -103,3 +103,27 @@ It proves the database contract can support:
 
 No production code path uses a live database in this spike.
 
+## Integration Fixture
+
+`tests/integration/database-persistence-adapter.fixture.test.js` adds a deterministic integration-style fixture around the in-memory database adapter. It creates shared table maps and multiple adapter instances to mimic separate request/session lifecycles using the same database state.
+
+Run it with:
+
+```powershell
+npm run test:integration:database
+```
+
+The fixture proves:
+
+| Area | Fixture proof |
+| --- | --- |
+| Shared persistence | State written through one adapter instance can be read by another adapter instance using the same tables. |
+| Create/read/update lifecycle | Empty envelopes, first writes, guarded updates, and subsequent reads preserve normalized envelope fields. |
+| Revision conflicts | Stale revisions fail with `STATE_REVISION_CONFLICT` and do not overwrite the newer row. |
+| Company isolation | Company A and Company B state rows remain separate. |
+| Backup isolation | Backup lists and backup reads are scoped by company. |
+| Restore path | Restore flows through the guarded write path and uses `source: "restore"`. |
+| Cleanup | Fixture setup and teardown clear all in-memory rows after each integration scenario. |
+
+The fixture does not prove network connectivity, SQL migration syntax, transaction isolation level, database locks, RLS policies, or cloud-specific authentication. Those still need environment-specific validation when a live Supabase/PostgreSQL adapter is introduced.
+
