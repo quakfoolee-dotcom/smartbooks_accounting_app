@@ -224,6 +224,7 @@ Command:
 
 ```powershell
 npm run test:pages-smoke
+npm run test:deployment-smoke
 ```
 
 Configuration:
@@ -236,6 +237,7 @@ File:
 
 ```text
 tests/functional/pages-smoke.spec.js
+tests/functional/deployment-smoke.spec.js
 ```
 
 Default target:
@@ -244,7 +246,7 @@ Default target:
 https://quakfoolee-dotcom.github.io/smartbooks_accounting_app/
 ```
 
-The live smoke test intentionally stays smaller than the local functional suite. Its purpose is to prove the deployed GitHub Pages app loads and can perform a few core interactions after deployment.
+The live Pages smoke intentionally stays smaller than the local functional suite. Its purpose is to prove the deployed GitHub Pages app loads and can perform a few core interactions after deployment. The deployment workflow smoke adds one isolated critical workflow path for production readiness.
 
 Current coverage:
 
@@ -257,11 +259,26 @@ Current coverage:
 - Manage menu opens
 - Reports navigation works
 
+Deployment workflow smoke coverage:
+
+- target URL can be configured with `SMARTBOOKS_DEPLOYMENT_URL` or `SMARTBOOKS_PAGES_URL`
+- local fallback starts the backend server through `playwright.deployment.config.js`
+- isolated local persistence is used with a smoke company ID
+- Sales navigation works
+- invoice creation posts local state
+- payment receipt marks the invoice paid
+- Reports navigation works after the workflow
+- reload preserves the paid invoice state
+- no failed document/script/style assets
+- no browser console/page errors
+
 Use `SMARTBOOKS_PAGES_URL` to target another deployed URL:
 
 ```powershell
 $env:SMARTBOOKS_PAGES_URL="https://example.com/smartbooks/"
 npm run test:pages-smoke
+$env:SMARTBOOKS_DEPLOYMENT_URL="https://example.com/smartbooks/"
+npm run test:deployment-smoke
 ```
 
 ## Regression Test Rule

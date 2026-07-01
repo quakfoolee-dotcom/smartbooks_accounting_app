@@ -57,6 +57,11 @@ jobs:
       - name: Run live Pages smoke test
         run: npm run test:pages-smoke
 
+      - name: Run deployment workflow smoke test
+        run: npm run test:deployment-smoke
+        env:
+          SMARTBOOKS_DEPLOYMENT_URL: ${{ env.SMARTBOOKS_PAGES_URL }}
+
       - name: Write smoke failure summary
         if: failure()
         run: node scripts/write-playwright-diagnostics.js pages-smoke
