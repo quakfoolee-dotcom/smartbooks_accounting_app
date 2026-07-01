@@ -1,6 +1,6 @@
 # Production Backend Environment Setup
 
-This guide documents the environment required before SmartBooks backend persistence is used outside local development. Backend mode is still opt-in and is not production-safe for real accounting data until the remaining production gates in `docs/production-persistence-hardening.md` are complete.
+This guide documents the environment required before SmartBooks backend persistence is used outside local development. Use `docs/production-deployment-runbook.md` for the deployment sequence, smoke tests, rollback, and post-deploy monitoring. Backend mode is still opt-in and is not production-safe for real accounting data until the remaining production gates in `docs/production-persistence-hardening.md` are complete.
 
 ## Current Backend Posture
 
@@ -51,6 +51,32 @@ For split frontend/backend hosting, set the backend endpoint to the deployed API
 
 ```text
 https://example.com/smartbooks/?sb_persistence=backend&sb_backend_endpoint=https://api.example.com/api/state&sb_company_id=demo-company
+```
+
+## Production Backend Smoke
+
+Before enabling backend persistence in a new runtime, run the local production-style backend smoke:
+
+```powershell
+npm run smoke:backend
+```
+
+The smoke starts the real backend server on a temporary local port with an isolated temporary state directory. It verifies:
+
+| Gate | What it proves |
+| --- | --- |
+| Liveness | `/api/live` returns a live process response. |
+| Readiness | `/api/ready` can read persistence without exposing filesystem paths. |
+| State read | `/api/state` returns a company-scoped envelope and request ID. |
+| Revision-safe save | `PUT /api/state` writes only with the latest revision. |
+| Saved state readback | The saved company state can be read back with the new revision. |
+| Metrics | `/api/metrics` includes route counts without leaking storage paths. |
+
+Use `SMARTBOOKS_SMOKE_COMPANY_ID` to override the default smoke company ID:
+
+```powershell
+$env:SMARTBOOKS_SMOKE_COMPANY_ID = "deployment-check"
+npm run smoke:backend
 ```
 
 ## API And Header Requirements

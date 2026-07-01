@@ -2,6 +2,8 @@
 
 Use this checklist before merging a release or stabilization branch into `main`.
 
+For deployment sequencing, rollback, and monitoring details, use `docs/production-deployment-runbook.md`.
+
 ## 1. Branch Hygiene
 
 - Start from a clean working tree.
@@ -36,6 +38,7 @@ npm run test:ui-contracts
 For deployment or public runtime changes, also run:
 
 ```powershell
+npm run smoke:backend
 npm run test:pages-smoke
 ```
 
@@ -75,6 +78,7 @@ After merging into `main`, confirm:
 | Functional browser tests | `npm run test:functional` |  |  |
 | Business workflows | `npm run test:business` |  |  |
 | UI contract snapshot | `npm run test:ui-contracts` |  |  |
+| Backend production smoke | `npm run smoke:backend` |  |  |
 | Live Pages smoke | `npm run test:pages-smoke` |  |  |
 | GitHub CI | `SmartBooks CI / CI Result` |  |  |
 | Pages deploy | `Deploy SmartBooks Pages` |  |  |
