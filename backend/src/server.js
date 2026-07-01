@@ -21,6 +21,7 @@ const COMPANY_ID_HEADER = "x-smartbooks-company-id";
 const REQUEST_ID_HEADER = "x-smartbooks-request-id";
 const REVISION_HEADER = "x-smartbooks-state-revision";
 const COMPANY_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{1,63}$/;
+const SERVICE_NAME = "smartbooks-backend";
 
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -37,6 +38,137 @@ const MIME_TYPES = {
 function sendJson(res, statusCode, payload) {
   res.writeHead(statusCode, { "Content-Type": MIME_TYPES[".json"] });
   res.end(JSON.stringify(payload, null, 2));
+}
+
+function createRuntimeMetrics(now = Date.now) {
+  return {
+    startedAt: now(),
+    requests: {
+      total: 0,
+      api: 0,
+      failures: 0,
+      byStatus: {},
+      routes: {}
+    }
+  };
+}
+
+function routeLabel(pathname) {
+  if (pathname === `${API_PREFIX}/state`) return `${API_PREFIX}/state`;
+  if (pathname.startsWith(`${API_PREFIX}/state/`)) return `${API_PREFIX}/state/:operation`;
+  if (pathname === `${API_PREFIX}/health`) return `${API_PREFIX}/health`;
+  if (pathname === `${API_PREFIX}/live`) return `${API_PREFIX}/live`;
+  if (pathname === `${API_PREFIX}/ready`) return `${API_PREFIX}/ready`;
+  if (pathname === `${API_PREFIX}/metrics`) return `${API_PREFIX}/metrics`;
+  if (pathname.startsWith(API_PREFIX)) return `${API_PREFIX}/unknown`;
+  return "static";
+}
+
+function recordRequest(metrics, entry) {
+  if (!metrics?.requests) return;
+  const statusCode = Number(entry.statusCode || 0);
+  const durationMs = Math.max(0, Math.round(entry.durationMs || 0));
+  const statusGroup = statusCode ? `${Math.floor(statusCode / 100)}xx` : "unknown";
+  const route = `${entry.method || "GET"} ${routeLabel(entry.pathname || "")}`;
+  const routeMetrics = metrics.requests.routes[route] || {
+    total: 0,
+    failures: 0,
+    totalDurationMs: 0,
+    maxDurationMs: 0,
+    lastStatusCode: null
+  };
+
+  metrics.requests.total += 1;
+  if (String(entry.pathname || "").startsWith(API_PREFIX)) metrics.requests.api += 1;
+  metrics.requests.byStatus[statusGroup] = (metrics.requests.byStatus[statusGroup] || 0) + 1;
+  if (statusCode >= 400) metrics.requests.failures += 1;
+
+  routeMetrics.total += 1;
+  routeMetrics.totalDurationMs += durationMs;
+  routeMetrics.maxDurationMs = Math.max(routeMetrics.maxDurationMs, durationMs);
+  routeMetrics.lastStatusCode = statusCode || null;
+  if (statusCode >= 400) routeMetrics.failures += 1;
+  metrics.requests.routes[route] = routeMetrics;
+}
+
+function metricsSnapshot(metrics, now = Date.now) {
+  const requests = metrics?.requests || createRuntimeMetrics(now).requests;
+  const memory = process.memoryUsage();
+  const routes = Object.fromEntries(Object.entries(requests.routes).map(([route, values]) => [
+    route,
+    {
+      total: values.total,
+      failures: values.failures,
+      averageDurationMs: values.total ? Math.round(values.totalDurationMs / values.total) : 0,
+      maxDurationMs: values.maxDurationMs,
+      lastStatusCode: values.lastStatusCode
+    }
+  ]));
+
+  return {
+    ok: true,
+    service: SERVICE_NAME,
+    generatedAt: new Date(now()).toISOString(),
+    uptimeSeconds: Math.max(0, Math.round((now() - metrics.startedAt) / 1000)),
+    memory: {
+      rssMb: Math.round(memory.rss / 1024 / 1024),
+      heapUsedMb: Math.round(memory.heapUsed / 1024 / 1024),
+      heapTotalMb: Math.round(memory.heapTotal / 1024 / 1024)
+    },
+    requests: {
+      total: requests.total,
+      api: requests.api,
+      failures: requests.failures,
+      byStatus: requests.byStatus,
+      routes
+    }
+  };
+}
+
+function livePayload(metrics) {
+  return {
+    ok: true,
+    status: "live",
+    service: SERVICE_NAME,
+    uptimeSeconds: Math.max(0, Math.round((Date.now() - metrics.startedAt) / 1000))
+  };
+}
+
+async function readinessPayload(persistenceAdapter, metrics) {
+  const checks = {
+    persistence: {
+      status: "unknown",
+      detail: "Persistence read check has not run."
+    }
+  };
+
+  try {
+    const envelope = await persistenceAdapter.read();
+    checks.persistence = {
+      status: "pass",
+      detail: "Persistence dependency is readable.",
+      schemaVersion: envelope?.schemaVersion || null,
+      revisionPresent: Boolean(envelope?.revision),
+      statePresent: Boolean(envelope?.state && Object.keys(envelope.state).length)
+    };
+  } catch (error) {
+    checks.persistence = {
+      status: "fail",
+      detail: "Persistence dependency is not readable."
+    };
+  }
+
+  const ready = checks.persistence.status === "pass";
+  return {
+    statusCode: ready ? 200 : 503,
+    body: {
+      ok: ready,
+      status: ready ? "ready" : "degraded",
+      service: SERVICE_NAME,
+      uptimeSeconds: Math.max(0, Math.round((Date.now() - metrics.startedAt) / 1000)),
+      checks
+    }
+  };
 }
 
 function validationError(message) {
@@ -118,9 +250,19 @@ function createPersistenceAdapter(options = {}) {
 
 async function handleApi(req, res, pathname, options = {}) {
   const persistenceAdapter = createPersistenceAdapter(options);
+  const metrics = options.metrics || createRuntimeMetrics();
 
-  if (pathname === `${API_PREFIX}/health` && req.method === "GET") {
-    return sendJson(res, 200, { ok: true, service: "smartbooks-backend" });
+  if ((pathname === `${API_PREFIX}/health` || pathname === `${API_PREFIX}/live`) && req.method === "GET") {
+    return sendJson(res, 200, livePayload(metrics));
+  }
+
+  if (pathname === `${API_PREFIX}/ready` && req.method === "GET") {
+    const readiness = await readinessPayload(persistenceAdapter, metrics);
+    return sendJson(res, readiness.statusCode, readiness.body);
+  }
+
+  if (pathname === `${API_PREFIX}/metrics` && req.method === "GET") {
+    return sendJson(res, 200, metricsSnapshot(metrics));
   }
 
   if (pathname === `${API_PREFIX}/state` && req.method === "GET") {
@@ -227,12 +369,26 @@ function serveStatic(req, res, pathname) {
 }
 
 function createSmartBooksServer(options = {}) {
+  const metrics = options.metrics || createRuntimeMetrics();
+
   return http.createServer(async (req, res) => {
+    const startedAt = Date.now();
+    let pathname = "";
+    res.on("finish", () => {
+      recordRequest(metrics, {
+        method: req.method,
+        pathname,
+        statusCode: res.statusCode,
+        durationMs: Date.now() - startedAt
+      });
+    });
+
     try {
       const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
+      pathname = url.pathname;
 
       if (url.pathname.startsWith(API_PREFIX)) {
-        return await handleApi(req, res, url.pathname, options);
+        return await handleApi(req, res, url.pathname, { ...options, metrics });
       }
 
       return serveStatic(req, res, url.pathname);
@@ -256,6 +412,7 @@ if (require.main === module) {
 module.exports = {
   createSmartBooksServer,
   createPersistenceAdapter,
+  createRuntimeMetrics,
   normalizeStatePayload,
   stateEnvelope,
   COMPANY_ID_HEADER,

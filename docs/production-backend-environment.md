@@ -12,7 +12,7 @@ This guide documents the environment required before SmartBooks backend persiste
 | Backups | File-backed backups are written under the state directory's `backups/` folder. | Back up the whole state directory, test restore, and define retention before using real data. |
 | Identity | Requests carry `X-SmartBooks-Company-Id` and optional/generated request IDs. | Add authenticated user identity and company membership checks before real use. |
 | Authorization | Company-scope checks prevent cross-company access to the current file-backed state. | Add role-based permissions for read, write, import, export, reset, backup, and restore. |
-| Observability | Server logs to stdout/stderr and API responses include request IDs for state routes. | Capture structured logs, alert on failed saves/restores, and retain audit events. |
+| Observability | Server logs to stdout/stderr, API responses include request IDs for state routes, and backend exposes liveness, readiness, and safe JSON metrics endpoints. | Capture structured logs, alert on failed saves/restores, and retain audit events. |
 
 ## Required Runtime Settings
 
@@ -68,16 +68,23 @@ State writes and restores must include the latest revision when backend state al
 X-SmartBooks-State-Revision: rev_000001
 ```
 
-Health check:
+Operational endpoints:
 
 ```text
 GET /api/health
+GET /api/live
+GET /api/ready
+GET /api/metrics
 ```
 
 State endpoints:
 
 | Endpoint | Purpose |
 | --- | --- |
+| `GET /api/health` | Backward-compatible liveness check for basic process availability. |
+| `GET /api/live` | Liveness check for deployment platforms that distinguish liveness from readiness. |
+| `GET /api/ready` | Readiness check that verifies the configured persistence adapter can be read without mutating state. Returns `503` when degraded. |
+| `GET /api/metrics` | Safe JSON metrics with uptime, memory, request counts, status groups, route counts, and request durations. Does not expose file paths or secrets. |
 | `GET /api/state` | Load current company state envelope. |
 | `PUT /api/state` or `POST /api/state` | Save current company state envelope with revision protection. |
 | `POST /api/state/backup` | Create a server-side file backup. |
@@ -94,7 +101,7 @@ State endpoints:
 | Backups | Schedule backups for `smartbooks-state.json` and `backups/`; test restore before launch. |
 | Secrets | Keep future database URLs, auth secrets, and API keys in the hosting secret manager, never in source control. |
 | Logs | Capture stdout/stderr and include request IDs in support/debug reports. |
-| Monitoring | Alert on backend process failure, repeated save failures, restore failures, and storage-volume errors. |
+| Monitoring | Use `/api/live` for liveness, `/api/ready` for readiness, and `/api/metrics` for safe operational counters. Alert on readiness failures, backend process failure, repeated save failures, restore failures, and storage-volume errors. |
 | Data policy | Do not enter real customer, payroll, banking, tax, or credential data until auth, authorization, audit logging, encryption policy, and backup retention are implemented. |
 
 ## Not Production-Safe Yet

@@ -7,7 +7,7 @@ This document describes the first repeatable speed checks for SmartBooks. The go
 - Local startup readiness: open the app in local mode and wait for the dashboard shell to become usable.
 - Backend startup readiness: open the app in backend mode, load state through `/api/state`, and wait for the dashboard shell to become usable.
 - Backend save latency: trigger a user save in backend mode and wait for the backend write path to finish.
-- Backend read latency: call `/api/health` and `GET /api/state` through Playwright's API client.
+- Backend read latency: call `/api/health`, `/api/ready`, `/api/metrics`, and `GET /api/state` through Playwright's API client.
 - Large-state readiness: load a deterministic company fixture with hundreds of customers, vendors, invoices, bills, expenses, payments, and bank-feed rows.
 - Large-state dashboard render latency: render the dashboard against realistic record volume after fixture load.
 - Large-state backend read latency: fetch the fixture-backed backend state separately from startup timing.
