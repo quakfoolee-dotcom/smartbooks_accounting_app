@@ -250,27 +250,25 @@
     else setTimeout(run,0);
   }
 
-  const v58SaveStateBase = saveState;
-  saveState = function(){
-    v58ReconcileData();
-    return v58SaveStateBase.apply(this, arguments);
-  };
-
-  const v58RenderAllBase = renderAll;
-  renderAll = function(){
-    if(v58Runtime.rendering) return v58RenderAllBase.apply(this, arguments);
-    v58Runtime.rendering=true;
-    try{
+  const smartBooksLifecycle = window.SmartBooksLifecycle;
+  if(smartBooksLifecycle && typeof smartBooksLifecycle.register === 'function'){
+    smartBooksLifecycle.register('normalizeState', 'v58-reconcile-data', function(){ return v58ReconcileData(); });
+    smartBooksLifecycle.register('beforeSave', 'v58-normalize-before-save', function(){
+      smartBooksLifecycle.run('normalizeState', { source:'saveState' });
+    });
+    smartBooksLifecycle.register('beforeRender', 'v58-prepare-render', function(){
       v58InjectStabilityStyles();
-      v58ReconcileData();
+      smartBooksLifecycle.run('normalizeState', { source:'renderAll' });
       v58InvalidateDynamicCaches();
-      const result=v58RenderAllBase.apply(this, arguments);
-      v58AfterRender();
-      return result;
-    }finally{
-      v58Runtime.rendering=false;
-    }
-  };
+    });
+    smartBooksLifecycle.register('afterRender', 'v58-after-render', function(){ v58AfterRender(); });
+    smartBooksLifecycle.installCoreHooks({
+      getSaveState:() => saveState,
+      setSaveState:fn => { saveState = fn; },
+      getRenderAll:() => renderAll,
+      setRenderAll:fn => { renderAll = fn; }
+    });
+  }
 
   const v58RenderSalesBase = renderSales;
   renderSales = function(){ v58ReconcileData(); return v58RenderSalesBase.apply(this, arguments); };
