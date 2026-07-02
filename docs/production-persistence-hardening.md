@@ -1,6 +1,6 @@
 # Production Persistence Hardening Plan
 
-This plan turns backend persistence from a prototype file-backed state store into a production-ready path. It should be completed before backend mode becomes the default or before real customer accounting data is stored outside the browser.
+This plan turns backend persistence from a prototype file-backed state store into a production-ready path. It should be completed before backend mode becomes the default or before real customer accounting data is stored outside the browser. Use `docs/persistence-migration-roadmap.md` for the current roadmap status, recently completed slices, recommended next issues, and remaining production gates.
 
 ## Current Posture
 
